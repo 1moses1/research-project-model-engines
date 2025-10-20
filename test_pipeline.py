@@ -112,9 +112,61 @@ def test_synthetic_generator():
         print(f"  Val: {len(val_df)}")
         print(f"  Test: {len(test_df)}")
 
-        return True
+        return True, df
     except Exception as e:
         print(f"❌ Synthetic generator failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return False, None
+
+
+def test_log_parser(df=None):
+    """Test log parser."""
+    print("\n" + "="*60)
+    print("Testing Log Parser (Drain Algorithm)...")
+    print("="*60)
+
+    try:
+        from data_pipeline.log_parser import DrainParser
+
+        parser = DrainParser(
+            depth=4,
+            similarity_threshold=0.5,
+            max_children=100,
+            max_clusters=100  # Smaller for testing
+        )
+
+        print("✅ Drain parser initialized")
+
+        if df is not None and len(df) > 0:
+            # Use generated data for testing
+            test_sample = df.head(100).copy()
+            print(f"Parsing {len(test_sample)} log messages...")
+
+            parsed_df = parser.parse_dataset(test_sample)
+
+            print(f"✅ Parsed {parser.parsed_count} logs")
+            print(f"✅ Extracted {parser.template_count} unique templates")
+
+            # Show sample template
+            if parser.template_count > 0:
+                templates = parser.get_templates()
+                first_template = list(templates.values())[0]
+                print(f"\nSample template:")
+                print(f"  {first_template['template']}")
+                print(f"  (appears {first_template['log_count']} times)")
+
+            stats = parser.get_statistics()
+            print(f"\n✅ Compression ratio: {stats['compression_ratio']:.2f}x")
+
+            return True
+        else:
+            print("⚠️  No dataset available for parsing test")
+            print("   Parser initialization successful, but skipping parse test")
+            return True
+
+    except Exception as e:
+        print(f"❌ Log parser failed: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -127,12 +179,19 @@ def main():
     print("="*70)
 
     results = {}
+    generated_df = None
 
     # Test each component
     results['config_loader'] = test_config_loader()
     results['logger'] = test_logger()
     results['control_mapper'] = test_control_mapper()
-    results['synthetic_generator'] = test_synthetic_generator()
+
+    # Synthetic generator returns df for log parser testing
+    gen_result, generated_df = test_synthetic_generator()
+    results['synthetic_generator'] = gen_result
+
+    # Log parser test (uses generated data if available)
+    results['log_parser'] = test_log_parser(generated_df)
 
     # Summary
     print("\n" + "="*70)
