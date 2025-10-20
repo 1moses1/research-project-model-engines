@@ -1,0 +1,175 @@
+# Data Pipeline Configuration
+
+dataset:
+  name: "rwanda_nist_compliance"
+  output_dir: "data/synthetic"
+  size: 100000  # Total number of compliance events to generate
+
+  # Train/Validation/Test Split
+  split:
+    train: 0.70
+    validation: 0.15
+    test: 0.15
+    random_seed: 42
+
+# Control Definitions
+controls:
+  nist_controls:
+    - AC-2   # Account Management
+    - AC-3   # Access Enforcement
+    - AC-6   # Least Privilege
+    - AC-17  # Remote Access
+    - AU-2   # Event Logging
+    - AU-3   # Content of Audit Records
+    - AU-6   # Audit Review and Analysis
+    - AU-9   # Protection of Audit Information
+    - AU-12  # Audit Record Generation
+    - CM-2   # Baseline Configuration
+    - CM-6   # Configuration Settings
+    - CM-7   # Least Functionality
+    - CP-2   # Contingency Plan
+    - CP-9   # System Backup
+    - IA-2   # User Identification and Authentication
+    - IA-4   # Identifier Management
+    - IA-5   # Authenticator Management
+    - IR-4   # Incident Handling
+    - IR-5   # Incident Monitoring
+    - IR-6   # Incident Reporting
+    - RA-3   # Risk Assessment
+    - RA-5   # Vulnerability Monitoring and Scanning
+    - SC-7   # Boundary Protection
+    - SC-8   # Transmission Confidentiality
+    - SC-12  # Cryptographic Key Establishment
+    - SI-2   # Flaw Remediation
+    - SI-3   # Malicious Code Protection
+    - SI-4   # System Monitoring
+    - SI-7   # Software, Firmware, and Information Integrity
+
+  rwanda_controls:
+    - RW-AC-001  # User Account Management
+    - RW-AC-002  # Access Control Policies
+    - RW-AC-003  # Privilege Management
+    - RW-AU-001  # Audit Logging Requirements
+    - RW-AU-002  # Log Retention Standards
+    - RW-AU-003  # Audit Review Procedures
+    - RW-IR-001  # Incident Response Plan
+    - RW-IR-002  # Incident Reporting Requirements
+    - RW-IR-003  # Incident Response Team
+    - RW-VM-001  # Vulnerability Assessment
+    - RW-VM-002  # Patch Management
+    - RW-VM-003  # Security Updates
+    - RW-SH-001  # System Hardening Standards
+    - RW-SH-002  # Secure Configuration
+    - RW-SH-003  # Baseline Security Settings
+    - RW-BC-001  # Business Continuity Planning
+    - RW-BC-002  # Backup and Recovery
+    - RW-BC-003  # Disaster Recovery
+    - RW-DP-001  # Data Protection Standards
+    - RW-DP-002  # Encryption Requirements
+    - RW-DP-003  # Data Classification
+
+# Synthetic Event Generation
+synthetic_events:
+  # Event type distribution
+  distribution:
+    access_control: 0.25
+    audit_logging: 0.20
+    incident_response: 0.15
+    vulnerability_management: 0.15
+    system_hardening: 0.10
+    data_protection: 0.10
+    business_continuity: 0.05
+
+  # Compliance status distribution (imbalanced - realistic)
+  compliance_ratio:
+    compliant: 0.75
+    non_compliant: 0.25
+
+  # Anomaly labels
+  anomaly_distribution:
+    normal: 0.80
+    suspicious: 0.15
+    critical: 0.05
+
+# Log Parsing (Drain Algorithm)
+log_parser:
+  algorithm: "drain"
+  similarity_threshold: 0.5
+  depth: 4
+  max_children: 100
+  max_clusters: 1000
+
+# Data Augmentation
+augmentation:
+  enabled: true
+  methods:
+    - synonym_replacement  # Replace words with synonyms
+    - back_translation     # Translate to another language and back
+    - template_variation   # Vary log templates
+  augmentation_factor: 1.5  # Generate 1.5x more samples
+
+# Class Balancing
+class_balancing:
+  method: "smote"  # Options: smote, random_oversample, cost_sensitive
+  k_neighbors: 5
+  target_ratio: 0.5  # Balance to 50/50
+
+# Public Datasets Integration
+public_datasets:
+  hdfs:
+    enabled: true
+    path: "data/public_datasets/hdfs"
+    url: "https://zenodo.org/record/3227177/files/HDFS_v1.tar.gz"
+    use_for: "log_parser_validation"
+
+  bgl:
+    enabled: false  # Optional for Phase II
+    path: "data/public_datasets/bgl"
+    url: "https://zenodo.org/record/3227177/files/BGL.tar.gz"
+    use_for: "long_sequence_testing"
+
+  nsl_kdd:
+    enabled: false  # Optional for benchmarking
+    path: "data/public_datasets/nsl_kdd"
+    url: "https://www.unb.ca/cic/datasets/nsl.html"
+    use_for: "network_intrusion_baseline"
+
+# Feature Engineering
+features:
+  text_features:
+    - raw_log_message
+    - log_template
+    - control_description
+
+  structured_features:
+    - user_id
+    - action_type
+    - resource_path
+    - source_ip
+    - destination_ip
+    - port_number
+    - status_code
+    - timestamp
+    - hour_of_day
+    - day_of_week
+    - control_id
+    - control_category
+    - framework
+    - severity_level
+
+  engineered_features:
+    - recent_failures_count
+    - user_risk_score
+    - resource_sensitivity_level
+    - time_since_last_access
+    - access_frequency
+
+# Output Formats
+output:
+  formats:
+    - csv
+    - json
+    - parquet  # For large-scale processing
+
+  compression: true
+  compression_type: "gzip"
