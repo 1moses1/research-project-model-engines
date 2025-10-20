@@ -23,10 +23,11 @@ This research project develops an AI-driven compliance auditing system tailored 
 
 ### Mid-October 2025 Deliverable (20%)
 - ✅ Comprehensive project structure
-- 🔄 Data ingestion pipeline
-- 🔄 Log parsing and mapping engine
-- 🔄 Baseline ML classifiers (BERT, SVM, LSTM)
-- 🔄 Comparative evaluation framework
+- ✅ Data ingestion pipeline
+- ✅ Log parsing and mapping engine
+- ✅ Baseline ML classifiers (BERT, XGBoost, LSTM)
+- ✅ Comparative evaluation framework
+- ⏳ Model training and validation (user action required)
 
 ## Architecture
 
@@ -38,10 +39,12 @@ This research project develops an AI-driven compliance auditing system tailored 
 
 ### ML Models
 
-#### Baseline Models (Phase 5)
-- **BERT Classifier**: Pre-trained transformer fine-tuned for compliance classification
-- **SVM Classifier**: Traditional ML baseline with engineered features
-- **LSTM Classifier**: Sequential model for temporal log analysis
+#### Baseline Models (Phase 5) ✅ COMPLETE
+- **BERT Classifier**: Fine-tuned bert-base-uncased (110M params, target: >93% accuracy)
+- **XGBoost Classifier**: Gradient boosting with feature engineering (target: >93% accuracy)
+- **LSTM Classifier**: Bidirectional 2-layer LSTM (target: >90% accuracy)
+- **Evaluation Framework**: Comprehensive metrics (accuracy, precision, recall, F1, ROC-AUC)
+- **Training Pipeline**: Unified CLI (`train_all_models.py`) for all models
 
 #### Transfer Learning (Phase 6)
 - Base model architecture for multi-country adaptability
@@ -55,6 +58,28 @@ This research project develops an AI-driven compliance auditing system tailored 
 - Model comparison visualizations
 - Interactive evaluation metrics
 
+## Quick Start
+
+```bash
+# 1. Setup environment
+./setup.sh
+source venv/bin/activate
+
+# 2. Generate synthetic dataset (100K events)
+python src/data_pipeline/synthetic_generator.py
+
+# 3. Train all models
+python train_all_models.py
+
+# Or quick test (5K samples, reduced epochs)
+python train_all_models.py --sample 5000 --bert-epochs 2 --lstm-epochs 5
+
+# 4. View results
+cat results/comparison/model_comparison.csv
+```
+
+See [TRAINING_GUIDE.md](TRAINING_GUIDE.md) for comprehensive instructions.
+
 ## Installation
 
 ```bash
@@ -62,15 +87,11 @@ This research project develops an AI-driven compliance auditing system tailored 
 git clone https://github.com/1moses1/research-project-model-engines.git
 cd model-engine
 
-# Create virtual environment
-python -m venv venv
+# Run setup script (creates venv, installs dependencies)
+./setup.sh
+
+# Activate environment
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Download spaCy model
-python -m spacy download en_core_web_sm
 ```
 
 ## Project Structure
@@ -90,12 +111,17 @@ python src/data_pipeline/log_parser.py --input data/raw/logs --output data/proce
 
 ### Model Training
 ```bash
-# Train BERT classifier
-python src/models/bert_classifier.py --config config/model_config.yaml
+# Train all models (BERT, XGBoost, LSTM)
+python train_all_models.py
 
-# Train all baseline models and compare
-python src/utils/train_all.py --compare
+# Train specific models
+python train_all_models.py --skip-bert --skip-lstm  # Only XGBoost
+
+# Custom configuration
+python train_all_models.py --bert-epochs 10 --lstm-epochs 20 --sample 10000
 ```
+
+See [TRAINING_GUIDE.md](TRAINING_GUIDE.md) for detailed options and best practices.
 
 ### UI Dashboard
 ```bash
@@ -114,34 +140,37 @@ uvicorn src.api.app:app --reload --port 8000
 
 ## Development Roadmap
 
-### ✅ Phase 1: Project Setup & Requirements Analysis
+### ✅ Phase 1: Project Setup & Requirements Analysis (100%)
 - [x] Extract deliverable requirements
 - [x] Initialize Git repository
 - [x] Create project structure
-- [ ] Document regulatory frameworks
+- [x] Document regulatory frameworks
 
-### 🔄 Phase 2: Literature Review
-- [ ] Research >93% accuracy models
-- [ ] Identify novelty gap
-- [ ] Define unique contributions
+### ✅ Phase 2: Literature Review (100%)
+- [x] Research >93% accuracy models
+- [x] Identify novelty gap
+- [x] Define unique contributions
 
-### 🔄 Phase 3: Model Selection Strategy
-- [ ] Compare BERT vs SVM vs LSTM
-- [ ] Evaluate fine-tuning vs training from scratch
-- [ ] Design comparison framework
+### ✅ Phase 3: Model Selection Strategy (100%)
+- [x] Compare BERT vs SVM vs LSTM
+- [x] Evaluate fine-tuning vs training from scratch
+- [x] Design comparison framework
 
-### 📋 Phase 4: Data Pipeline
-- [ ] Synthetic dataset schema
-- [ ] Control mapper (NIST + Rwanda)
-- [ ] Log parsing engine
-- [ ] Data augmentation
-- [ ] Public dataset integration
+### ✅ Phase 4: Data Pipeline (100%)
+- [x] Synthetic dataset schema
+- [x] Control mapper (NIST + Rwanda)
+- [x] Log parsing engine (Drain algorithm)
+- [x] Data augmentation
+- [x] Class balancing (SMOTE)
+- [x] Public dataset integration (HDFS, BGL)
 
-### 📋 Phase 5: Baseline Models
-- [ ] BERT classifier
-- [ ] SVM classifier
-- [ ] LSTM classifier
-- [ ] Comparative evaluation
+### ✅ Phase 5: Baseline Models (100%)
+- [x] BERT classifier (706 lines)
+- [x] XGBoost classifier (675 lines)
+- [x] LSTM classifier (706 lines)
+- [x] Evaluation framework (507 lines)
+- [x] Training pipeline (500+ lines)
+- [x] Comprehensive documentation (1,900+ lines)
 
 ### 📋 Phase 6: Transfer Learning
 - [ ] Multi-country base model
@@ -228,5 +257,14 @@ Moise Iradukunda - Carnegie Mellon University
 
 ---
 
-**Status**: Phase 1 Complete | Phase 2-3 In Progress
-**Next Milestone**: Data Pipeline & Baseline Models - Mid-October 2025
+**Status**: Phase 5 Complete ✅ | Phase 6-8 Pending
+**Progress**: 29/45 tasks (64.4%)
+**Next Milestone**: Model Training → Transfer Learning (Phase 6)
+
+## Documentation
+
+- **[TRAINING_GUIDE.md](TRAINING_GUIDE.md)** - Comprehensive model training instructions
+- **[MODEL_INFERENCE_GUIDE.md](MODEL_INFERENCE_GUIDE.md)** - Deployment and API integration
+- **[PHASE5_COMPLETION_SUMMARY.md](PHASE5_COMPLETION_SUMMARY.md)** - Phase 5 complete summary
+- **[PHASE5_MODELS_SUMMARY.md](PHASE5_MODELS_SUMMARY.md)** - Technical specifications
+- **[CURRENT_STATUS.md](CURRENT_STATUS.md)** - Project status and next steps
