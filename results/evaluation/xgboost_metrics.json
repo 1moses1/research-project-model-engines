@@ -1,0 +1,51 @@
+{
+  "model_name": "XGBoost",
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "error_rate": 0.0,
+  "roc_auc": 1.0,
+  "confusion_matrix": [
+    [
+      815,
+      0
+    ],
+    [
+      0,
+      256
+    ]
+  ],
+  "classification_report": {
+    "compliant": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 815.0
+    },
+    "non_compliant": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 256.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 1071.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 1071.0
+    }
+  },
+  "total_samples": 1071,
+  "true_positives": 256,
+  "true_negatives": 815,
+  "false_positives": 0,
+  "false_negatives": 0
+}

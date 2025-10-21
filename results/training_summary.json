@@ -1,0 +1,35 @@
+{
+  "timestamp": "2025-10-20T22:52:07.356080",
+  "sample_size": 5000,
+  "models_trained": [
+    "BERT",
+    "XGBoost",
+    "LSTM"
+  ],
+  "best_model": "BERT",
+  "best_accuracy": 1.0,
+  "target_achieved": true,
+  "models": {
+    "BERT": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "training_time_minutes": 13.922371137142182
+    },
+    "XGBoost": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "training_time_minutes": 0.0253053347269694
+    },
+    "LSTM": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "training_time_minutes": 2.579401433467865
+    }
+  }
+}
