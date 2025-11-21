@@ -1,51 +1,51 @@
 {
   "model_name": "LSTM",
-  "accuracy": 1.0,
-  "precision": 1.0,
-  "recall": 1.0,
-  "f1_score": 1.0,
-  "error_rate": 0.0,
-  "roc_auc": 1.0,
+  "accuracy": 0.9611333333333333,
+  "precision": 0.7620087336244541,
+  "recall": 0.8035303146584805,
+  "f1_score": 0.7822189017556966,
+  "error_rate": 0.038866666666666716,
+  "roc_auc": 0.990058029299961,
   "confusion_matrix": [
     [
-      815,
-      0
+      26740,
+      654
     ],
     [
-      0,
-      256
+      512,
+      2094
     ]
   ],
   "classification_report": {
     "compliant": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1-score": 1.0,
-      "support": 815.0
+      "precision": 0.9812123880816087,
+      "recall": 0.9761261590129225,
+      "f1-score": 0.9786626651538997,
+      "support": 27394.0
     },
     "non_compliant": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1-score": 1.0,
-      "support": 256.0
+      "precision": 0.7620087336244541,
+      "recall": 0.8035303146584805,
+      "f1-score": 0.7822189017556966,
+      "support": 2606.0
     },
-    "accuracy": 1.0,
+    "accuracy": 0.9611333333333333,
     "macro avg": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1-score": 1.0,
-      "support": 1071.0
+      "precision": 0.8716105608530313,
+      "recall": 0.8898282368357016,
+      "f1-score": 0.8804407834547981,
+      "support": 30000.0
     },
     "weighted avg": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1-score": 1.0,
-      "support": 1071.0
+      "precision": 0.9621708972977638,
+      "recall": 0.9611333333333333,
+      "f1-score": 0.9615982502400424,
+      "support": 30000.0
     }
   },
-  "total_samples": 1071,
-  "true_positives": 256,
-  "true_negatives": 815,
-  "false_positives": 0,
-  "false_negatives": 0
+  "total_samples": 30000,
+  "true_positives": 2094,
+  "true_negatives": 26740,
+  "false_positives": 654,
+  "false_negatives": 512
 }

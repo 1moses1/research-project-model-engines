@@ -1,0 +1,19 @@
+# Requirements for Kubernetes deployment - Phase 2.5 Model
+# Phase 2.5 uses: TF-IDF (2000) + Categorical (2) + Temporal (26) + BERT (768) = 2796 features
+
+# Core ML libraries
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.5.0
+xgboost==2.0.3
+joblib==1.4.2
+
+# Deep Learning for BERT embeddings (distilbert-base-uncased)
+torch==2.2.0
+transformers==4.40.0
+
+# Web framework
+flask==3.0.0
+
+# Utilities
+pyyaml==6.0.1

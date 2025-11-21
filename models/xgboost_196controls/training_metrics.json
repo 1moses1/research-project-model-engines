@@ -1,0 +1,55 @@
+{
+  "model_info": {
+    "controls": 196,
+    "training_events": 70000,
+    "validation_events": 15000,
+    "test_events": 15000,
+    "features": 30,
+    "text_features": 25,
+    "trained_at": "2025-11-21T02:11:34.998735"
+  },
+  "optimization": {
+    "n_jobs": 2,
+    "cv_folds": 3,
+    "n_estimators": 100,
+    "max_depth": 5,
+    "max_text_features": 25
+  },
+  "cross_validation": {
+    "mean_f1": 1.0,
+    "std_f1": 0.0,
+    "fold_scores": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "training": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0
+  },
+  "validation": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0
+  },
+  "test": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0
+  },
+  "confusion_matrix": {
+    "true_negative": 11214,
+    "false_positive": 0,
+    "false_negative": 0,
+    "true_positive": 3786
+  },
+  "overfitting_analysis": {
+    "train_test_gap": 0.0,
+    "overfitting_detected": false
+  }
+}

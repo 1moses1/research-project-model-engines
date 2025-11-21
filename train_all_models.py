@@ -645,10 +645,28 @@ def main():
         help='Skip LSTM training'
     )
 
+    parser.add_argument(
+        '--data-dir',
+        type=str,
+        default='data/synthetic',
+        help='Directory containing training data (default: data/synthetic)'
+    )
+
+    parser.add_argument(
+        '--results-dir',
+        type=str,
+        default='results',
+        help='Directory for saving results (default: results)'
+    )
+
     args = parser.parse_args()
 
     # Initialize pipeline
-    pipeline = TrainingPipeline(sample_size=args.sample)
+    pipeline = TrainingPipeline(
+        data_dir=args.data_dir,
+        results_dir=args.results_dir,
+        sample_size=args.sample
+    )
 
     # Run
     pipeline.run(

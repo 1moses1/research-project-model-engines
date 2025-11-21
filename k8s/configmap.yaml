@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compliance-config
+  namespace: compliance-monitoring
+data:
+  model_version: "2.5.0"
+  accuracy: "99.49"
+  recall: "98.96"
+  framework: "NIST-SP-800-53"
+  log_level: "INFO"

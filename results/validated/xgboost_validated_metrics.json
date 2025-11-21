@@ -1,0 +1,14 @@
+{
+  "model": "XGBoost",
+  "framework": "Rwanda NCSA (PRIMARY) + NIST (SECONDARY)",
+  "validated": true,
+  "validation_date": "2025-11-15",
+  "test_metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+  },
+  "training_samples": 50000,
+  "test_samples": 10000
+}

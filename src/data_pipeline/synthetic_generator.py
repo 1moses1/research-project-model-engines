@@ -27,14 +27,14 @@ class SyntheticEventGenerator:
 
     def __init__(
         self,
-        control_taxonomy_path: str = "data/processed/control_taxonomy.json",
+        control_taxonomy_path: str = "data/processed/control_taxonomy_validated.json",
         output_dir: str = "data/synthetic"
     ):
         """
-        Initialize SyntheticEventGenerator.
+        Initialize SyntheticEventGenerator with VALIDATED control taxonomy.
 
         Args:
-            control_taxonomy_path: Path to control taxonomy JSON
+            control_taxonomy_path: Path to VALIDATED control taxonomy JSON
             output_dir: Directory to save generated datasets
         """
         self.output_dir = Path(output_dir)
@@ -44,19 +44,31 @@ class SyntheticEventGenerator:
         self.config = self.config_loader.load_data_config()
         self.logger = setup_logger("synthetic_generator", "logs/synthetic_generator.log")
 
-        # Load control taxonomy
+        # Load VALIDATED control taxonomy
         taxonomy_path = Path(control_taxonomy_path)
         if not taxonomy_path.exists():
-            raise FileNotFoundError(f"Control taxonomy not found: {control_taxonomy_path}")
+            raise FileNotFoundError(
+                f"VALIDATED control taxonomy not found: {control_taxonomy_path}\n"
+                f"Run: python src/data_pipeline/control_mapper_validated.py"
+            )
 
         with open(taxonomy_path, 'r') as f:
             self.taxonomy = json.load(f)
+
+        # Verify taxonomy is validated
+        if not self.taxonomy.get('metadata', {}).get('validated', False):
+            raise ValueError(
+                "Control taxonomy is not validated! "
+                "Use control_taxonomy_validated.json, not control_taxonomy.json"
+            )
 
         self.nist_controls = {c['control_id']: c for c in self.taxonomy['nist']}
         self.rwanda_controls = {c['control_id']: c for c in self.taxonomy['rwanda']}
         self.all_controls = {**self.nist_controls, **self.rwanda_controls}
 
-        self.logger.info(f"Loaded {len(self.all_controls)} controls from taxonomy")
+        self.logger.info(f"✅ Loaded {len(self.all_controls)} VALIDATED controls from taxonomy")
+        self.logger.info(f"   Rwanda NCSA (PRIMARY): {len(self.rwanda_controls)} requirements")
+        self.logger.info(f"   NIST SP 800-53 (SECONDARY): {len(self.nist_controls)} controls")
 
         # Initialize data pools
         self._initialize_data_pools()
@@ -136,7 +148,7 @@ class SyntheticEventGenerator:
             Realistic log message string
         """
         control_id = control['control_id']
-        indicators = control['log_indicators']
+        indicators = control.get('log_indicators', ['event logged', 'compliance check'])
 
         if is_compliant:
             # Compliant log messages

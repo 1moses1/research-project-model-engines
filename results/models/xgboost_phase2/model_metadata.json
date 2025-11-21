@@ -1,0 +1,22 @@
+{
+  "trained_at": "2025-11-02T21:23:41.470386",
+  "phase": "2 - BERT + Temporal Features",
+  "data_sources": [
+    "Synthetic compliance events (72K)",
+    "NSL-KDD intrusion dataset (20K)",
+    "MITRE ATT&CK techniques (1.5K)",
+    "CISA KEV vulnerabilities (1K)"
+  ],
+  "total_samples": 88321,
+  "features": {
+    "tfidf": 2000,
+    "categorical": 2,
+    "temporal": 26,
+    "bert": 768,
+    "total": 2796
+  },
+  "accuracy": 0.9928144978073652,
+  "model_type": "XGBoost with BERT + Temporal",
+  "version": "2.0 - Phase 2 Ensemble",
+  "target": "95%+ accuracy on real scenarios"
+}

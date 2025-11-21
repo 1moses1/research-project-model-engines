@@ -1,0 +1,19 @@
+{
+  "ddos": {
+    "total_samples": 7000,
+    "attack_samples": 5000,
+    "normal_samples": 2000,
+    "train": 4900,
+    "val": 1050,
+    "test": 1050
+  },
+  "credential_stuffing": {
+    "total_samples": 7000,
+    "attack_samples": 5000,
+    "normal_samples": 2000,
+    "train": 4900,
+    "val": 1050,
+    "test": 1050
+  },
+  "creation_date": "2025-11-02T23:26:20.779505"
+}

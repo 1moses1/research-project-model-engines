@@ -1,0 +1,108 @@
+{
+  "model_type": "XGBoost",
+  "total_features": 1003,
+  "samples_analyzed": 1000,
+  "base_value": 0.24205443263053894,
+  "top_features": [
+    {
+      "rank": 1,
+      "feature": "tfidf_537",
+      "importance": 2.142974853515625
+    },
+    {
+      "rank": 2,
+      "feature": "tfidf_950",
+      "importance": 0.42585188150405884
+    },
+    {
+      "rank": 3,
+      "feature": "tfidf_426",
+      "importance": 0.352846622467041
+    },
+    {
+      "rank": 4,
+      "feature": "tfidf_473",
+      "importance": 0.3378082811832428
+    },
+    {
+      "rank": 5,
+      "feature": "tfidf_198",
+      "importance": 0.22604510188102722
+    },
+    {
+      "rank": 6,
+      "feature": "tfidf_773",
+      "importance": 0.1956859678030014
+    },
+    {
+      "rank": 7,
+      "feature": "tfidf_622",
+      "importance": 0.18351809680461884
+    },
+    {
+      "rank": 8,
+      "feature": "tfidf_422",
+      "importance": 0.17893965542316437
+    },
+    {
+      "rank": 9,
+      "feature": "tfidf_542",
+      "importance": 0.16645687818527222
+    },
+    {
+      "rank": 10,
+      "feature": "tfidf_997",
+      "importance": 0.15325766801834106
+    },
+    {
+      "rank": 11,
+      "feature": "tfidf_559",
+      "importance": 0.1329929083585739
+    },
+    {
+      "rank": 12,
+      "feature": "tfidf_26",
+      "importance": 0.1238565444946289
+    },
+    {
+      "rank": 13,
+      "feature": "tfidf_28",
+      "importance": 0.1143602803349495
+    },
+    {
+      "rank": 14,
+      "feature": "tfidf_329",
+      "importance": 0.09950746595859528
+    },
+    {
+      "rank": 15,
+      "feature": "tfidf_999",
+      "importance": 0.08794204145669937
+    },
+    {
+      "rank": 16,
+      "feature": "tfidf_430",
+      "importance": 0.07803309708833694
+    },
+    {
+      "rank": 17,
+      "feature": "tfidf_934",
+      "importance": 0.07608510553836823
+    },
+    {
+      "rank": 18,
+      "feature": "tfidf_465",
+      "importance": 0.07430004328489304
+    },
+    {
+      "rank": 19,
+      "feature": "tfidf_396",
+      "importance": 0.0728076621890068
+    },
+    {
+      "rank": 20,
+      "feature": "tfidf_753",
+      "importance": 0.07234125584363937
+    }
+  ]
+}

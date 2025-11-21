@@ -1,0 +1,13 @@
+{
+  "accuracy": 0.9908628788366257,
+  "precision": 0.9893983567452955,
+  "recall": 0.9734028683181225,
+  "f1_score": 0.981335436382755,
+  "true_positives": 3733,
+  "false_positives": 40,
+  "true_negatives": 11666,
+  "false_negatives": 102,
+  "avg_confidence": 0.2531832158565521,
+  "trained_at": "2025-10-29T00:51:35.876171",
+  "assessment": "EXCELLENT"
+}

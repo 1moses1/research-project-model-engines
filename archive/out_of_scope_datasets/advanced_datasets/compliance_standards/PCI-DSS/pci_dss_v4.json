@@ -1,0 +1,68 @@
+{
+  "version": "4.0",
+  "date_published": "2022-03-31",
+  "requirements": [
+    {
+      "id": "1",
+      "name": "Install and Maintain Network Security Controls",
+      "description": "Network security controls protect the cardholder data environment"
+    },
+    {
+      "id": "2",
+      "name": "Apply Secure Configurations to All System Components",
+      "description": "Malicious individuals use default passwords and settings to compromise systems"
+    },
+    {
+      "id": "3",
+      "name": "Protect Stored Account Data",
+      "description": "Protection methods such as encryption, truncation, masking, and hashing"
+    },
+    {
+      "id": "4",
+      "name": "Protect Cardholder Data with Strong Cryptography During Transmission",
+      "description": "Sensitive information must be encrypted during transmission over networks"
+    },
+    {
+      "id": "5",
+      "name": "Protect All Systems and Networks from Malicious Software",
+      "description": "Anti-virus software must be used on all systems commonly affected by malware"
+    },
+    {
+      "id": "6",
+      "name": "Develop and Maintain Secure Systems and Software",
+      "description": "Security vulnerabilities in systems and software are continuously being discovered"
+    },
+    {
+      "id": "7",
+      "name": "Restrict Access to System Components and Cardholder Data by Business Need to Know",
+      "description": "Limit access to authorized personnel with legitimate business need"
+    },
+    {
+      "id": "8",
+      "name": "Identify Users and Authenticate Access to System Components",
+      "description": "Assigning a unique identification to each person with access ensures accountability"
+    },
+    {
+      "id": "9",
+      "name": "Restrict Physical Access to Cardholder Data",
+      "description": "Physical access provides the opportunity to access devices or data"
+    },
+    {
+      "id": "10",
+      "name": "Log and Monitor All Access to System Components and Cardholder Data",
+      "description": "Logging mechanisms and ability to track user activities are critical"
+    },
+    {
+      "id": "11",
+      "name": "Test Security of Systems and Networks Regularly",
+      "description": "Vulnerabilities are continually discovered, systems must be tested regularly"
+    },
+    {
+      "id": "12",
+      "name": "Support Information Security with Organizational Policies and Programs",
+      "description": "Overall information security policy sets the security tone for the whole entity"
+    }
+  ],
+  "source": "https://www.pcisecuritystandards.org/",
+  "downloaded": "2025-10-27T11:01:59.949254"
+}

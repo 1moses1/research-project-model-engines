@@ -1,0 +1,76 @@
+{
+  "datasets": {
+    "downloaded": [
+      {
+        "name": "CSIC-2010",
+        "description": "Web application attacks (SQL injection, XSS, buffer overflow)",
+        "category": "web_security",
+        "size": "~40MB"
+      }
+    ],
+    "manual_required": [
+      {
+        "name": "ADFA-IDS",
+        "description": "Linux system call traces for intrusion detection",
+        "category": "host_intrusion",
+        "size": "~500MB"
+      },
+      {
+        "name": "CTU-13",
+        "description": "Real botnet traffic captures",
+        "category": "botnet",
+        "size": "~50GB"
+      },
+      {
+        "name": "Kitsune",
+        "description": "Network-based anomaly detection",
+        "category": "network_anomaly",
+        "size": "~2GB"
+      },
+      {
+        "name": "SecRepo",
+        "description": "Various security log samples",
+        "category": "security_logs",
+        "size": "Various"
+      },
+      {
+        "name": "EMBER",
+        "description": "Malware classification dataset",
+        "category": "malware",
+        "size": "~2GB"
+      }
+    ]
+  },
+  "compliance_standards": {
+    "downloaded": [
+      {
+        "name": "OWASP",
+        "files": 1,
+        "path": "data/advanced_datasets/compliance_standards/OWASP"
+      },
+      {
+        "name": "MITRE-ATT&CK",
+        "files": 3,
+        "path": "data/advanced_datasets/compliance_standards/MITRE-ATT&CK"
+      },
+      {
+        "name": "CIS-Controls",
+        "files": 1,
+        "path": "data/advanced_datasets/compliance_standards/CIS-Controls"
+      },
+      {
+        "name": "NIST-NVD",
+        "files": 0,
+        "path": "data/advanced_datasets/compliance_standards/NIST-NVD"
+      },
+      {
+        "name": "PCI-DSS",
+        "files": 1,
+        "path": "data/advanced_datasets/compliance_standards/PCI-DSS"
+      }
+    ],
+    "manual_required": []
+  },
+  "total_size_gb": 0,
+  "created": "2025-10-27T11:01:59.949849"
+}

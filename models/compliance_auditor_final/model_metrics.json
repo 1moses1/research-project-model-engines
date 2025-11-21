@@ -1,0 +1,33 @@
+{
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "confusion_matrix": [
+    [
+      7511,
+      0
+    ],
+    [
+      0,
+      2489
+    ]
+  ],
+  "high_confidence_pct": 100.0,
+  "cross_validation": {
+    "mean_f1": 1.0,
+    "std_f1": 0.0,
+    "fold_scores": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "training_time_seconds": 0.23796772956848145,
+  "framework": "Rwanda NCSA Minimum Cybersecurity Standards",
+  "total_controls": 196,
+  "rwanda_controls": 169,
+  "nist_controls": 27
+}

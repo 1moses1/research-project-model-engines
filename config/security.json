@@ -1,0 +1,38 @@
+{
+  "authentication": {
+    "enabled": true,
+    "token_expiry_hours": 24,
+    "max_failed_attempts": 5,
+    "password_min_length": 12
+  },
+  "rate_limiting": {
+    "requests_per_minute": 60,
+    "requests_per_hour": 1000,
+    "requests_per_day": 10000
+  },
+  "input_validation": {
+    "max_log_length": 10000,
+    "min_log_length": 10,
+    "allowed_chars": "ascii_printable"
+  },
+  "adversarial_detection": {
+    "enabled": true,
+    "confidence_threshold": 0.6,
+    "z_score_threshold": 3.0
+  },
+  "audit_logging": {
+    "enabled": true,
+    "log_predictions": true,
+    "log_failed_auth": true,
+    "log_rate_limit_violations": true
+  },
+  "model_integrity": {
+    "verify_on_load": true,
+    "verify_interval_hours": 24
+  },
+  "deployment": {
+    "environment": "staging",
+    "https_only": true,
+    "cors_enabled": false
+  }
+}

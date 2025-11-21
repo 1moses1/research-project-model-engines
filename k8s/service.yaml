@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: compliance-api
+  namespace: compliance-monitoring
+  labels:
+    app: compliance-monitor
+spec:
+  type: NodePort
+  selector:
+    app: compliance-monitor
+  ports:
+  - name: api
+    protocol: TCP
+    port: 5000
+    targetPort: 5000
+    nodePort: 30080

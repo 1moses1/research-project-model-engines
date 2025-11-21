@@ -1,0 +1,11 @@
+{
+  "total_samples": 15000,
+  "phishing_samples": 10000,
+  "legitimate_samples": 5000,
+  "phishing_ratio": 0.6666666666666666,
+  "train_samples": 10500,
+  "val_samples": 2250,
+  "test_samples": 2250,
+  "creation_date": "2025-11-02T23:23:35.581258",
+  "source": "Synthetic phishing patterns based on PhishTank characteristics"
+}

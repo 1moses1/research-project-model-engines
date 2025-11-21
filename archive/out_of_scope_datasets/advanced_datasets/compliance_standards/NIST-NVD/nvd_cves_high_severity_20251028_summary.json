@@ -1,0 +1,71 @@
+{
+  "total_cves": 1000,
+  "severity_distribution": {
+    "CRITICAL": 266
+  },
+  "top_vendors": {},
+  "top_cwe": {
+    "CWE-119": 297,
+    "CWE-416": 62,
+    "CWE-20": 52,
+    "CWE-284": 46,
+    "CWE-264": 38,
+    "CWE-89": 31,
+    "CWE-190": 26,
+    "CWE-287": 25,
+    "CWE-787": 25,
+    "CWE-255": 22
+  },
+  "recent_cves": [
+    {
+      "id": "CVE-1999-0426",
+      "description": "The default permissions of /dev/kmem in Linux versions before 2.0.36 allows IP spoofing.",
+      "published": "1999-03-01T05:00:00.000"
+    },
+    {
+      "id": "CVE-1999-1324",
+      "description": "VAXstations running Open VMS 5.3 through 5.5-2 with VMS DECwindows or MOTIF do not properly disable access to user accounts that exceed the break-in limit threshold for failed login attempts, which ma",
+      "published": "1999-12-31T05:00:00.000"
+    },
+    {
+      "id": "CVE-2000-1218",
+      "description": "The default configuration for the domain name resolver for Microsoft Windows 98, NT 4.0, 2000, and XP sets the QueryIpMatching parameter to 0, which causes Windows to accept DNS updates from hosts tha",
+      "published": "2000-04-14T04:00:00.000"
+    },
+    {
+      "id": "CVE-2000-0944",
+      "description": "CGI Script Center News Update 1.1 does not properly validate the original news administration password during a password change operation, which allows remote attackers to modify the password without ",
+      "published": "2000-12-19T05:00:00.000"
+    },
+    {
+      "id": "CVE-2001-1339",
+      "description": "Beck IPC GmbH IPC@CHIP telnet service does not delay or disconnect users from the service when bad passwords are entered, which makes it easier for remote attackers to conduct brute force password gue",
+      "published": "2001-05-24T04:00:00.000"
+    },
+    {
+      "id": "CVE-2001-0248",
+      "description": "Buffer overflow in FTP server in HPUX 11 allows remote attackers to execute arbitrary commands by creating a long pathname and calling the STAT command, which uses glob to generate long strings.",
+      "published": "2001-06-18T04:00:00.000"
+    },
+    {
+      "id": "CVE-2001-0249",
+      "description": "Heap overflow in FTP daemon in Solaris 8 allows remote attackers to execute arbitrary commands by creating a long pathname and calling the LIST command, which uses glob to generate long strings.",
+      "published": "2001-06-18T04:00:00.000"
+    },
+    {
+      "id": "CVE-2001-0395",
+      "description": "Lightwave ConsoleServer 3200 does not disconnect users after unsuccessful login attempts, which could allow remote attackers to conduct brute force password guessing.",
+      "published": "2001-07-02T04:00:00.000"
+    },
+    {
+      "id": "CVE-2001-1291",
+      "description": "The telnet server for 3Com hardware such as PS40 SuperStack II does not delay or disconnect remote attackers who provide an incorrect username or password, which makes it easier to break into the serv",
+      "published": "2001-07-12T04:00:00.000"
+    },
+    {
+      "id": "CVE-2001-0609",
+      "description": "Format string vulnerability in Infodrom cfingerd 1.4.3 and earlier allows a remote attacker to gain additional privileges via a malformed ident reply that is passed to the syslog function.",
+      "published": "2001-08-02T04:00:00.000"
+    }
+  ]
+}

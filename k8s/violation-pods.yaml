@@ -1,0 +1,191 @@
+---
+# Simulation Pod 1: Unauthorized SSH Access (AC-3 Violation)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: violation-unauthorized-ssh
+  namespace: compliance-monitoring
+  labels:
+    violation-type: unauthorized-access
+    control: AC-3
+spec:
+  containers:
+  - name: ssh-simulator
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting unauthorized SSH simulation..."
+        while true; do
+          echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] FAILED SSH login attempt from 192.168.1.100 for user admin - Access denied"
+          sleep 30
+        done
+  restartPolicy: Always
+
+---
+# Simulation Pod 2: Phishing Detection (SI-4 Violation)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: violation-phishing
+  namespace: compliance-monitoring
+  labels:
+    violation-type: phishing
+    control: SI-4
+spec:
+  containers:
+  - name: phishing-simulator
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting phishing simulation..."
+        while true; do
+          echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ALERT: Suspicious email detected from external domain - Potential phishing attempt blocked"
+          sleep 45
+        done
+  restartPolicy: Always
+
+---
+# Simulation Pod 3: Data Exfiltration (AC-4 Violation)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: violation-data-exfil
+  namespace: compliance-monitoring
+  labels:
+    violation-type: data-exfiltration
+    control: AC-4
+spec:
+  containers:
+  - name: exfil-simulator
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting data exfiltration simulation..."
+        while true; do
+          echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] WARNING: Large data transfer detected to unknown IP 203.0.113.50 - 5GB in 10 minutes"
+          sleep 60
+        done
+  restartPolicy: Always
+
+---
+# Simulation Pod 4: Privilege Escalation (AC-6 Violation)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: violation-priv-escalation
+  namespace: compliance-monitoring
+  labels:
+    violation-type: privilege-escalation
+    control: AC-6
+spec:
+  containers:
+  - name: privesc-simulator
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting privilege escalation simulation..."
+        while true; do
+          echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] CRITICAL: User jdoe attempted sudo privilege escalation - Permission denied"
+          sleep 50
+        done
+  restartPolicy: Always
+
+---
+# Simulation Pod 5: Malware Detection (SI-3 Violation)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: violation-malware
+  namespace: compliance-monitoring
+  labels:
+    violation-type: malware
+    control: SI-3
+spec:
+  containers:
+  - name: malware-simulator
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting malware simulation..."
+        while true; do
+          echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ALERT: Malicious file detected - trojan.exe quarantined by antivirus"
+          sleep 40
+        done
+  restartPolicy: Always
+
+---
+# Simulation Pod 6: DDoS Attack (SC-5 Violation)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: violation-ddos
+  namespace: compliance-monitoring
+  labels:
+    violation-type: ddos
+    control: SC-5
+spec:
+  containers:
+  - name: ddos-simulator
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting DDoS simulation..."
+        while true; do
+          echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] CRITICAL: DDoS attack detected - 100000 requests/sec from botnet - Rate limiting activated"
+          sleep 35
+        done
+  restartPolicy: Always
+
+---
+# Simulation Pod 7: Insider Threat (PS-3 Violation)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: violation-insider-threat
+  namespace: compliance-monitoring
+  labels:
+    violation-type: insider-threat
+    control: PS-3
+spec:
+  containers:
+  - name: insider-simulator
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting insider threat simulation..."
+        while true; do
+          echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] WARNING: Employee accessing sensitive customer database outside business hours - Anomalous behavior flagged"
+          sleep 55
+        done
+  restartPolicy: Always
+
+---
+# Simulation Pod 8: Compliant Activity (Baseline for comparison)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: compliant-activity
+  namespace: compliance-monitoring
+  labels:
+    violation-type: compliant
+    control: AC-2
+spec:
+  containers:
+  - name: compliant-simulator
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting compliant activity simulation..."
+        while true; do
+          echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] INFO: User logged in successfully with MFA - Account access granted"
+          sleep 20
+        done
+  restartPolicy: Always

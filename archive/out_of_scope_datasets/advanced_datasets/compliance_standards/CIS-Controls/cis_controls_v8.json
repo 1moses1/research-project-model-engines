@@ -1,0 +1,103 @@
+{
+  "version": "8.0",
+  "date_published": "2021-05-18",
+  "implementation_groups": {
+    "IG1": "Basic cyber hygiene",
+    "IG2": "Scalable security",
+    "IG3": "Advanced security"
+  },
+  "controls": [
+    {
+      "id": "1",
+      "name": "Inventory and Control of Enterprise Assets",
+      "description": "Actively manage hardware assets"
+    },
+    {
+      "id": "2",
+      "name": "Inventory and Control of Software Assets",
+      "description": "Actively manage software assets"
+    },
+    {
+      "id": "3",
+      "name": "Data Protection",
+      "description": "Develop processes and technical controls"
+    },
+    {
+      "id": "4",
+      "name": "Secure Configuration",
+      "description": "Establish and maintain secure configurations"
+    },
+    {
+      "id": "5",
+      "name": "Account Management",
+      "description": "Use processes and tools to assign and manage authorization"
+    },
+    {
+      "id": "6",
+      "name": "Access Control Management",
+      "description": "Use processes and tools to create, assign, manage, and revoke access credentials"
+    },
+    {
+      "id": "7",
+      "name": "Continuous Vulnerability Management",
+      "description": "Develop a plan to continuously assess and track vulnerabilities"
+    },
+    {
+      "id": "8",
+      "name": "Audit Log Management",
+      "description": "Collect, alert, review, and retain audit logs"
+    },
+    {
+      "id": "9",
+      "name": "Email and Web Browser Protections",
+      "description": "Improve defenses and reduce risks from email and web browsers"
+    },
+    {
+      "id": "10",
+      "name": "Malware Defenses",
+      "description": "Control installation, spread, and execution of malicious applications"
+    },
+    {
+      "id": "11",
+      "name": "Data Recovery",
+      "description": "Establish and maintain data recovery practices"
+    },
+    {
+      "id": "12",
+      "name": "Network Infrastructure Management",
+      "description": "Establish, implement, and actively manage network devices"
+    },
+    {
+      "id": "13",
+      "name": "Network Monitoring and Defense",
+      "description": "Operate processes and tooling to establish and maintain comprehensive network monitoring"
+    },
+    {
+      "id": "14",
+      "name": "Security Awareness and Skills Training",
+      "description": "Establish and maintain a security awareness program"
+    },
+    {
+      "id": "15",
+      "name": "Service Provider Management",
+      "description": "Develop a process to evaluate service providers"
+    },
+    {
+      "id": "16",
+      "name": "Application Software Security",
+      "description": "Manage the security life cycle of in-house developed applications"
+    },
+    {
+      "id": "17",
+      "name": "Incident Response Management",
+      "description": "Establish a program to develop and maintain an incident response capability"
+    },
+    {
+      "id": "18",
+      "name": "Penetration Testing",
+      "description": "Test the effectiveness and resiliency of enterprise assets"
+    }
+  ],
+  "source": "https://www.cisecurity.org/controls/v8",
+  "downloaded": "2025-10-27T11:01:59.946077"
+}

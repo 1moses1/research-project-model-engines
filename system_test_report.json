@@ -1,0 +1,88 @@
+{
+  "test_timestamp": "2025-11-02T19:26:15.012387",
+  "initialization_log": [
+    {
+      "step": "dataset_download",
+      "status": "skipped"
+    },
+    {
+      "step": "nlp_processor",
+      "status": "success"
+    },
+    {
+      "step": "rag_engine",
+      "status": "success"
+    },
+    {
+      "step": "siem_integrator",
+      "status": "success"
+    },
+    {
+      "step": "learning_pipeline",
+      "status": "success"
+    }
+  ],
+  "test_results": [
+    {
+      "test_case": "Unauthorized Access Attempt",
+      "expected": "non_compliant",
+      "predicted": "non_compliant",
+      "confidence": 0.7999999999999999,
+      "correct": true
+    },
+    {
+      "test_case": "Successful Authentication",
+      "expected": "compliant",
+      "predicted": "compliant",
+      "confidence": 0.95,
+      "correct": true
+    },
+    {
+      "test_case": "Ransomware Detection",
+      "expected": "non_compliant",
+      "predicted": "compliant",
+      "confidence": 0.6,
+      "correct": false
+    },
+    {
+      "test_case": "Phishing Email Blocked",
+      "expected": "non_compliant",
+      "predicted": "non_compliant",
+      "confidence": 0.95,
+      "correct": true
+    },
+    {
+      "test_case": "System Backup Completed",
+      "expected": "compliant",
+      "predicted": "compliant",
+      "confidence": 0.95,
+      "correct": true
+    },
+    {
+      "test_case": "Vulnerability Scan Results",
+      "expected": "non_compliant",
+      "predicted": "non_compliant",
+      "confidence": 0.7999999999999999,
+      "correct": true
+    },
+    {
+      "test_case": "Insider Threat - Excessive Data Access",
+      "expected": "non_compliant",
+      "predicted": "compliant",
+      "confidence": 0.95,
+      "correct": false
+    },
+    {
+      "test_case": "Compliance Audit Passed",
+      "expected": "compliant",
+      "predicted": "compliant",
+      "confidence": 0.95,
+      "correct": true
+    }
+  ],
+  "summary": {
+    "total_tests": 8,
+    "correct_predictions": 6,
+    "accuracy": 0.75
+  }
+}

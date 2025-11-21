@@ -1,0 +1,26 @@
+{
+  "total_events": 3604,
+  "mitre_events": 3318,
+  "owasp_events": 100,
+  "cis_events": 90,
+  "pci_events": 96,
+  "nvd_events": 0,
+  "compliance_distribution": {
+    "compliant": 2872,
+    "non_compliant": 732
+  },
+  "anomaly_distribution": {
+    "normal": 2872,
+    "suspicious": 717,
+    "critical": 15
+  },
+  "source_distribution": {
+    "mitre_attck_enterprise": 2469,
+    "mitre_attck_mobile": 564,
+    "mitre_attck_ics": 285,
+    "owasp_waf": 100,
+    "pci_dss_auditor": 96,
+    "cis_scanner": 90
+  },
+  "created": "2025-10-28T14:22:01.108084"
+}

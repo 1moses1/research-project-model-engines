@@ -1,0 +1,78 @@
+{
+  "download_timestamp": "2025-11-02T18:12:02.390412",
+  "elapsed_seconds": 171.96132707595825,
+  "datasets": {
+    "cisa_kev": {
+      "status": "success",
+      "vulnerability_count": 1453,
+      "file": "data/security_feeds/cisa_advisories/known_exploited_vulnerabilities.json"
+    },
+    "malware_feeds": {
+      "abuse_ch_urlhaus": {
+        "status": "error",
+        "error": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "abuse_ch_threatfox": {
+        "status": "success",
+        "file": "data/security_feeds/malware_feeds/abuse_ch_threatfox.json",
+        "size_kb": 412.513671875
+      },
+      "malware_bazaar_recent": {
+        "status": "error",
+        "error": "404 Client Error: Not Found for url: https://bazaar.abuse.ch/export/json/recent/"
+      }
+    },
+    "mitre_attack": {
+      "enterprise": {
+        "status": "success",
+        "file": "data/security_feeds/mitre_attack/enterprise-attack.json",
+        "techniques_count": 835,
+        "size_mb": 38.09249401092529
+      },
+      "mobile": {
+        "status": "success",
+        "file": "data/security_feeds/mitre_attack/mobile-attack.json",
+        "techniques_count": 189,
+        "size_mb": 3.6406383514404297
+      },
+      "ics": {
+        "status": "success",
+        "file": "data/security_feeds/mitre_attack/ics-attack.json",
+        "techniques_count": 95,
+        "size_mb": 2.5900516510009766
+      }
+    },
+    "sample_logs": {
+      "secrepo_web_logs": {
+        "status": "success",
+        "file": "data/security_feeds/log_samples/secrepo_web_logs.log",
+        "lines": 22694356,
+        "size_mb": 2592.912735939026
+      },
+      "secrepo_dns_logs": {
+        "status": "success",
+        "file": "data/security_feeds/log_samples/secrepo_dns_logs.log",
+        "lines": 427935,
+        "size_mb": 59.19979763031006
+      }
+    },
+    "nist_nvd": {
+      "2022": {
+        "status": "error",
+        "error": "403 Client Error: Forbidden for url: https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2022.json.gz"
+      },
+      "2023": {
+        "status": "error",
+        "error": "403 Client Error: Forbidden for url: https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2023.json.gz"
+      },
+      "2024": {
+        "status": "error",
+        "error": "403 Client Error: Forbidden for url: https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2024.json.gz"
+      },
+      "2025": {
+        "status": "error",
+        "error": "403 Client Error: Forbidden for url: https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2025.json.gz"
+      }
+    }
+  }
+}

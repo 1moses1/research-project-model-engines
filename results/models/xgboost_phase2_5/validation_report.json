@@ -1,0 +1,12 @@
+{
+  "validation_date": "2025-11-03T00:13:53.419759",
+  "validation_checks": {
+    "no_leakage": false,
+    "generalizes": true,
+    "calibrated": true,
+    "targeted_impact": true
+  },
+  "overall_passed": 3,
+  "overall_total": 4,
+  "conclusion": "REVIEW_NEEDED"
+}

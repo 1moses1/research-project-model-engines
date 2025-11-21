@@ -90,6 +90,7 @@ class FeatureEngineer:
         self.anomaly_encoder = LabelEncoder()
 
         self.is_fitted = False
+        self.fitted_columns = set()  # Track which optional columns were fitted
 
         self.logger = setup_logger("feature_engineer", "logs/xgboost.log")
 
@@ -108,19 +109,40 @@ class FeatureEngineer:
         # Fit TF-IDF on log messages
         self.tfidf.fit(df['log_message'])
 
-        # Fit label encoders
+        # Fit label encoders for required columns
         self.control_encoder.fit(df['control_id'])
-        self.framework_encoder.fit(df['framework'])
         self.family_encoder.fit(df['control_family'])
-        self.severity_encoder.fit(df['severity'])
-        self.anomaly_encoder.fit(df['anomaly_label'])
+
+        # Track required columns
+        self.fitted_columns = {'log_message', 'control_id', 'control_family'}
+
+        # Optional columns (only fit if available)
+        if 'framework' in df.columns:
+            self.framework_encoder.fit(df['framework'])
+            self.fitted_columns.add('framework')
+        if 'severity' in df.columns:
+            self.severity_encoder.fit(df['severity'])
+            self.fitted_columns.add('severity')
+        if 'anomaly_label' in df.columns:
+            self.anomaly_encoder.fit(df['anomaly_label'])
+            self.fitted_columns.add('anomaly_label')
+        if 'hour_of_day' in df.columns:
+            self.fitted_columns.add('hour_of_day')
+        if 'is_business_hours' in df.columns:
+            self.fitted_columns.add('is_business_hours')
+        if 'status_code' in df.columns:
+            self.fitted_columns.add('status_code')
+        if 'port' in df.columns:
+            self.fitted_columns.add('port')
 
         self.is_fitted = True
 
         self.logger.info(f"Feature transformers fitted:")
         self.logger.info(f"  TF-IDF features: {self.max_features}")
         self.logger.info(f"  Control IDs: {len(self.control_encoder.classes_)}")
-        self.logger.info(f"  Frameworks: {len(self.framework_encoder.classes_)}")
+        self.logger.info(f"  Control Families: {len(self.family_encoder.classes_)}")
+        if 'framework' in df.columns:
+            self.logger.info(f"  Frameworks: {len(self.framework_encoder.classes_)}")
 
         return self
 
@@ -139,43 +161,46 @@ class FeatureEngineer:
 
         features_list = []
 
-        # 1. TF-IDF features from log messages
+        # 1. TF-IDF features from log messages (always required)
         tfidf_features = self.tfidf.transform(df['log_message']).toarray()
         features_list.append(tfidf_features)
 
-        # 2. Control ID (encoded)
+        # 2. Control ID (encoded, required)
         control_encoded = self.control_encoder.transform(df['control_id']).reshape(-1, 1)
         features_list.append(control_encoded)
 
-        # 3. Framework (encoded)
-        framework_encoded = self.framework_encoder.transform(df['framework']).reshape(-1, 1)
-        features_list.append(framework_encoded)
-
-        # 4. Control family (encoded)
+        # 3. Control family (encoded, required)
         family_encoded = self.family_encoder.transform(df['control_family']).reshape(-1, 1)
         features_list.append(family_encoded)
 
-        # 5. Severity (encoded)
-        severity_encoded = self.severity_encoder.transform(df['severity']).reshape(-1, 1)
-        features_list.append(severity_encoded)
+        # Optional features (only transform if column exists in data)
+        if 'framework' in df.columns:
+            framework_encoded = self.framework_encoder.transform(df['framework']).reshape(-1, 1)
+            features_list.append(framework_encoded)
 
-        # 6. Anomaly label (encoded)
-        anomaly_encoded = self.anomaly_encoder.transform(df['anomaly_label']).reshape(-1, 1)
-        features_list.append(anomaly_encoded)
+        if 'severity' in df.columns:
+            severity_encoded = self.severity_encoder.transform(df['severity']).reshape(-1, 1)
+            features_list.append(severity_encoded)
 
-        # 7. Temporal features
-        hour_of_day = df['hour_of_day'].values.reshape(-1, 1)
-        is_business_hours = df['is_business_hours'].astype(int).values.reshape(-1, 1)
-        features_list.append(hour_of_day)
-        features_list.append(is_business_hours)
+        if 'anomaly_label' in df.columns:
+            anomaly_encoded = self.anomaly_encoder.transform(df['anomaly_label']).reshape(-1, 1)
+            features_list.append(anomaly_encoded)
 
-        # 8. Status code
-        status_code = df['status_code'].values.reshape(-1, 1)
-        features_list.append(status_code)
+        if 'hour_of_day' in df.columns:
+            hour_of_day = df['hour_of_day'].values.reshape(-1, 1)
+            features_list.append(hour_of_day)
 
-        # 9. Port number
-        port = df['port'].values.reshape(-1, 1)
-        features_list.append(port)
+        if 'is_business_hours' in df.columns:
+            is_business_hours = df['is_business_hours'].astype(int).values.reshape(-1, 1)
+            features_list.append(is_business_hours)
+
+        if 'status_code' in df.columns:
+            status_code = df['status_code'].values.reshape(-1, 1)
+            features_list.append(status_code)
+
+        if 'port' in df.columns:
+            port = df['port'].values.reshape(-1, 1)
+            features_list.append(port)
 
         # Concatenate all features
         X = np.hstack(features_list)
@@ -199,28 +224,35 @@ class FeatureEngineer:
 
     def get_feature_names(self) -> List[str]:
         """
-        Get feature names.
+        Get feature names based on which columns were actually fitted.
 
         Returns:
-            List of feature names
+            List of feature names matching the actual feature matrix
         """
         feature_names = []
 
-        # TF-IDF features
+        # TF-IDF features (always present)
         feature_names.extend([f"tfidf_{i}" for i in range(self.max_features)])
 
-        # Encoded features
-        feature_names.extend([
-            'control_id_encoded',
-            'framework_encoded',
-            'family_encoded',
-            'severity_encoded',
-            'anomaly_encoded',
-            'hour_of_day',
-            'is_business_hours',
-            'status_code',
-            'port'
-        ])
+        # Required encoded features
+        feature_names.append('control_id_encoded')
+        feature_names.append('family_encoded')
+
+        # Optional encoded features (only add if fitted)
+        if 'framework' in self.fitted_columns:
+            feature_names.append('framework_encoded')
+        if 'severity' in self.fitted_columns:
+            feature_names.append('severity_encoded')
+        if 'anomaly_label' in self.fitted_columns:
+            feature_names.append('anomaly_encoded')
+        if 'hour_of_day' in self.fitted_columns:
+            feature_names.append('hour_of_day')
+        if 'is_business_hours' in self.fitted_columns:
+            feature_names.append('is_business_hours')
+        if 'status_code' in self.fitted_columns:
+            feature_names.append('status_code')
+        if 'port' in self.fitted_columns:
+            feature_names.append('port')
 
         return feature_names
 

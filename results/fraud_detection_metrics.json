@@ -1,0 +1,8 @@
+{
+  "Financial Fraud": {
+    "fraud_type": "Financial Fraud",
+    "total_samples": 100,
+    "detected": 100,
+    "missed": 0,
+    "detection_rate": 100.0,
+    "avg_confidence": 

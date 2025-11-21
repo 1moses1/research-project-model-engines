@@ -1,0 +1,13 @@
+{
+  "signature": "4e9594afdc505e4675758be4385c75a7306b509bc4a9262394cdc2882252094e",
+  "checksums": {
+    "xgboost_phase2_5.pkl": "c1064ca40609789f4c425668ede3cfa5673dc77ab30626975dda616ca04d2d33",
+    "tfidf_vectorizer.pkl": "1743226a3f59b37df826d6085832112db92545cc29d82cfe5a44011c731659ff",
+    "control_encoder.pkl": "f8969b14cf79b26c5893168ed5f0dc51740e634f111f081749d77c8e30d10a4e",
+    "family_encoder.pkl": "897b1158ea20b341f18890806d6466c3f8c6b95a4c5210964a6f8fbb1f72d103"
+  },
+  "signed_at": "2025-11-03T01:02:53.639111",
+  "algorithm": "HMAC-SHA256",
+  "version": "Phase 2.5",
+  "files_signed": 4
+}

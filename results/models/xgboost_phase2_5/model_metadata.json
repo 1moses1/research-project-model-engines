@@ -1,0 +1,24 @@
+{
+  "trained_at": "2025-11-02T23:48:00.433104",
+  "phase": "2.5 - With Targeted Datasets",
+  "data_sources": [
+    "Original Phase 2 (88K)",
+    "Phishing emails (15K)",
+    "Insider threats (8K)",
+    "DDoS attacks (7K)",
+    "Credential stuffing (7K)"
+  ],
+  "total_samples": 114221,
+  "targeted_samples_added": 37000,
+  "features": {
+    "tfidf": 2000,
+    "categorical": 2,
+    "temporal": 26,
+    "bert": 768,
+    "total": 2796
+  },
+  "accuracy": 0.9948931650120522,
+  "model_type": "XGBoost with BERT + Temporal + Targeted Data",
+  "version": "2.5 - Targeted Dataset Integration",
+  "improvements": "Added 37K targeted attack samples to fix Phase 2 bias"
+}

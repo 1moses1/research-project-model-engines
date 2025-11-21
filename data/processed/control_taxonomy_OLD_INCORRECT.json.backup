@@ -1,0 +1,1241 @@
+{
+  "metadata": {
+    "total_controls": 50,
+    "nist_controls": 29,
+    "rwanda_controls": 21,
+    "generated_at": "/Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/src/data_pipeline"
+  },
+  "nist": [
+    {
+      "control_id": "AC-2",
+      "framework": "NIST-800-53",
+      "name": "Account Management",
+      "family": "Access Control",
+      "description": "Manage system accounts including creation, modification, and deletion",
+      "log_indicators": [
+        "user creation",
+        "account modification",
+        "privilege escalation",
+        "account deletion",
+        "account disabled"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "audit trail",
+          "authorization",
+          "periodic review"
+        ],
+        "frequency": "continuous",
+        "retention": "90 days"
+      }
+    },
+    {
+      "control_id": "AC-3",
+      "framework": "NIST-800-53",
+      "name": "Access Enforcement",
+      "family": "Access Control",
+      "description": "Enforce approved authorizations for logical access to information and system resources",
+      "log_indicators": [
+        "access denied",
+        "permission check",
+        "authorization failure",
+        "unauthorized access attempt"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "access control policy",
+          "enforcement mechanism",
+          "audit logging"
+        ],
+        "frequency": "continuous",
+        "retention": "180 days"
+      }
+    },
+    {
+      "control_id": "AC-6",
+      "framework": "NIST-800-53",
+      "name": "Least Privilege",
+      "family": "Access Control",
+      "description": "Employ the principle of least privilege",
+      "log_indicators": [
+        "privilege escalation",
+        "admin access",
+        "elevated permissions",
+        "sudo command"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "privilege review",
+          "justification",
+          "temporary elevation"
+        ],
+        "frequency": "quarterly",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "AC-17",
+      "framework": "NIST-800-53",
+      "name": "Remote Access",
+      "family": "Access Control",
+      "description": "Establish and document usage restrictions for remote access",
+      "log_indicators": [
+        "remote login",
+        "VPN connection",
+        "SSH access",
+        "remote desktop"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "encryption",
+          "multi-factor authentication",
+          "access logging"
+        ],
+        "frequency": "continuous",
+        "retention": "180 days"
+      }
+    },
+    {
+      "control_id": "AU-2",
+      "framework": "NIST-800-53",
+      "name": "Event Logging",
+      "family": "Audit and Accountability",
+      "description": "Determine which events to audit and coordinate with related organizations",
+      "log_indicators": [
+        "event logged",
+        "audit record created",
+        "system activity",
+        "user action"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "comprehensive logging",
+          "event correlation",
+          "timestamp accuracy"
+        ],
+        "frequency": "continuous",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "AU-3",
+      "framework": "NIST-800-53",
+      "name": "Content of Audit Records",
+      "family": "Audit and Accountability",
+      "description": "Ensure audit records contain information necessary for investigations",
+      "log_indicators": [
+        "timestamp",
+        "user ID",
+        "event type",
+        "outcome",
+        "source IP"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "event type",
+          "timestamp",
+          "subject identity",
+          "outcome",
+          "object identity"
+        ],
+        "frequency": "continuous",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "AU-6",
+      "framework": "NIST-800-53",
+      "name": "Audit Review and Analysis",
+      "family": "Audit and Accountability",
+      "description": "Review and analyze system audit records for inappropriate activity",
+      "log_indicators": [
+        "audit review",
+        "anomaly detected",
+        "security violation",
+        "pattern analysis"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "regular review",
+          "automated analysis",
+          "incident reporting"
+        ],
+        "frequency": "weekly",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "AU-9",
+      "framework": "NIST-800-53",
+      "name": "Protection of Audit Information",
+      "family": "Audit and Accountability",
+      "description": "Protect audit information and audit logging tools from unauthorized access",
+      "log_indicators": [
+        "audit log access",
+        "log tampering attempt",
+        "audit tool modification"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "access restrictions",
+          "integrity protection",
+          "backup"
+        ],
+        "frequency": "continuous",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "AU-12",
+      "framework": "NIST-800-53",
+      "name": "Audit Record Generation",
+      "family": "Audit and Accountability",
+      "description": "Provide audit record generation capability for defined events",
+      "log_indicators": [
+        "audit record generated",
+        "logging enabled",
+        "capture event data"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "configurable logging",
+          "timestamp synchronization",
+          "event correlation"
+        ],
+        "frequency": "continuous",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "CM-2",
+      "framework": "NIST-800-53",
+      "name": "Baseline Configuration",
+      "family": "Configuration Management",
+      "description": "Develop, document, and maintain baseline configurations",
+      "log_indicators": [
+        "configuration change",
+        "baseline update",
+        "system modification"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "documented baseline",
+          "change control",
+          "version management"
+        ],
+        "frequency": "quarterly",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "CM-6",
+      "framework": "NIST-800-53",
+      "name": "Configuration Settings",
+      "family": "Configuration Management",
+      "description": "Establish and document mandatory configuration settings",
+      "log_indicators": [
+        "configuration changed",
+        "setting modified",
+        "policy violation"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "approved settings",
+          "deviation tracking",
+          "remediation"
+        ],
+        "frequency": "continuous",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "CM-7",
+      "framework": "NIST-800-53",
+      "name": "Least Functionality",
+      "family": "Configuration Management",
+      "description": "Configure systems to provide only essential capabilities",
+      "log_indicators": [
+        "service disabled",
+        "unnecessary protocol",
+        "port closure"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "minimal services",
+          "prohibited function list",
+          "periodic review"
+        ],
+        "frequency": "quarterly",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "CP-2",
+      "framework": "NIST-800-53",
+      "name": "Contingency Plan",
+      "family": "Contingency Planning",
+      "description": "Develop and maintain a contingency plan",
+      "log_indicators": [
+        "contingency plan update",
+        "recovery procedure",
+        "plan test"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "documented plan",
+          "recovery procedures",
+          "annual testing"
+        ],
+        "frequency": "annually",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "CP-9",
+      "framework": "NIST-800-53",
+      "name": "System Backup",
+      "family": "Contingency Planning",
+      "description": "Conduct backups of system-level and user-level information",
+      "log_indicators": [
+        "backup completed",
+        "backup failed",
+        "restore operation",
+        "backup verification"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "regular backups",
+          "offsite storage",
+          "integrity verification"
+        ],
+        "frequency": "daily",
+        "retention": "90 days"
+      }
+    },
+    {
+      "control_id": "IA-2",
+      "framework": "NIST-800-53",
+      "name": "User Identification and Authentication",
+      "family": "Identification and Authentication",
+      "description": "Uniquely identify and authenticate organizational users",
+      "log_indicators": [
+        "login attempt",
+        "authentication success",
+        "authentication failure",
+        "multi-factor auth"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "unique identifiers",
+          "authentication mechanism",
+          "failed attempt logging"
+        ],
+        "frequency": "continuous",
+        "retention": "180 days"
+      }
+    },
+    {
+      "control_id": "IA-4",
+      "framework": "NIST-800-53",
+      "name": "Identifier Management",
+      "family": "Identification and Authentication",
+      "description": "Manage system identifiers",
+      "log_indicators": [
+        "identifier created",
+        "identifier modified",
+        "identifier revoked"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "unique identifiers",
+          "identifier lifecycle",
+          "reuse prevention"
+        ],
+        "frequency": "continuous",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "IA-5",
+      "framework": "NIST-800-53",
+      "name": "Authenticator Management",
+      "family": "Identification and Authentication",
+      "description": "Manage system authenticators (passwords, tokens, etc.)",
+      "log_indicators": [
+        "password change",
+        "password reset",
+        "authenticator update",
+        "weak password"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "strength requirements",
+          "periodic change",
+          "secure distribution"
+        ],
+        "frequency": "90 days",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "IR-4",
+      "framework": "NIST-800-53",
+      "name": "Incident Handling",
+      "family": "Incident Response",
+      "description": "Implement incident handling capability",
+      "log_indicators": [
+        "incident detected",
+        "incident reported",
+        "incident response",
+        "containment action"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "incident response plan",
+          "detection capability",
+          "reporting procedure"
+        ],
+        "frequency": "continuous",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "IR-5",
+      "framework": "NIST-800-53",
+      "name": "Incident Monitoring",
+      "family": "Incident Response",
+      "description": "Track and document system security incidents",
+      "log_indicators": [
+        "incident tracked",
+        "monitoring alert",
+        "security event",
+        "incident status"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "tracking system",
+          "trend analysis",
+          "metrics collection"
+        ],
+        "frequency": "continuous",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "IR-6",
+      "framework": "NIST-800-53",
+      "name": "Incident Reporting",
+      "family": "Incident Response",
+      "description": "Require personnel to report suspected security incidents",
+      "log_indicators": [
+        "incident reported",
+        "report submitted",
+        "notification sent"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "reporting procedure",
+          "timely reporting",
+          "designated personnel"
+        ],
+        "frequency": "immediate",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RA-3",
+      "framework": "NIST-800-53",
+      "name": "Risk Assessment",
+      "family": "Risk Assessment",
+      "description": "Conduct risk assessments regularly",
+      "log_indicators": [
+        "risk assessment",
+        "vulnerability identified",
+        "threat analysis"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "documented methodology",
+          "risk identification",
+          "mitigation plans"
+        ],
+        "frequency": "annually",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RA-5",
+      "framework": "NIST-800-53",
+      "name": "Vulnerability Monitoring and Scanning",
+      "family": "Risk Assessment",
+      "description": "Monitor and scan for vulnerabilities",
+      "log_indicators": [
+        "vulnerability scan",
+        "patch available",
+        "security update",
+        "CVE identified"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "regular scanning",
+          "vulnerability database",
+          "remediation tracking"
+        ],
+        "frequency": "monthly",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "SC-7",
+      "framework": "NIST-800-53",
+      "name": "Boundary Protection",
+      "family": "System and Communications Protection",
+      "description": "Monitor and control communications at system boundaries",
+      "log_indicators": [
+        "firewall block",
+        "boundary violation",
+        "traffic filtered",
+        "connection denied"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "firewall",
+          "intrusion detection",
+          "traffic monitoring"
+        ],
+        "frequency": "continuous",
+        "retention": "180 days"
+      }
+    },
+    {
+      "control_id": "SC-8",
+      "framework": "NIST-800-53",
+      "name": "Transmission Confidentiality and Integrity",
+      "family": "System and Communications Protection",
+      "description": "Protect the confidentiality and integrity of transmitted information",
+      "log_indicators": [
+        "encrypted transmission",
+        "TLS connection",
+        "unencrypted traffic",
+        "cipher negotiation"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "encryption",
+          "integrity protection",
+          "approved protocols"
+        ],
+        "frequency": "continuous",
+        "retention": "180 days"
+      }
+    },
+    {
+      "control_id": "SC-12",
+      "framework": "NIST-800-53",
+      "name": "Cryptographic Key Establishment and Management",
+      "family": "System and Communications Protection",
+      "description": "Establish and manage cryptographic keys",
+      "log_indicators": [
+        "key generated",
+        "key rotated",
+        "key expired",
+        "key revoked"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "key lifecycle",
+          "secure generation",
+          "rotation schedule"
+        ],
+        "frequency": "annually",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "SI-2",
+      "framework": "NIST-800-53",
+      "name": "Flaw Remediation",
+      "family": "System and Information Integrity",
+      "description": "Identify, report, and correct system flaws",
+      "log_indicators": [
+        "patch installed",
+        "flaw identified",
+        "update applied",
+        "remediation completed"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "flaw tracking",
+          "patch management",
+          "testing before deployment"
+        ],
+        "frequency": "monthly",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "SI-3",
+      "framework": "NIST-800-53",
+      "name": "Malicious Code Protection",
+      "family": "System and Information Integrity",
+      "description": "Implement malicious code protection mechanisms",
+      "log_indicators": [
+        "malware detected",
+        "virus scan",
+        "quarantine action",
+        "signature update"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "anti-malware software",
+          "regular updates",
+          "real-time protection"
+        ],
+        "frequency": "continuous",
+        "retention": "180 days"
+      }
+    },
+    {
+      "control_id": "SI-4",
+      "framework": "NIST-800-53",
+      "name": "System Monitoring",
+      "family": "System and Information Integrity",
+      "description": "Monitor the system to detect attacks and indicators of potential attacks",
+      "log_indicators": [
+        "intrusion detected",
+        "anomaly identified",
+        "security alert",
+        "monitoring event"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "continuous monitoring",
+          "alert generation",
+          "analysis capability"
+        ],
+        "frequency": "continuous",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "SI-7",
+      "framework": "NIST-800-53",
+      "name": "Software, Firmware, and Information Integrity",
+      "family": "System and Information Integrity",
+      "description": "Detect unauthorized changes to software and information",
+      "log_indicators": [
+        "integrity check",
+        "checksum verification",
+        "unauthorized modification",
+        "file change"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "integrity verification tools",
+          "baseline comparison",
+          "alert on change"
+        ],
+        "frequency": "continuous",
+        "retention": "365 days"
+      }
+    }
+  ],
+  "rwanda": [
+    {
+      "control_id": "RW-AC-001",
+      "framework": "Rwanda-NCSA",
+      "name": "User Account Management",
+      "family": "Access Control",
+      "description": "Manage user accounts according to Rwanda NCSA standards",
+      "nist_mapping": [
+        "AC-2",
+        "IA-4"
+      ],
+      "log_indicators": [
+        "account created",
+        "user added",
+        "account removed",
+        "access granted"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "approval process",
+          "periodic review",
+          "termination procedure"
+        ],
+        "frequency": "continuous",
+        "retention": "180 days"
+      }
+    },
+    {
+      "control_id": "RW-AC-002",
+      "framework": "Rwanda-NCSA",
+      "name": "Access Control Policies",
+      "family": "Access Control",
+      "description": "Implement and enforce access control policies",
+      "nist_mapping": [
+        "AC-3",
+        "AC-6"
+      ],
+      "log_indicators": [
+        "access policy",
+        "permission check",
+        "authorization"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "documented policy",
+          "enforcement mechanism",
+          "annual review"
+        ],
+        "frequency": "continuous",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-AC-003",
+      "framework": "Rwanda-NCSA",
+      "name": "Privilege Management",
+      "family": "Access Control",
+      "description": "Control privileged access to critical systems",
+      "nist_mapping": [
+        "AC-6"
+      ],
+      "log_indicators": [
+        "admin access",
+        "privileged operation",
+        "elevated rights"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "least privilege",
+          "privilege review",
+          "justification"
+        ],
+        "frequency": "quarterly",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "RW-AU-001",
+      "framework": "Rwanda-NCSA",
+      "name": "Audit Logging Requirements",
+      "family": "Audit and Accountability",
+      "description": "Implement comprehensive audit logging",
+      "nist_mapping": [
+        "AU-2",
+        "AU-3",
+        "AU-12"
+      ],
+      "log_indicators": [
+        "event logged",
+        "audit record",
+        "logging enabled"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "comprehensive logging",
+          "timestamp",
+          "event details"
+        ],
+        "frequency": "continuous",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "RW-AU-002",
+      "framework": "Rwanda-NCSA",
+      "name": "Log Retention Standards",
+      "family": "Audit and Accountability",
+      "description": "Maintain audit logs per Rwanda requirements",
+      "nist_mapping": [
+        "AU-9",
+        "AU-11"
+      ],
+      "log_indicators": [
+        "log archived",
+        "retention compliance",
+        "log backup"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "minimum 1 year retention",
+          "secure storage",
+          "integrity protection"
+        ],
+        "frequency": "continuous",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "RW-AU-003",
+      "framework": "Rwanda-NCSA",
+      "name": "Audit Review Procedures",
+      "family": "Audit and Accountability",
+      "description": "Regular review of audit logs",
+      "nist_mapping": [
+        "AU-6"
+      ],
+      "log_indicators": [
+        "log review",
+        "audit analysis",
+        "anomaly detection"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "regular review",
+          "documented procedures",
+          "incident escalation"
+        ],
+        "frequency": "weekly",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "RW-IR-001",
+      "framework": "Rwanda-NCSA",
+      "name": "Incident Response Plan",
+      "family": "Incident Response",
+      "description": "Maintain incident response plan per NCSA requirements",
+      "nist_mapping": [
+        "IR-8",
+        "IR-4"
+      ],
+      "log_indicators": [
+        "IR plan updated",
+        "response procedure",
+        "plan tested"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "documented plan",
+          "contact information",
+          "annual testing"
+        ],
+        "frequency": "annually",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-IR-002",
+      "framework": "Rwanda-NCSA",
+      "name": "Incident Reporting Requirements",
+      "family": "Incident Response",
+      "description": "Report incidents to NCSA as required",
+      "nist_mapping": [
+        "IR-6"
+      ],
+      "log_indicators": [
+        "incident reported",
+        "NCSA notification",
+        "report submitted"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "24-hour reporting",
+          "incident classification",
+          "NCSA contact"
+        ],
+        "frequency": "immediate",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-IR-003",
+      "framework": "Rwanda-NCSA",
+      "name": "Incident Response Team",
+      "family": "Incident Response",
+      "description": "Establish and maintain incident response team",
+      "nist_mapping": [
+        "IR-4"
+      ],
+      "log_indicators": [
+        "team activated",
+        "incident handled",
+        "response initiated"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "designated team",
+          "training",
+          "contact list"
+        ],
+        "frequency": "continuous",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-VM-001",
+      "framework": "Rwanda-NCSA",
+      "name": "Vulnerability Assessment",
+      "family": "Vulnerability Management",
+      "description": "Conduct regular vulnerability assessments",
+      "nist_mapping": [
+        "RA-5"
+      ],
+      "log_indicators": [
+        "vulnerability scan",
+        "assessment completed",
+        "findings documented"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "quarterly scans",
+          "remediation plan",
+          "tracking"
+        ],
+        "frequency": "quarterly",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "RW-VM-002",
+      "framework": "Rwanda-NCSA",
+      "name": "Patch Management",
+      "family": "Vulnerability Management",
+      "description": "Apply security patches in timely manner",
+      "nist_mapping": [
+        "SI-2"
+      ],
+      "log_indicators": [
+        "patch installed",
+        "update applied",
+        "patching delayed"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "30-day critical patches",
+          "testing",
+          "documentation"
+        ],
+        "frequency": "monthly",
+        "retention": "365 days"
+      }
+    },
+    {
+      "control_id": "RW-VM-003",
+      "framework": "Rwanda-NCSA",
+      "name": "Security Updates",
+      "family": "Vulnerability Management",
+      "description": "Maintain current security updates",
+      "nist_mapping": [
+        "SI-2"
+      ],
+      "log_indicators": [
+        "security update",
+        "version current",
+        "update status"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "update tracking",
+          "current versions",
+          "EOL monitoring"
+        ],
+        "frequency": "continuous",
+        "retention": "180 days"
+      }
+    },
+    {
+      "control_id": "RW-SH-001",
+      "framework": "Rwanda-NCSA",
+      "name": "System Hardening Standards",
+      "family": "System Hardening",
+      "description": "Harden systems according to Rwanda standards",
+      "nist_mapping": [
+        "CM-6",
+        "CM-7"
+      ],
+      "log_indicators": [
+        "hardening applied",
+        "configuration secured",
+        "unnecessary service disabled"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "hardening checklist",
+          "verification",
+          "documentation"
+        ],
+        "frequency": "at deployment",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-SH-002",
+      "framework": "Rwanda-NCSA",
+      "name": "Secure Configuration",
+      "family": "System Hardening",
+      "description": "Implement secure configuration baselines",
+      "nist_mapping": [
+        "CM-2",
+        "CM-6"
+      ],
+      "log_indicators": [
+        "configuration applied",
+        "baseline compliance",
+        "setting verified"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "approved baseline",
+          "deviation tracking",
+          "remediation"
+        ],
+        "frequency": "continuous",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-SH-003",
+      "framework": "Rwanda-NCSA",
+      "name": "Baseline Security Settings",
+      "family": "System Hardening",
+      "description": "Maintain baseline security settings",
+      "nist_mapping": [
+        "CM-2"
+      ],
+      "log_indicators": [
+        "baseline verified",
+        "configuration drift",
+        "setting changed"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "documented baseline",
+          "compliance checking",
+          "annual review"
+        ],
+        "frequency": "quarterly",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-BC-001",
+      "framework": "Rwanda-NCSA",
+      "name": "Business Continuity Planning",
+      "family": "Business Continuity",
+      "description": "Maintain business continuity plan",
+      "nist_mapping": [
+        "CP-2"
+      ],
+      "log_indicators": [
+        "BC plan updated",
+        "continuity test",
+        "plan reviewed"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "documented plan",
+          "annual testing",
+          "update procedure"
+        ],
+        "frequency": "annually",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-BC-002",
+      "framework": "Rwanda-NCSA",
+      "name": "Backup and Recovery",
+      "family": "Business Continuity",
+      "description": "Implement backup and recovery procedures",
+      "nist_mapping": [
+        "CP-9",
+        "CP-10"
+      ],
+      "log_indicators": [
+        "backup completed",
+        "backup verified",
+        "recovery tested"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "daily backups",
+          "offsite storage",
+          "recovery testing"
+        ],
+        "frequency": "daily",
+        "retention": "90 days"
+      }
+    },
+    {
+      "control_id": "RW-BC-003",
+      "framework": "Rwanda-NCSA",
+      "name": "Disaster Recovery",
+      "family": "Business Continuity",
+      "description": "Maintain disaster recovery capabilities",
+      "nist_mapping": [
+        "CP-10"
+      ],
+      "log_indicators": [
+        "DR test",
+        "recovery procedure",
+        "failover tested"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "DR plan",
+          "RTO/RPO defined",
+          "annual testing"
+        ],
+        "frequency": "annually",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-DP-001",
+      "framework": "Rwanda-NCSA",
+      "name": "Data Protection Standards",
+      "family": "Data Protection",
+      "description": "Protect sensitive data per Rwanda requirements",
+      "nist_mapping": [
+        "MP-2",
+        "MP-6",
+        "SC-8"
+      ],
+      "log_indicators": [
+        "data encrypted",
+        "data classification",
+        "protection applied"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "data classification",
+          "encryption",
+          "access control"
+        ],
+        "frequency": "continuous",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-DP-002",
+      "framework": "Rwanda-NCSA",
+      "name": "Encryption Requirements",
+      "family": "Data Protection",
+      "description": "Encrypt data at rest and in transit",
+      "nist_mapping": [
+        "SC-8",
+        "SC-12",
+        "SC-13"
+      ],
+      "log_indicators": [
+        "encryption enabled",
+        "data encrypted",
+        "TLS used"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "AES-256 or equivalent",
+          "key management",
+          "transport encryption"
+        ],
+        "frequency": "continuous",
+        "retention": "indefinite"
+      }
+    },
+    {
+      "control_id": "RW-DP-003",
+      "framework": "Rwanda-NCSA",
+      "name": "Data Classification",
+      "family": "Data Protection",
+      "description": "Classify and label data appropriately",
+      "nist_mapping": [
+        "MP-3"
+      ],
+      "log_indicators": [
+        "data classified",
+        "label applied",
+        "classification reviewed"
+      ],
+      "compliance_criteria": {
+        "must_have": [
+          "classification scheme",
+          "labeling",
+          "handling procedures"
+        ],
+        "frequency": "at creation",
+        "retention": "indefinite"
+      }
+    }
+  ],
+  "control_families": {
+    "Access Control": [
+      "AC-2",
+      "AC-3",
+      "AC-6",
+      "AC-17",
+      "RW-AC-001",
+      "RW-AC-002",
+      "RW-AC-003"
+    ],
+    "Audit and Accountability": [
+      "AU-2",
+      "AU-3",
+      "AU-6",
+      "AU-9",
+      "AU-12",
+      "RW-AU-001",
+      "RW-AU-002",
+      "RW-AU-003"
+    ],
+    "Configuration Management": [
+      "CM-2",
+      "CM-6",
+      "CM-7"
+    ],
+    "Contingency Planning": [
+      "CP-2",
+      "CP-9"
+    ],
+    "Identification and Authentication": [
+      "IA-2",
+      "IA-4",
+      "IA-5"
+    ],
+    "Incident Response": [
+      "IR-4",
+      "IR-5",
+      "IR-6",
+      "RW-IR-001",
+      "RW-IR-002",
+      "RW-IR-003"
+    ],
+    "Risk Assessment": [
+      "RA-3",
+      "RA-5"
+    ],
+    "System and Communications Protection": [
+      "SC-7",
+      "SC-8",
+      "SC-12"
+    ],
+    "System and Information Integrity": [
+      "SI-2",
+      "SI-3",
+      "SI-4",
+      "SI-7"
+    ],
+    "Vulnerability Management": [
+      "RW-VM-001",
+      "RW-VM-002",
+      "RW-VM-003"
+    ],
+    "System Hardening": [
+      "RW-SH-001",
+      "RW-SH-002",
+      "RW-SH-003"
+    ],
+    "Business Continuity": [
+      "RW-BC-001",
+      "RW-BC-002",
+      "RW-BC-003"
+    ],
+    "Data Protection": [
+      "RW-DP-001",
+      "RW-DP-002",
+      "RW-DP-003"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "integration_date": "2025-11-02T23:28:33.306528",
+  "original_samples": {
+    "train": 88321,
+    "val": 18926,
+    "test": 18927
+  },
+  "integrated_samples": {
+    "train": 114221,
+    "val": 24476,
+    "test": 24477
+  },
+  "targeted_additions": {
+    "phishing": {
+      "train": 10500,
+      "val": 2250,
+      "test": 2250
+    },
+    "insider_threat": {
+      "train": 5600,
+      "val": 1200,
+      "test": 1200
+    },
+    "ddos": {
+      "train": 4900,
+      "val": 1050,
+      "test": 1050
+    },
+    "credential_stuffing": {
+      "train": 4900,
+      "val": 1050,
+      "test": 1050
+    }
+  },
+  "compliance_distribution": {
+    "compliant": 62745,
+    "non_compliant": 51476
+  },
+  "total_increase": {
+    "train": 25900,
+    "val": 5550,
+    "test": 5550
+  }
+}

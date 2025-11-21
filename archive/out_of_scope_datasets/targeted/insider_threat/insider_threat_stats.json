@@ -1,0 +1,19 @@
+{
+  "total_samples": 8000,
+  "threat_samples": 5000,
+  "normal_samples": 3000,
+  "threat_ratio": 0.625,
+  "threat_categories": {
+    "Unusual Access Patterns": 888,
+    "After-Hours Activity": 840,
+    "Data Exfiltration - Email": 824,
+    "Credential Abuse": 823,
+    "Data Exfiltration - USB": 820,
+    "Data Exfiltration - Cloud": 805
+  },
+  "train_samples": 5600,
+  "val_samples": 1200,
+  "test_samples": 1200,
+  "creation_date": "2025-11-02T23:26:19.798625",
+  "source": "Synthetic insider threat patterns based on CERT database characteristics"
+}

@@ -1,0 +1,15 @@
+{
+  "trained_at": "2025-11-02T21:09:07.155884",
+  "data_sources": [
+    "Synthetic compliance events (103K)",
+    "SecRepo web logs (22.6M samples)",
+    "NSL-KDD intrusion dataset (148K records)",
+    "MITRE ATT&CK (26K techniques)",
+    "CISA KEV (1,453 CVEs)"
+  ],
+  "total_samples": 156173,
+  "features": 2003,
+  "accuracy": 0.9935541818566069,
+  "model_type": "XGBoost",
+  "version": "2.0 - Enhanced with Real Data"
+}

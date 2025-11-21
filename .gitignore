@@ -23,7 +23,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Virtual Environment
+# Virtual Environment (NEVER commit venv/ - too large)
 venv/
 ENV/
 env/
@@ -36,12 +36,13 @@ env/
 *.swo
 *~
 .DS_Store
+.claude/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb_checkpoints/
 
-# Model files and outputs
+# Model files and outputs (large files - use Git LFS if needed)
 outputs/models/*.pt
 outputs/models/*.pth
 outputs/models/*.h5
@@ -56,14 +57,24 @@ tensorboard/
 wandb/
 mlruns/
 
-# Data (large files)
+# Data (large files - NEVER commit public datasets)
 data/raw/*.pdf
-data/public_datasets/*
+data/public/
+data/public_datasets/
 !data/public_datasets/.gitkeep
+data/security_feeds/
 data/processed/*.parquet
 data/processed/*.csv
 data/synthetic/*.json
 data/synthetic/*.csv
+
+# Credentials and Secrets (CRITICAL - NEVER commit)
+.model_signing_key
+config/credentials/
+config/credentials/*.json
+certs/*.key
+certs/*.crt
+*.pem
 
 # Environment variables
 .env
@@ -85,3 +96,8 @@ temp/
 # OS
 Thumbs.db
 Desktop.ini
+
+# Packaging
+*.tar.gz
+*.zip
+packaging*.log
