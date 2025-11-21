@@ -1,0 +1,30 @@
+# ENGINE 3: XGBoost Compliance Classifier - Standalone Deployment
+# Rwanda NCSA Compliance Auditor
+
+services:
+  xgboost-classifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rwanda-ncsa-engine3-standalone
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - LOG_LEVEL=INFO
+      - WORKERS=4
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - rwanda-ncsa-network
+
+networks:
+  rwanda-ncsa-network:
+    driver: bridge
+    name: rwanda-ncsa-standalone

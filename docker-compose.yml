@@ -1,209 +1,141 @@
-version: '3.8'
+# Rwanda NCSA Compliance Auditor - Master Orchestration
+# All 6 engines with self-contained dependencies
 
 services:
-  # ============================================================================
-  # ENGINE 6: Web UI Backend (FastAPI + Socket.IO)
-  # ============================================================================
-  web-ui-backend:
-    build: ./engines/web_ui/backend
-    container_name: rwanda-ncsa-web-backend
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-your_key_here}
-      - POSTGRES_URL=postgresql://compliance_user:compliance_pass@postgres:5432/compliance_db
-      - REDIS_URL=redis://redis:6379
-      - ENGINE3_URL=http://xgboost-api:8000
-    ports:
-      - "8006:8006"
-    volumes:
-      - ./engines/web_ui/backend:/app
-      - web_uploads:/app/uploads
-    depends_on:
-      - postgres
-      - redis
-    restart: unless-stopped
-    networks:
-      - rwanda-ncsa-network
-
-  # ============================================================================
-  # ENGINE 6: Web UI Frontend (React + TypeScript)
-  # ============================================================================
-  web-ui-frontend:
-    build:
-      context: ./engines/web_ui/frontend
-      dockerfile: Dockerfile
-    container_name: rwanda-ncsa-web-frontend
-    environment:
-      - REACT_APP_API_URL=http://localhost:8006
-      - REACT_APP_WS_URL=ws://localhost:8006
-    ports:
-      - "3000:80"
-    depends_on:
-      - web-ui-backend
-    restart: unless-stopped
-    networks:
-      - rwanda-ncsa-network
-
-  # ============================================================================
-  # PostgreSQL Database
-  # ============================================================================
-  postgres:
-    image: postgres:15-alpine
-    container_name: rwanda-ncsa-postgres
-    environment:
-      - POSTGRES_DB=compliance_db
-      - POSTGRES_USER=compliance_user
-      - POSTGRES_PASSWORD=compliance_pass
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-    networks:
-      - rwanda-ncsa-network
-
-  # ============================================================================
-  # Redis Cache
-  # ============================================================================
-  redis:
-    image: redis:7-alpine
-    container_name: rwanda-ncsa-redis
-    command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-    networks:
-      - rwanda-ncsa-network
-
-  # ============================================================================
   # ENGINE 3: XGBoost Compliance Classifier
-  # ============================================================================
-  xgboost-api:
-    build: ./engines/xgboost_api
-    container_name: rwanda-ncsa-xgboost
-    environment:
-      - MODEL_PATH=/app/models/rwanda_ncsa_compliance_auditor.json
+  xgboost-classifier:
+    build:
+      context: ./engines_new/engine3-xgboost-classifier
+      dockerfile: Dockerfile
+    container_name: rwanda-ncsa-engine3
     ports:
       - "8000:8000"
-    volumes:
-      - ./models/compliance_auditor_final:/app/models
-    restart: unless-stopped
-    networks:
-      - rwanda-ncsa-network
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  # ============================================================================
-  # ENGINE 4: Decision & Scoring Engine
-  # ============================================================================
-  decision-engine:
-    build: ./engines/decision_engine
-    container_name: rwanda-ncsa-decision
-    environment:
-      - POSTGRES_URL=postgresql://compliance_user:compliance_pass@postgres:5432/compliance_db
-      - ENGINE3_URL=http://xgboost-api:8000
-    ports:
-      - "8001:8001"
-    depends_on:
-      - postgres
-      - xgboost-api
     restart: unless-stopped
     networks:
-      - rwanda-ncsa-network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health')"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+      - rwanda-ncsa
 
-  # ============================================================================
-  # ENGINE 2: Document Processing Engine
-  # ============================================================================
+  # ENGINE 2: Document Processor
   document-processor:
-    build: ./engines/document_processor
-    container_name: rwanda-ncsa-document
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - CONTROL_TAXONOMY_PATH=/app/data/processed/control_taxonomy_validated.json
+    build:
+      context: ./engines_new/engine2-document-processor
+      dockerfile: Dockerfile
+    container_name: rwanda-ncsa-engine2
     ports:
       - "8002:8002"
-    volumes:
-      - ./data/processed:/app/data/processed
-      - document_uploads:/app/uploads
-    restart: unless-stopped
-    networks:
-      - rwanda-ncsa-network
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - CONTROL_TAXONOMY_PATH=/app/data/control_taxonomy_validated.json
+      - HOST=0.0.0.0
+      - PORT=8002
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8002/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  # ============================================================================
-  # ENGINE 5: Report Generation Engine
-  # ============================================================================
-  report-generator:
-    build: ./engines/report_generator
-    container_name: rwanda-ncsa-reports
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-    ports:
-      - "8003:8003"
-    volumes:
-      - report_outputs:/app/reports
     restart: unless-stopped
     networks:
-      - rwanda-ncsa-network
+      - rwanda-ncsa
+
+  # ENGINE 1: Log Collector
+  log-collector:
+    build:
+      context: ./engines_new/engine1-log-collector
+      dockerfile: Dockerfile
+    container_name: rwanda-ncsa-engine1
+    ports:
+      - "8001:8001"
+    environment:
+      - ENGINE3_URL=http://xgboost-classifier:8000
+      - ENGINE4_URL=http://decision-engine:8004
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - CONTROL_TAXONOMY_PATH=/app/data/control_taxonomy_validated.json
+      - HOST=0.0.0.0
+      - PORT=8001
+    depends_on:
+      - xgboost-classifier
+      - decision-engine
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8003/health')"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+    restart: unless-stopped
+    networks:
+      - rwanda-ncsa
 
-  # ============================================================================
-  # ENGINE 1: Log Collection Engine
-  # ============================================================================
-  log-collector:
-    build: ./engines/log_collector
-    container_name: rwanda-ncsa-logs
-    environment:
-      - ENGINE3_URL=http://xgboost-api:8000
-      - ENGINE4_URL=http://decision-engine:8001
+  # ENGINE 4: Decision Engine
+  decision-engine:
+    build:
+      context: ./engines_new/engine4-decision-engine
+      dockerfile: Dockerfile
+    container_name: rwanda-ncsa-engine4
     ports:
       - "8004:8004"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8004
+      - ENGINE3_URL=http://xgboost-classifier:8000
     depends_on:
-      - xgboost-api
+      - xgboost-classifier
+    restart: unless-stopped
+    networks:
+      - rwanda-ncsa
+
+  # ENGINE 5: Web UI
+  web-ui:
+    build:
+      context: ./engines_new/engine5-web-ui
+      dockerfile: Dockerfile
+    container_name: rwanda-ncsa-engine5
+    ports:
+      - "3000:3000"
+      - "8005:8005"
+    environment:
+      - ENGINE1_URL=http://log-collector:8001
+      - ENGINE2_URL=http://document-processor:8002
+      - ENGINE3_URL=http://xgboost-classifier:8000
+      - ENGINE4_URL=http://decision-engine:8004
+      - ENGINE6_URL=http://report-generator:8006
+    depends_on:
+      - log-collector
+      - document-processor
+      - xgboost-classifier
+      - decision-engine
+      - report-generator
+    restart: unless-stopped
+    networks:
+      - rwanda-ncsa
+
+  # ENGINE 6: Report Generator
+  report-generator:
+    build:
+      context: ./engines_new/engine6-report-generator
+      dockerfile: Dockerfile
+    container_name: rwanda-ncsa-engine6
+    ports:
+      - "8006:8006"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8006
+      - ENGINE4_URL=http://decision-engine:8004
+    depends_on:
       - decision-engine
     restart: unless-stopped
     networks:
-      - rwanda-ncsa-network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8004/health')"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  web_uploads:
-    driver: local
-  document_uploads:
-    driver: local
-  report_outputs:
-    driver: local
+      - rwanda-ncsa
 
 networks:
-  rwanda-ncsa-network:
+  rwanda-ncsa:
     driver: bridge
+    name: rwanda-ncsa-compliance
