@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rwanda NCSA Compliance Auditor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .progress-bar { transition: width 0.5s ease-in-out; }
+        .stage-dot { transition: all 0.3s ease; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .sidebar-link { transition: all 0.2s ease; }
+        .sidebar-link:hover { background-color: rgba(59, 130, 246, 0.1); }
+        .sidebar-link.active { background-color: rgba(59, 130, 246, 0.15); border-left: 3px solid #3B82F6; }
+        .log-entry { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .page { display: none; }
+        .page.active { display: block; }
+        .drop-zone { border: 2px dashed #cbd5e1; transition: all 0.3s ease; }
+        .drop-zone.dragover { border-color: #3B82F6; background-color: rgba(59, 130, 246, 0.05); }
+        .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .modal-content { animation: modalIn 0.2s ease; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .engine-card { cursor: pointer; transition: all 0.2s ease; }
+        .engine-card:hover { background-color: #e5e7eb; transform: translateX(2px); }
+
+        /* Collapsible Sidebar */
+        .sidebar { transition: width 0.3s ease, transform 0.3s ease; }
+        .sidebar.collapsed { width: 72px; }
+        .sidebar.collapsed .sidebar-text { display: none; }
+        .sidebar.collapsed .sidebar-header-text { display: none; }
+        .sidebar.collapsed .sidebar-status-text { display: none; }
+        .sidebar.collapsed .sidebar-link { justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar.collapsed .sidebar-link i { width: auto; margin: 0; font-size: 1.1rem; }
+        .sidebar.collapsed .logo-container { justify-content: center; }
+        .sidebar.collapsed .logo-text { display: none; }
+        .sidebar.collapsed .status-footer { padding: 0.5rem; }
+        .sidebar.collapsed #connection-status { justify-content: center; margin-bottom: 0.5rem; }
+        .sidebar.collapsed .db-status-icons { flex-direction: column; gap: 0.5rem; }
+        .sidebar.collapsed .db-status-icons > div { justify-content: center; padding: 0.5rem; min-width: auto; flex: none; }
+        .main-content { transition: margin-left 0.3s ease; }
+        .main-content.sidebar-collapsed { margin-left: 72px; }
+        .toggle-btn { transition: transform 0.3s ease; }
+        .toggle-btn.rotated { transform: rotate(180deg); }
+        .sidebar-tooltip {
+            position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
+            background: #1f2937; color: white; padding: 0.5rem 0.75rem; border-radius: 0.375rem;
+            font-size: 0.75rem; white-space: nowrap; opacity: 0; visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s; margin-left: 0.5rem; z-index: 100;
+        }
+        .sidebar.collapsed .sidebar-link:hover .sidebar-tooltip { opacity: 1; visibility: visible; }
+
+        /* Audit Mode Selector */
+        .audit-mode-option { transition: all 0.2s ease; }
+        .audit-mode-option:hover { border-color: #93C5FD; }
+        .audit-mode-option input[type="radio"]:checked ~ div { color: #1D4ED8; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar w-64 bg-white shadow-lg flex flex-col fixed h-full z-10">
+        <div class="p-4 border-b">
+            <div class="logo-container flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-shield-alt text-white text-lg"></i>
+                </div>
+                <div class="logo-text">
+                    <h1 class="font-bold text-gray-900">Rwanda NCSA</h1>
+                    <p class="text-xs text-gray-500">Compliance Auditor v3</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toggle Button -->
+        <button onclick="toggleSidebar()" class="toggle-btn absolute -right-3 top-20 w-6 h-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center z-20">
+            <i class="fas fa-chevron-left text-xs"></i>
+        </button>
+
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <a href="#" onclick="showPage('dashboard')" class="sidebar-link active flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 relative" data-page="dashboard">
+                <i class="fas fa-home w-5 flex-shrink-0"></i>
+                <span class="sidebar-text">Dashboard</span>
+                <span class="sidebar-tooltip">Dashboard</span>
+            </a>
+            <a href="#" onclick="showPage('new-audit')" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 relative" data-page="new-audit">
+                <i class="fas fa-play-circle w-5 flex-shrink-0"></i>
+                <span class="sidebar-text">Start Audit</span>
+                <span class="sidebar-tooltip">Start Audit</span>
+            </a>
+            <a href="#" onclick="showPage('documents')" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 relative" data-page="documents">
+                <i class="fas fa-file-upload w-5 flex-shrink-0"></i>
+                <span class="sidebar-text">Policy Documents</span>
+                <span class="sidebar-tooltip">Policy Documents</span>
+            </a>
+            <a href="#" onclick="showPage('audits')" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 relative" data-page="audits">
+                <i class="fas fa-history w-5 flex-shrink-0"></i>
+                <span class="sidebar-text">Audit History</span>
+                <span class="sidebar-tooltip">Audit History</span>
+            </a>
+            <a href="#" onclick="showPage('reports')" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 relative" data-page="reports">
+                <i class="fas fa-file-pdf w-5 flex-shrink-0"></i>
+                <span class="sidebar-text">Reports</span>
+                <span class="sidebar-tooltip">Reports</span>
+            </a>
+            <a href="#" onclick="showPage('controls')" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 relative" data-page="controls">
+                <i class="fas fa-list-check w-5 flex-shrink-0"></i>
+                <span class="sidebar-text">Controls by Framework</span>
+                <span class="sidebar-tooltip">Controls by Framework</span>
+            </a>
+            <a href="#" onclick="showPage('taxonomies')" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 relative" data-page="taxonomies">
+                <i class="fas fa-terminal w-5 flex-shrink-0"></i>
+                <span class="sidebar-text">Taxonomies</span>
+                <span class="sidebar-tooltip">Taxonomies</span>
+            </a>
+            <a href="#" onclick="showPage('settings')" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 relative" data-page="settings">
+                <i class="fas fa-cog w-5 flex-shrink-0"></i>
+                <span class="sidebar-text">Settings</span>
+                <span class="sidebar-tooltip">Settings</span>
+            </a>
+        </nav>
+
+        <div class="status-footer p-4 border-t">
+            <!-- Database Status Icons - Always visible -->
+            <div class="flex items-center gap-3 db-status-icons">
+                <!-- PostgreSQL -->
+                <div id="sidebar-pg-container" class="flex items-center gap-2 px-2 py-1.5 bg-gray-100 rounded-lg flex-1 min-w-0" title="PostgreSQL">
+                    <div class="relative flex-shrink-0">
+                        <i class="fas fa-database text-blue-600 text-sm"></i>
+                        <span id="sidebar-pg-dot" class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500"></span>
+                    </div>
+                    <span id="pg-status" class="sidebar-status-text text-xs text-gray-500 truncate">Checking...</span>
+                </div>
+                <!-- Redis -->
+                <div id="sidebar-redis-container" class="flex items-center gap-2 px-2 py-1.5 bg-gray-100 rounded-lg flex-1 min-w-0" title="Redis">
+                    <div class="relative flex-shrink-0">
+                        <i class="fas fa-bolt text-red-600 text-sm"></i>
+                        <span id="sidebar-redis-dot" class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500"></span>
+                    </div>
+                    <span id="redis-status" class="sidebar-status-text text-xs text-gray-500 truncate">Checking...</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main-content ml-64 flex-1 min-h-screen">
+        <header class="bg-white shadow-sm border-b px-6 py-4 sticky top-0 z-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 id="page-title" class="text-xl font-semibold text-gray-900">Dashboard</h2>
+                    <p id="page-subtitle" class="text-sm text-gray-500">Overview of compliance status</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="showPage('new-audit')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        New Audit
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-6">
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page active">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Total Audits</p>
+                                <p id="stat-total" class="text-3xl font-bold text-gray-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-clipboard-check text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Compliant</p>
+                                <p id="stat-compliant" class="text-3xl font-bold text-green-600">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Non-Compliant</p>
+                                <p id="stat-noncompliant" class="text-3xl font-bold text-red-600">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-times-circle text-red-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Avg Score</p>
+                                <p id="stat-avg" class="text-3xl font-bold text-blue-600">--%</p>
+                            </div>
+                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Architecture Flow Diagram -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Platform Architecture Flow</h3>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                                <span class="text-gray-500">Running</span>
+                                <span class="w-3 h-3 rounded-full bg-red-500 ml-2"></span>
+                                <span class="text-gray-500">Offline</span>
+                            </div>
+                            <span class="text-xs text-gray-500">Click any engine for details</span>
+                        </div>
+                    </div>
+                    <div id="architecture-diagram" class="architecture-diagram relative" style="height: 450px;">
+                        <svg viewBox="0 -60 1000 460" class="w-full h-full">
+                            <defs>
+                                <!-- Animated gradient for data flow -->
+                                <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:0">
+                                        <animate attributeName="offset" values="-1;1" dur="2s" repeatCount="indefinite"/>
+                                    </stop>
+                                    <stop offset="50%" style="stop-color:#3B82F6;stop-opacity:1">
+                                        <animate attributeName="offset" values="-0.5;1.5" dur="2s" repeatCount="indefinite"/>
+                                    </stop>
+                                    <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0">
+                                        <animate attributeName="offset" values="0;2" dur="2s" repeatCount="indefinite"/>
+                                    </stop>
+                                </linearGradient>
+                                <!-- Redis gradient -->
+                                <linearGradient id="redisGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#DC2626;stop-opacity:0">
+                                        <animate attributeName="offset" values="-1;1" dur="4s" repeatCount="indefinite"/>
+                                    </stop>
+                                    <stop offset="50%" style="stop-color:#DC2626;stop-opacity:1">
+                                        <animate attributeName="offset" values="-0.5;1.5" dur="4s" repeatCount="indefinite"/>
+                                    </stop>
+                                    <stop offset="100%" style="stop-color:#DC2626;stop-opacity:0">
+                                        <animate attributeName="offset" values="0;2" dur="4s" repeatCount="indefinite"/>
+                                    </stop>
+                                </linearGradient>
+                                <!-- PostgreSQL gradient -->
+                                <linearGradient id="pgGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#2563EB;stop-opacity:0">
+                                        <animate attributeName="offset" values="-1;1" dur="5s" repeatCount="indefinite"/>
+                                    </stop>
+                                    <stop offset="50%" style="stop-color:#2563EB;stop-opacity:1">
+                                        <animate attributeName="offset" values="-0.5;1.5" dur="5s" repeatCount="indefinite"/>
+                                    </stop>
+                                    <stop offset="100%" style="stop-color:#2563EB;stop-opacity:0">
+                                        <animate attributeName="offset" values="0;2" dur="5s" repeatCount="indefinite"/>
+                                    </stop>
+                                </linearGradient>
+                                <!-- Glow filter -->
+                                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="2" result="blur"/>
+                                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                </filter>
+                                <!-- Arrow marker -->
+                                <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#3B82F6"/>
+                                </marker>
+                                <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#DC2626"/>
+                                </marker>
+                                <marker id="arrowPg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563EB"/>
+                                </marker>
+                                <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#F59E0B"/>
+                                </marker>
+                            </defs>
+
+                            <!-- ========== DATABASE LAYER (Bottom) ========== -->
+                            <!-- PostgreSQL -->
+                            <g id="db-postgres" class="cursor-pointer" transform="translate(200, 230)">
+                                <rect x="0" y="0" width="100" height="60" rx="6" fill="#2563EB" filter="url(#glow)"/>
+                                <!-- Database icon (fa-database) - lowered position -->
+                                <g transform="translate(12, 15)" fill="white" opacity="0.9">
+                                    <ellipse cx="8" cy="3" rx="8" ry="3" fill="white"/>
+                                    <path d="M0,3 L0,10 C0,12 3,14 8,14 C13,14 16,12 16,10 L16,3" fill="white"/>
+                                    <ellipse cx="8" cy="6.5" rx="8" ry="2.5" fill="#2563EB" opacity="0.5"/>
+                                    <ellipse cx="8" cy="10" rx="8" ry="2.5" fill="#2563EB" opacity="0.5"/>
+                                </g>
+                                <text x="50" y="22" text-anchor="middle" fill="white" font-size="10" font-weight="bold">PostgreSQL</text>
+                                <text x="50" y="34" text-anchor="middle" fill="white" font-size="8" opacity="0.8">:5432</text>
+                                <!-- Dynamic database info -->
+                                <text id="pg-table-count" x="50" y="48" text-anchor="middle" fill="white" font-size="7" opacity="0.9">24 tables</text>
+                                <circle id="pg-indicator" cx="90" cy="10" r="5" fill="#22C55E"/>
+                            </g>
+
+                            <!-- Redis -->
+                            <g id="db-redis" class="cursor-pointer" transform="translate(700, 230)">
+                                <rect x="0" y="0" width="100" height="60" rx="6" fill="#DC2626" filter="url(#glow)"/>
+                                <!-- Database icon (fa-database) -->
+                                <g transform="translate(12, 10)" fill="white" opacity="0.9">
+                                    <ellipse cx="8" cy="3" rx="8" ry="3" fill="white"/>
+                                    <path d="M0,3 L0,10 C0,12 3,14 8,14 C13,14 16,12 16,10 L16,3" fill="white"/>
+                                    <ellipse cx="8" cy="6.5" rx="8" ry="2.5" fill="#DC2626" opacity="0.5"/>
+                                    <ellipse cx="8" cy="10" rx="8" ry="2.5" fill="#DC2626" opacity="0.5"/>
+                                </g>
+                                <text x="50" y="16" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Redis</text>
+                                <text x="50" y="28" text-anchor="middle" fill="white" font-size="8" opacity="0.8">:6379</text>
+                                <!-- Dynamic database info -->
+                                <text id="redis-memory" x="50" y="42" text-anchor="middle" fill="white" font-size="7" opacity="0.9">Loading...</text>
+                                <text id="redis-clients" x="50" y="54" text-anchor="middle" fill="white" font-size="6" opacity="0.7">-</text>
+                                <circle id="redis-indicator" cx="90" cy="10" r="5" fill="#22C55E"/>
+                            </g>
+
+                            <!-- ========== ENGINE CONNECTIONS TO DATABASES ========== -->
+                            <!-- Engine 4 to PostgreSQL (vertical) -->
+                            <path d="M535,150 L535,200 L300,200 L300,230" stroke="url(#pgGradient)" stroke-width="2" fill="none" marker-end="url(#arrowPg)" stroke-dasharray="4,2"/>
+                            <text x="400" y="195" text-anchor="middle" fill="#2563EB" font-size="7">decisions</text>
+
+                            <!-- Engine 6 to PostgreSQL -->
+                            <path d="M830,150 L830,215 L300,215 L300,230" stroke="url(#pgGradient)" stroke-width="2" fill="none" marker-end="url(#arrowPg)" stroke-dasharray="4,2"/>
+
+                            <!-- Engine 7 to Redis (sessions) - goes down then right then down to Redis -->
+                            <path d="M92,150 L92,220 L750,220 L750,230" stroke="url(#redisGradient)" stroke-width="2" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="4,2"/>
+                            <text x="400" y="215" text-anchor="middle" fill="#DC2626" font-size="7">JWT sessions</text>
+
+                            <!-- Engine 1 to Redis (streaming) -->
+                            <path d="M235,150 L235,205 L730,205 L730,230" stroke="url(#redisGradient)" stroke-width="2" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="4,2"/>
+                            <text x="480" y="200" text-anchor="middle" fill="#DC2626" font-size="7">log streaming</text>
+
+                            <!-- Engine 3 to Redis (cache) -->
+                            <path d="M385,150 L385,190 L770,190 L770,230" stroke="url(#redisGradient)" stroke-width="2" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="4,2"/>
+                            <text x="570" y="185" text-anchor="middle" fill="#DC2626" font-size="7">ML cache</text>
+
+                            <!-- Engine 4 to Redis -->
+                            <path d="M555,150 L555,175 L790,175 L790,230" stroke="url(#redisGradient)" stroke-width="2" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="4,2"/>
+
+                            <!-- Engine 5 to Redis (pub/sub) -->
+                            <path d="M685,150 L685,165 L750,165 L750,230" stroke="url(#redisGradient)" stroke-width="2" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="4,2"/>
+                            <text x="720" y="160" text-anchor="middle" fill="#DC2626" font-size="7">pub/sub</text>
+
+                            <!-- Engine 6 to Redis -->
+                            <path d="M850,150 L850,210 L770,210 L770,230" stroke="url(#redisGradient)" stroke-width="2" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="4,2"/>
+
+                            <!-- ========== MAIN DATA FLOW (Horizontal with curved arrows) ========== -->
+                            <!-- Auth to Log Collector -->
+                            <path d="M142,100 Q161,90 180,100" stroke="url(#flowGradient)" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+                            <text x="161" y="85" text-anchor="middle" fill="#6B7280" font-size="8" font-weight="500">auth</text>
+
+                            <!-- Log Collector to XGBoost -->
+                            <path d="M280,100 Q302,90 325,100" stroke="url(#flowGradient)" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+                            <text x="302" y="85" text-anchor="middle" fill="#6B7280" font-size="8" font-weight="500">logs</text>
+
+                            <!-- XGBoost to Decision -->
+                            <path d="M430,100 Q452,90 475,100" stroke="url(#flowGradient)" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+                            <text x="452" y="85" text-anchor="middle" fill="#6B7280" font-size="8" font-weight="500">classify</text>
+
+                            <!-- Decision to Report -->
+                            <path d="M580,100 Q602,90 625,100" stroke="url(#flowGradient)" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+                            <text x="602" y="85" text-anchor="middle" fill="#6B7280" font-size="8" font-weight="500">decide</text>
+
+                            <!-- Report to UI -->
+                            <path d="M730,100 Q752,90 775,100" stroke="url(#flowGradient)" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+                            <text x="752" y="85" text-anchor="middle" fill="#6B7280" font-size="8" font-weight="500">report</text>
+
+                            <!-- ========== ENGINE 2 CONNECTION (Doc Processor to XGBoost) ========== -->
+                            <!-- Arrow from ENGINE 2 (center at x=380, bottom at y=50) to ENGINE 3 (center at x=380, top at y=60) -->
+                            <path d="M380,50 L380,60" stroke="url(#flowGradient)" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+                            <text x="395" y="55" text-anchor="middle" fill="#6B7280" font-size="8" font-weight="500">docs</text>
+
+                            <!-- ========== ENGINE BOXES ========== -->
+                            <!-- Engine 7: Auth -->
+                            <g id="engine-7-box" class="engine cursor-pointer" onclick="showEngineModal('ENGINE 7 - Auth Engine')" transform="translate(42, 60)">
+                                <rect x="0" y="0" width="100" height="90" rx="8" fill="#6366F1" filter="url(#glow)" class="transition-all hover:fill-indigo-400"/>
+                                <!-- Shield icon (fa-shield-alt) - Enhanced visibility -->
+                                <g transform="translate(38, 18)" fill="white" opacity="0.9">
+                                    <!-- Shield outline -->
+                                    <path d="M10,0 C10,0 2,2 2,8 C2,14 10,18 10,18 C10,18 18,14 18,8 C18,2 10,0 10,0 Z" fill="white"/>
+                                    <!-- Shield inner detail -->
+                                    <path d="M10,2 C10,2 4,3.5 4,8 C4,12.5 10,16 10,16 C10,16 16,12.5 16,8 C16,3.5 10,2 10,2 Z" fill="#6366F1"/>
+                                    <!-- Check mark for security -->
+                                    <path d="M7,8 L9,10 L13,6" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                                </g>
+                                <text x="50" y="43" text-anchor="middle" fill="white" font-size="11" font-weight="bold">Auth Engine</text>
+                                <text x="50" y="55" text-anchor="middle" fill="white" font-size="7" opacity="0.8">:8007</text>
+                                <!-- Status indicator -->
+                                <circle id="engine-7-status" cx="90" cy="10" r="5" fill="#EF4444"/>
+                                <!-- DB icons -->
+                                <g transform="translate(20, 65)">
+                                    <rect x="0" y="0" width="60" height="20" rx="3" fill="rgba(255,255,255,0.15)"/>
+                                    <circle cx="12" cy="10" r="5" fill="#DC2626"/><text x="12" y="13" text-anchor="middle" fill="white" font-size="6">R</text>
+                                </g>
+                            </g>
+
+                            <!-- Engine 1: Log Collector -->
+                            <g id="engine-1-box" class="engine cursor-pointer" onclick="showEngineModal('ENGINE 1 - Log Collector')" transform="translate(180, 60)">
+                                <rect x="0" y="0" width="100" height="90" rx="8" fill="#10B981" filter="url(#glow)" class="transition-all hover:fill-emerald-400"/>
+                                <!-- Stream icon (fa-stream) -->
+                                <g transform="translate(38, 15)" fill="white" opacity="0.9">
+                                    <rect x="0" y="0" width="24" height="3" rx="1.5" fill="white"/>
+                                    <rect x="6" y="6" width="18" height="3" rx="1.5" fill="white"/>
+                                    <rect x="0" y="12" width="24" height="3" rx="1.5" fill="white"/>
+                                </g>
+                                <text x="50" y="40" text-anchor="middle" fill="white" font-size="11" font-weight="bold">Log Collector</text>
+                                <text x="50" y="55" text-anchor="middle" fill="white" font-size="7" opacity="0.8">:8001</text>
+                                <circle id="engine-1-status" cx="90" cy="10" r="5" fill="#EF4444"/>
+                                <g transform="translate(20, 65)">
+                                    <rect x="0" y="0" width="60" height="20" rx="3" fill="rgba(255,255,255,0.15)"/>
+                                    <circle cx="12" cy="10" r="5" fill="#DC2626"/><text x="12" y="13" text-anchor="middle" fill="white" font-size="6">R</text>
+                                </g>
+                            </g>
+
+                            <!-- Engine 3: XGBoost -->
+                            <g id="engine-3-box" class="engine cursor-pointer" onclick="showEngineModal('ENGINE 3 - XGBoost Classifier')" transform="translate(330, 60)">
+                                <rect x="0" y="0" width="100" height="90" rx="8" fill="#8B5CF6" filter="url(#glow)" class="transition-all hover:fill-purple-400"/>
+                                <!-- Brain icon (fa-brain) -->
+                                <g transform="translate(38, 15)" fill="white" opacity="0.9">
+                                    <ellipse cx="12" cy="8" rx="10" ry="8" fill="white"/>
+                                    <path d="M8,4 Q12,2 16,4" stroke="#8B5CF6" stroke-width="1.5" fill="none"/>
+                                    <path d="M6,8 Q12,6 18,8" stroke="#8B5CF6" stroke-width="1.5" fill="none"/>
+                                    <path d="M8,12 Q12,10 16,12" stroke="#8B5CF6" stroke-width="1.5" fill="none"/>
+                                </g>
+                                <text x="50" y="40" text-anchor="middle" fill="white" font-size="11" font-weight="bold">XGBoost ML</text>
+                                <text x="50" y="55" text-anchor="middle" fill="white" font-size="7" opacity="0.8">:8003</text>
+                                <circle id="engine-3-status" cx="90" cy="10" r="5" fill="#EF4444"/>
+                                <g transform="translate(20, 65)">
+                                    <rect x="0" y="0" width="60" height="20" rx="3" fill="rgba(255,255,255,0.15)"/>
+                                    <circle cx="12" cy="10" r="5" fill="#DC2626"/><text x="12" y="13" text-anchor="middle" fill="white" font-size="6">R</text>
+                                </g>
+                            </g>
+
+                            <!-- Engine 4: Decision -->
+                            <g id="engine-4-box" class="engine cursor-pointer" onclick="showEngineModal('ENGINE 4 - Decision Engine')" transform="translate(480, 60)">
+                                <rect x="0" y="0" width="100" height="90" rx="8" fill="#F43F5E" filter="url(#glow)" class="transition-all hover:fill-rose-400"/>
+                                <!-- Balance scale icon (fa-balance-scale) -->
+                                <g transform="translate(36, 15)" fill="white" opacity="0.9">
+                                    <rect x="13" y="0" width="2" height="16" fill="white"/>
+                                    <rect x="0" y="15" width="28" height="2" fill="white"/>
+                                    <path d="M6,8 L10,3 L14,8 Z" fill="white"/>
+                                    <path d="M18,8 L22,3 L26,8 Z" fill="white"/>
+                                    <line x1="6" y1="8" x2="14" y2="8" stroke="white" stroke-width="1"/>
+                                    <line x1="18" y1="8" x2="26" y2="8" stroke="white" stroke-width="1"/>
+                                </g>
+                                <text x="50" y="40" text-anchor="middle" fill="white" font-size="11" font-weight="bold">Decision</text>
+                                <text x="50" y="55" text-anchor="middle" fill="white" font-size="7" opacity="0.8">:8004</text>
+                                <circle id="engine-4-status" cx="90" cy="10" r="5" fill="#EF4444"/>
+                                <g transform="translate(10, 65)">
+                                    <rect x="0" y="0" width="80" height="20" rx="3" fill="rgba(255,255,255,0.15)"/>
+                                    <circle cx="15" cy="10" r="5" fill="#2563EB"/><text x="15" y="13" text-anchor="middle" fill="white" font-size="6">P</text>
+                                    <circle cx="35" cy="10" r="5" fill="#DC2626"/><text x="35" y="13" text-anchor="middle" fill="white" font-size="6">R</text>
+                                </g>
+                            </g>
+
+                            <!-- Engine 5: Report -->
+                            <g id="engine-5-box" class="engine cursor-pointer" onclick="showEngineModal('ENGINE 5 - Report Generator')" transform="translate(630, 60)">
+                                <rect x="0" y="0" width="100" height="90" rx="8" fill="#06B6D4" filter="url(#glow)" class="transition-all hover:fill-cyan-400"/>
+                                <!-- PDF file icon (fa-file-pdf) -->
+                                <g transform="translate(40, 15)" fill="white" opacity="0.9">
+                                    <path d="M0,0 L12,0 L12,18 L0,18 Z" fill="white"/>
+                                    <text x="6" y="11" text-anchor="middle" fill="#06B6D4" font-size="6" font-weight="bold">PDF</text>
+                                </g>
+                                <text x="50" y="40" text-anchor="middle" fill="white" font-size="11" font-weight="bold">Report Gen</text>
+                                <text x="50" y="55" text-anchor="middle" fill="white" font-size="7" opacity="0.8">:8005</text>
+                                <circle id="engine-5-status" cx="90" cy="10" r="5" fill="#EF4444"/>
+                                <g transform="translate(20, 65)">
+                                    <rect x="0" y="0" width="60" height="20" rx="3" fill="rgba(255,255,255,0.15)"/>
+                                    <circle cx="12" cy="10" r="5" fill="#DC2626"/><text x="12" y="13" text-anchor="middle" fill="white" font-size="6">R</text>
+                                </g>
+                            </g>
+
+                            <!-- Engine 6: Web UI -->
+                            <g id="engine-6-box" class="engine cursor-pointer" transform="translate(780, 60)">
+                                <rect x="0" y="0" width="100" height="90" rx="8" fill="#3B82F6" filter="url(#glow)" class="transition-all hover:fill-blue-400"/>
+                                <!-- Browser window icon (fa-window) -->
+                                <g transform="translate(38, 15)" fill="white" opacity="0.9">
+                                    <rect x="0" y="0" width="24" height="18" rx="2" fill="white"/>
+                                    <rect x="0" y="0" width="24" height="5" rx="2" fill="white"/>
+                                    <circle cx="3" cy="2.5" r="1" fill="#3B82F6"/>
+                                    <circle cx="6.5" cy="2.5" r="1" fill="#3B82F6"/>
+                                    <circle cx="10" cy="2.5" r="1" fill="#3B82F6"/>
+                                    <rect x="2" y="7" width="20" height="9" fill="#3B82F6" opacity="0.3"/>
+                                </g>
+                                <text x="50" y="40" text-anchor="middle" fill="white" font-size="11" font-weight="bold">Web UI</text>
+                                <text x="50" y="55" text-anchor="middle" fill="white" font-size="7" opacity="0.8">:8006</text>
+                                <circle id="engine-6-status" cx="90" cy="10" r="5" fill="#22C55E"/>
+                                <g transform="translate(10, 65)">
+                                    <rect x="0" y="0" width="80" height="20" rx="3" fill="rgba(255,255,255,0.15)"/>
+                                    <circle cx="15" cy="10" r="5" fill="#2563EB"/><text x="15" y="13" text-anchor="middle" fill="white" font-size="6">P</text>
+                                    <circle cx="35" cy="10" r="5" fill="#DC2626"/><text x="35" y="13" text-anchor="middle" fill="white" font-size="6">R</text>
+                                </g>
+                            </g>
+
+                            <!-- Engine 2: Document Processor (top) -->
+                            <g id="engine-2-box" class="engine cursor-pointer" onclick="showEngineModal('ENGINE 2 - Document Processor')" transform="translate(330, -40)">
+                                <rect x="0" y="0" width="100" height="90" rx="8" fill="#F59E0B" filter="url(#glow)" class="transition-all hover:fill-amber-400"/>
+                                <!-- Document icon (fa-file-alt) -->
+                                <g transform="translate(40, 15)" fill="white" opacity="0.9">
+                                    <path d="M0,0 L12,0 L12,16 L0,16 Z" fill="white"/>
+                                    <rect x="2" y="3" width="8" height="1.5" fill="#F59E0B"/>
+                                    <rect x="2" y="6" width="8" height="1.5" fill="#F59E0B"/>
+                                    <rect x="2" y="9" width="8" height="1.5" fill="#F59E0B"/>
+                                    <rect x="2" y="12" width="6" height="1.5" fill="#F59E0B"/>
+                                </g>
+                                <text x="50" y="40" text-anchor="middle" fill="white" font-size="11" font-weight="bold">Doc Processor</text>
+                                <text x="50" y="55" text-anchor="middle" fill="white" font-size="7" opacity="0.8">:8002</text>
+                                <circle id="engine-2-status" cx="90" cy="10" r="5" fill="#EF4444"/>
+                                <g transform="translate(20, 65)">
+                                    <rect x="0" y="0" width="60" height="20" rx="3" fill="rgba(255,255,255,0.15)"/>
+                                    <circle cx="12" cy="10" r="5" fill="#DC2626"/><text x="12" y="13" text-anchor="middle" fill="white" font-size="6">R</text>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Recent Audits</h3>
+                        <div id="recent-audits" class="space-y-3">
+                            <div class="text-gray-500 text-sm">No audits yet</div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Engine Status</h3>
+                        <div id="engine-status" class="space-y-2">
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded engine-card" onclick="showEngineModal('ENGINE 1 - Log Collector')">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-stream text-emerald-600"></i>
+                                    <span class="text-sm">ENGINE 1 - Log Collector</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-gray-200 rounded">Checking...</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded engine-card" onclick="showEngineModal('ENGINE 2 - Document Processor')">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-file-alt text-amber-600"></i>
+                                    <span class="text-sm">ENGINE 2 - Document Processor</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-gray-200 rounded">Checking...</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded engine-card" onclick="showEngineModal('ENGINE 3 - XGBoost Classifier')">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-brain text-purple-600"></i>
+                                    <span class="text-sm">ENGINE 3 - XGBoost</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-gray-200 rounded">Checking...</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded engine-card" onclick="showEngineModal('ENGINE 4 - Decision Engine')">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-balance-scale text-rose-600"></i>
+                                    <span class="text-sm">ENGINE 4 - Decision</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-gray-200 rounded">Checking...</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded engine-card" onclick="showEngineModal('ENGINE 5 - Report Generator')">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-file-pdf text-cyan-600"></i>
+                                    <span class="text-sm">ENGINE 5 - Report</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-gray-200 rounded">Checking...</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded engine-card" onclick="showEngineModal('ENGINE 7 - Auth Engine')">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-shield-alt text-indigo-600"></i>
+                                    <span class="text-sm">ENGINE 7 - Auth</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-gray-200 rounded">Checking...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Audit Page -->
+            <div id="page-new-audit" class="page">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                            <h3 class="text-lg font-semibold mb-4">Audit Mode</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors audit-mode-option" data-mode="logs">
+                                    <input type="radio" name="audit-mode" value="logs" checked class="mr-3" onchange="updateAuditMode('logs')">
+                                    <div class="flex-1">
+                                        <div class="font-medium text-gray-900">System Logs Only</div>
+                                        <div class="text-xs text-gray-500">Audit system commands and logs</div>
+                                    </div>
+                                    <i class="fas fa-terminal text-emerald-600"></i>
+                                </label>
+                                <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors audit-mode-option" data-mode="documents">
+                                    <input type="radio" name="audit-mode" value="documents" class="mr-3" onchange="updateAuditMode('documents')">
+                                    <div class="flex-1">
+                                        <div class="font-medium text-gray-900">Policy Documents Only</div>
+                                        <div class="text-xs text-gray-500">Audit uploaded policy documents</div>
+                                    </div>
+                                    <i class="fas fa-file-pdf text-amber-600"></i>
+                                </label>
+                                <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors audit-mode-option" data-mode="both">
+                                    <input type="radio" name="audit-mode" value="both" class="mr-3" onchange="updateAuditMode('both')">
+                                    <div class="flex-1">
+                                        <div class="font-medium text-gray-900">Comprehensive Audit</div>
+                                        <div class="text-xs text-gray-500">Audit both logs and documents</div>
+                                    </div>
+                                    <i class="fas fa-layer-group text-purple-600"></i>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Configuration</h3>
+                            <div class="space-y-4">
+                                <!-- System Audit Configuration (shown for logs and both modes) -->
+                                <div id="system-config" class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Target Host</label>
+                                        <input type="text" id="target-host" value="localhost"
+                                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                        <input type="text" id="target-user" placeholder="Optional"
+                                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Operating System</label>
+                                        <select id="os-type" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                                            <option value="macos">macOS</option>
+                                            <option value="linux">Linux</option>
+                                            <option value="windows">Windows</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Document Upload Section (shown for documents and both modes) -->
+                                <div id="document-config" class="space-y-4 hidden">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Policy Documents</label>
+                                        <div id="drop-zone-audit" class="drop-zone rounded-lg p-6 text-center cursor-pointer border-2 border-dashed"
+                                             onclick="document.getElementById('file-input-audit').click()">
+                                            <input type="file" id="file-input-audit" class="hidden" accept=".pdf,.docx,.xlsx" onchange="handleAuditFileSelect(event)" multiple>
+                                            <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
+                                            <p class="text-sm text-gray-600 mb-1">Upload policy documents</p>
+                                            <p class="text-xs text-gray-400">PDF, DOCX, XLSX</p>
+                                        </div>
+                                        <div id="selected-files" class="mt-2 space-y-1"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Framework</label>
+                                    <select id="framework" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <option value="Rwanda-NCSA">Rwanda NCSA</option>
+                                        <option value="NIST-800-53">NIST SP 800-53</option>
+                                        <option value="ISO-27001">ISO 27001</option>
+                                    </select>
+                                </div>
+                                <button onclick="startUnifiedAudit()" id="start-btn"
+                                        class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2">
+                                    <i class="fas fa-play"></i>
+                                    Start Audit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">Audit Progress</h3>
+                                <span id="audit-id" class="text-sm text-gray-500 font-mono"></span>
+                            </div>
+
+                            <div class="mb-6">
+                                <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                    <span id="stage-label">Ready to start...</span>
+                                    <span id="progress-percent">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div id="progress-bar" class="progress-bar bg-blue-600 h-3 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between mb-6 overflow-x-auto pb-2">
+                                <div class="stage-item text-center min-w-max" data-stage="authenticating">
+                                    <div class="stage-dot w-10 h-10 rounded-full bg-gray-300 mx-auto mb-1 flex items-center justify-center text-white text-sm font-semibold">7</div>
+                                    <span class="text-xs text-gray-600">Auth</span>
+                                </div>
+                                <div class="flex-1 h-1 bg-gray-300 mx-1 min-w-4"></div>
+                                <div class="stage-item text-center min-w-max" data-stage="collecting_logs">
+                                    <div class="stage-dot w-10 h-10 rounded-full bg-gray-300 mx-auto mb-1 flex items-center justify-center text-white text-sm font-semibold">1</div>
+                                    <span class="text-xs text-gray-600">Collect</span>
+                                </div>
+                                <div class="flex-1 h-1 bg-gray-300 mx-1 min-w-4"></div>
+                                <div class="stage-item text-center min-w-max" data-stage="classifying">
+                                    <div class="stage-dot w-10 h-10 rounded-full bg-gray-300 mx-auto mb-1 flex items-center justify-center text-white text-sm font-semibold">3</div>
+                                    <span class="text-xs text-gray-600">Classify</span>
+                                </div>
+                                <div class="flex-1 h-1 bg-gray-300 mx-1 min-w-4"></div>
+                                <div class="stage-item text-center min-w-max" data-stage="making_decisions">
+                                    <div class="stage-dot w-10 h-10 rounded-full bg-gray-300 mx-auto mb-1 flex items-center justify-center text-white text-sm font-semibold">4</div>
+                                    <span class="text-xs text-gray-600">Decide</span>
+                                </div>
+                                <div class="flex-1 h-1 bg-gray-300 mx-1 min-w-4"></div>
+                                <div class="stage-item text-center min-w-max" data-stage="generating_report">
+                                    <div class="stage-dot w-10 h-10 rounded-full bg-gray-300 mx-auto mb-1 flex items-center justify-center text-white text-sm font-semibold">5</div>
+                                    <span class="text-xs text-gray-600">Report</span>
+                                </div>
+                                <div class="flex-1 h-1 bg-gray-300 mx-1 min-w-4"></div>
+                                <div class="stage-item text-center min-w-max" data-stage="completed">
+                                    <div class="stage-dot w-10 h-10 rounded-full bg-gray-300 mx-auto mb-1 flex items-center justify-center text-white text-sm"><i class="fas fa-check"></i></div>
+                                    <span class="text-xs text-gray-600">Done</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-900 rounded-xl shadow-sm p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-sm font-medium text-gray-300">Live Audit Log</h3>
+                                <span class="text-xs text-gray-500">Real-time command execution</span>
+                            </div>
+                            <div id="live-log" class="text-green-400 font-mono text-sm h-64 overflow-y-auto space-y-1">
+                                <div class="text-gray-500">$ Waiting for audit to start...</div>
+                            </div>
+                        </div>
+
+                        <div id="results-section" class="bg-white rounded-xl shadow-sm p-6 mt-6 hidden">
+                            <h3 class="text-lg font-semibold mb-4">Compliance Results</h3>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                    <div id="result-score" class="text-3xl font-bold text-blue-600">--%</div>
+                                    <div class="text-xs text-gray-600 mt-1">Overall Score</div>
+                                </div>
+                                <div class="text-center p-4 bg-green-50 rounded-lg">
+                                    <div id="result-compliant" class="text-3xl font-bold text-green-600">--</div>
+                                    <div class="text-xs text-gray-600 mt-1">Compliant</div>
+                                </div>
+                                <div class="text-center p-4 bg-red-50 rounded-lg">
+                                    <div id="result-noncompliant" class="text-3xl font-bold text-red-600">--</div>
+                                    <div class="text-xs text-gray-600 mt-1">Non-Compliant</div>
+                                </div>
+                                <div class="text-center p-4 bg-gray-50 rounded-lg">
+                                    <div id="result-logs" class="text-3xl font-bold text-gray-600">--</div>
+                                    <div class="text-xs text-gray-600 mt-1">Commands Run</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Page -->
+            <div id="page-documents" class="page">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Upload Policy Document</h3>
+                        <div id="drop-zone" class="drop-zone rounded-lg p-8 text-center cursor-pointer"
+                             onclick="document.getElementById('file-input').click()">
+                            <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.xlsx" onchange="handleFileSelect(event)">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-600 mb-1">Drag & drop policy documents here</p>
+                            <p class="text-sm text-gray-400">Supports PDF, DOCX, XLSX</p>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Framework</label>
+                            <select id="doc-framework" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="Rwanda-NCSA">Rwanda NCSA</option>
+                                <option value="NIST-800-53">NIST SP 800-53</option>
+                                <option value="ISO-27001">ISO 27001</option>
+                            </select>
+                        </div>
+                        <div id="upload-progress" class="mt-4 hidden">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span id="upload-filename">Uploading...</span>
+                                <span id="upload-percent">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="upload-bar" class="bg-blue-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Uploaded Documents</h3>
+                        <div id="documents-list" class="space-y-2">
+                            <div class="text-gray-500 text-sm">No documents uploaded yet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audits History Page -->
+            <div id="page-audits" class="page">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Audit History</h3>
+                        <button onclick="loadAudits()" class="text-blue-600 hover:text-blue-700 text-sm">
+                            <i class="fas fa-sync-alt mr-1"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Audit ID</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Target</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Framework</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audits-table" class="divide-y">
+                                <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No audits found</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Page -->
+            <div id="page-reports" class="page">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-1">Compliance Reports</h3>
+                            <p class="text-sm text-gray-500">Download and manage generated audit reports</p>
+                        </div>
+                        <button onclick="loadReports()" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-2">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <!-- Reports Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Audit ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Framework</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Generated</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reports-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                        <i class="fas fa-file-pdf text-4xl text-gray-300 mb-3"></i>
+                                        <p>No reports generated yet</p>
+                                        <p class="text-xs mt-1">Complete an audit to generate a compliance report</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls by Framework Page -->
+            <div id="page-controls" class="page">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold">Security Controls by Framework</h3>
+                        <select id="framework-filter" onchange="filterControls()" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="all">All Frameworks</option>
+                            <option value="Rwanda-NCSA">Rwanda NCSA</option>
+                            <option value="NIST-SP-800-53">NIST SP 800-53</option>
+                            <option value="ISO-27001">ISO 27001</option>
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Control ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Framework</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Control Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Family</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="controls-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading controls...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Taxonomies Page -->
+            <div id="page-taxonomies" class="page">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold">OS-Specific Command Taxonomies</h3>
+                        <select id="os-filter" onchange="filterTaxonomies()" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="all">All Operating Systems</option>
+                            <option value="macos">macOS</option>
+                            <option value="linux">Linux</option>
+                            <option value="windows">Windows</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="taxonomies-grid">
+                        <div class="text-center text-gray-500 py-8">Loading taxonomies...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="page-settings" class="page">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold mb-4">System Settings</h3>
+                    <div class="space-y-4 max-w-lg">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Organization Name</label>
+                            <input type="text" value="Demo Organization" class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Default Framework</label>
+                            <select class="w-full px-3 py-2 border rounded-lg">
+                                <option value="Rwanda-NCSA">Rwanda NCSA</option>
+                                <option value="NIST-800-53">NIST SP 800-53</option>
+                            </select>
+                        </div>
+                        <div class="pt-4 border-t">
+                            <h4 class="font-medium mb-3">Database Connections</h4>
+                            <div class="space-y-3">
+                                <div id="settings-pg-status" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-database text-blue-600"></i>
+                                        <span class="font-medium">PostgreSQL</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm text-gray-500">localhost:5432</span>
+                                        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                    </div>
+                                </div>
+                                <div id="settings-redis-status" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-bolt text-red-600"></i>
+                                        <span class="font-medium">Redis</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm text-gray-500">localhost:6379</span>
+                                        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t">
+                            <h4 class="font-medium mb-3">System Information</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-500">Platform Version:</span><span id="platform-version">v3.0.0</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Total Controls:</span><span id="total-controls">196</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Loaded Taxonomies:</span><span id="loaded-taxonomies">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let socket = null;
+        let currentAuditId = null;
+        let sidebarCollapsed = false;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            const toggleBtn = sidebar.querySelector('.toggle-btn');
+            const toggleIcon = toggleBtn.querySelector('i');
+
+            sidebarCollapsed = !sidebarCollapsed;
+
+            if (sidebarCollapsed) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('sidebar-collapsed');
+                toggleIcon.classList.remove('fa-chevron-left');
+                toggleIcon.classList.add('fa-chevron-right');
+            } else {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('sidebar-collapsed');
+                toggleIcon.classList.remove('fa-chevron-right');
+                toggleIcon.classList.add('fa-chevron-left');
+            }
+
+            // Save preference to localStorage
+            localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+        }
+
+        // Restore sidebar state on page load
+        function restoreSidebarState() {
+            const savedState = localStorage.getItem('sidebarCollapsed');
+            if (savedState === 'true') {
+                toggleSidebar();
+            }
+        }
+
+        // Engine details data
+        const engineDetails = {
+            'ENGINE 1 - Log Collector': {
+                name: 'ENGINE 1: Log Collector',
+                shortName: 'Log Collector',
+                port: 8001,
+                icon: 'fa-stream',
+                color: 'from-emerald-600 to-emerald-700',
+                usesLLM: true,
+                llmModel: 'GPT-4',
+                llmPurpose: 'Semantic log analysis and automatic control mapping to Rwanda NCSA framework',
+                description: 'Real-time log collection engine that gathers system logs, security events, and audit trails from target machines. Uses GPT-4 for semantic understanding of log messages and automatic mapping to compliance controls.',
+                role: 'First engine in the audit pipeline. Connects to target systems, executes audit commands, collects raw logs, and uses LLM to semantically analyze and map them to NCSA controls before streaming to Engine 3.',
+                databases: { redis: true, postgres: false },
+                dbUsage: 'Redis for streaming pipeline state and real-time event broadcasting',
+                inputs: [
+                    'Target hostname/IP address',
+                    'Authentication credentials',
+                    'OS type (macOS/Linux/Windows)',
+                    'Compliance framework selection'
+                ],
+                outputs: [
+                    'Normalized log entries (JSON)',
+                    'LLM-mapped control IDs',
+                    'System metadata',
+                    'Real-time streaming events'
+                ],
+                features: ['Real-time Streaming', 'Multi-OS Support', 'GPT-4 Semantic Analysis', 'Control Taxonomy', 'WebSocket Updates'],
+                api: [
+                    { method: 'POST', path: '/api/v1/logs/collect', desc: 'Start log collection' },
+                    { method: 'GET', path: '/api/v1/logs/stream', desc: 'WebSocket stream' },
+                    { method: 'POST', path: '/api/v1/logs/parse', desc: 'Parse single log entry' },
+                    { method: 'GET', path: '/health', desc: 'Health check' }
+                ]
+            },
+            'ENGINE 2 - Document Processor': {
+                name: 'ENGINE 2: Document Processor',
+                shortName: 'Document Processor',
+                port: 8002,
+                icon: 'fa-file-alt',
+                color: 'from-amber-600 to-amber-700',
+                usesLLM: true,
+                llmModel: 'GPT-4',
+                llmPurpose: 'Extract compliance controls from policy documents with confidence scores and semantic matching',
+                description: 'Processes compliance policy documents (PDF, DOCX, XLSX) using GPT-4 to extract security controls, requirements, and compliance criteria. Maps extracted controls to Rwanda NCSA and NIST frameworks using semantic matching.',
+                role: 'Independent document processing path. Extracts compliance requirements from uploaded documents using LLM, maps them to the 196-control taxonomy, and returns structured control data directly to Web UI for gap analysis.',
+                databases: { redis: true, postgres: false },
+                dbUsage: 'Redis for caching extracted controls and processing state',
+                inputs: [
+                    'PDF policy documents',
+                    'DOCX compliance manuals',
+                    'XLSX control matrices',
+                    'Framework selection'
+                ],
+                outputs: [
+                    'LLM-extracted controls (JSON)',
+                    'Control-to-framework mapping',
+                    'Confidence scores per control',
+                    'Document metadata'
+                ],
+                features: ['PDF/DOCX/XLSX Support', 'GPT-4 Control Extraction', '196 Controls', 'Semantic Matching', 'Gap Analysis'],
+                api: [
+                    { method: 'POST', path: '/api/v1/documents/upload', desc: 'Upload document' },
+                    { method: 'POST', path: '/api/v1/documents/extract', desc: 'Extract controls' },
+                    { method: 'GET', path: '/api/v1/controls', desc: 'List all controls' },
+                    { method: 'GET', path: '/health', desc: 'Health check' }
+                ]
+            },
+            'ENGINE 3 - XGBoost Classifier': {
+                name: 'ENGINE 3: XGBoost Compliance Classifier',
+                shortName: 'XGBoost Classifier',
+                port: 8003,
+                icon: 'fa-brain',
+                color: 'from-purple-600 to-purple-700',
+                usesLLM: false,
+                llmModel: null,
+                llmPurpose: null,
+                description: 'Pure machine learning engine using XGBoost for compliance classification. Trained on 196 controls with <1ms latency. Does NOT use LLM - relies on trained ML model for fast, deterministic classification.',
+                role: 'Core ML classification engine for the LOG PATH. Receives LLM-enriched logs from Engine 1, applies trained XGBoost model to classify compliance status, and outputs predictions with confidence scores to Engine 4.',
+                databases: { redis: true, postgres: false },
+                dbUsage: 'Redis for classification result caching and model metadata',
+                inputs: [
+                    'Normalized log entries from Engine 1',
+                    'Control IDs to evaluate',
+                    'TF-IDF feature vectors',
+                    'Temporal features'
+                ],
+                outputs: [
+                    'Compliance status (compliant/non_compliant)',
+                    'Confidence scores (0-1)',
+                    'Control mapping',
+                    'Classification metadata'
+                ],
+                features: ['XGBoost Model', '<1ms Latency', '196 Controls', 'TF-IDF Features', 'Batch Processing'],
+                api: [
+                    { method: 'POST', path: '/api/v1/classify', desc: 'Classify single log' },
+                    { method: 'POST', path: '/api/v1/classify/batch', desc: 'Batch classification' },
+                    { method: 'GET', path: '/api/v1/model/info', desc: 'Model metadata' },
+                    { method: 'GET', path: '/health', desc: 'Health check' }
+                ]
+            },
+            'ENGINE 4 - Decision Engine': {
+                name: 'ENGINE 4: Decision Engine',
+                shortName: 'Decision Engine',
+                port: 8004,
+                icon: 'fa-balance-scale',
+                color: 'from-rose-600 to-rose-700',
+                usesLLM: false,
+                llmModel: null,
+                llmPurpose: null,
+                description: 'Rule-based risk scoring and compliance decision engine. Does NOT use LLM - aggregates ML classifications using weighted algorithms, calculates compliance scores, and applies confidence-based routing logic.',
+                role: 'Decision-making layer that transforms Engine 3 classifications into actionable compliance decisions. Calculates weighted scores, applies confidence routing (auto-accept, review, verify), and stores results.',
+                databases: { redis: true, postgres: true },
+                dbUsage: 'PostgreSQL for persistent decision storage and historical trends. Redis for real-time score caching and feedback loops.',
+                inputs: [
+                    'Classification results from Engine 3',
+                    'Control family weights',
+                    'Risk thresholds',
+                    'Historical audit data'
+                ],
+                outputs: [
+                    'Overall compliance score (%)',
+                    'Per-family scores',
+                    'Risk assessment (Critical/High/Medium/Low)',
+                    'Remediation priorities'
+                ],
+                features: ['Risk Scoring', 'Weighted Aggregation', 'Confidence Routing', 'Priority Routing', 'Adaptive Learning'],
+                api: [
+                    { method: 'POST', path: '/api/v1/decide', desc: 'Make compliance decision' },
+                    { method: 'POST', path: '/api/v1/score', desc: 'Calculate risk score' },
+                    { method: 'GET', path: '/api/v1/thresholds', desc: 'Get risk thresholds' },
+                    { method: 'GET', path: '/health', desc: 'Health check' }
+                ]
+            },
+            'ENGINE 5 - Report Generator': {
+                name: 'ENGINE 5: Report Generator',
+                shortName: 'Report Generator',
+                port: 8005,
+                icon: 'fa-file-pdf',
+                color: 'from-cyan-600 to-cyan-700',
+                usesLLM: true,
+                llmModel: 'GPT-4',
+                llmPurpose: 'Generate human-readable executive summaries, insights, and remediation recommendations for compliance reports',
+                description: 'LLM-powered PDF report generation engine. Uses GPT-4 to create professional compliance audit reports with executive summaries, detailed findings, charts, and remediation recommendations.',
+                role: 'Final stage of the audit pipeline. Receives compliance decisions from Engine 4, uses GPT-4 to generate human-readable insights and actionable recommendations, and produces downloadable PDF reports with visualizations.',
+                databases: { redis: true, postgres: false },
+                dbUsage: 'Redis for audit state pub/sub updates and report generation progress tracking',
+                inputs: [
+                    'Compliance decisions from Engine 4',
+                    'Audit metadata',
+                    'Organization details',
+                    'Report template selection'
+                ],
+                outputs: [
+                    'PDF compliance report',
+                    'Executive summary',
+                    'Detailed findings JSON',
+                    'Remediation roadmap'
+                ],
+                features: ['LLM-Powered', 'PDF Generation', 'Charts & Graphs', 'Executive Summary', 'Remediation Plans'],
+                api: [
+                    { method: 'POST', path: '/api/v1/reports/generate', desc: 'Generate report' },
+                    { method: 'GET', path: '/api/v1/reports/{id}', desc: 'Download report' },
+                    { method: 'GET', path: '/api/v1/reports', desc: 'List reports' },
+                    { method: 'GET', path: '/health', desc: 'Health check' }
+                ]
+            },
+            'ENGINE 7 - Auth Engine': {
+                name: 'ENGINE 7: Authentication Engine',
+                shortName: 'Auth Engine',
+                port: 8007,
+                icon: 'fa-shield-alt',
+                color: 'from-indigo-600 to-indigo-700',
+                usesLLM: false,
+                llmModel: null,
+                llmPurpose: null,
+                description: 'Authentication and authorization engine handling user login, JWT token management, session handling, and secure machine connections for remote audits. Does NOT use LLM - relies on cryptographic algorithms and standard auth protocols.',
+                role: 'Security gateway for the platform. Authenticates users, manages sessions via Redis, handles secure connections to remote audit targets, and enforces access control policies.',
+                databases: { redis: true, postgres: false },
+                dbUsage: 'Redis for JWT session storage, token blacklisting, and rate limiting',
+                inputs: [
+                    'User credentials',
+                    'JWT tokens',
+                    'Machine connection requests',
+                    'Session tokens'
+                ],
+                outputs: [
+                    'JWT access tokens',
+                    'Session IDs',
+                    'Authentication status',
+                    'Connection handles'
+                ],
+                features: ['JWT Authentication', 'Redis Sessions', 'SSH/WinRM Support', 'RBAC', 'Token Refresh'],
+                api: [
+                    { method: 'POST', path: '/api/v1/auth/login', desc: 'User login' },
+                    { method: 'POST', path: '/api/v1/auth/token/refresh', desc: 'Refresh token' },
+                    { method: 'POST', path: '/api/v1/machines/connect', desc: 'Connect to machine' },
+                    { method: 'GET', path: '/health', desc: 'Health check' }
+                ]
+            }
+        };
+
+        function showEngineModal(engineKey) {
+            const engine = engineDetails[engineKey];
+            if (!engine) return;
+
+            document.getElementById('modal-title').textContent = engine.name;
+            document.getElementById('modal-subtitle').textContent = `Port: ${engine.port} | localhost:${engine.port}`;
+            document.getElementById('modal-icon').className = `fas ${engine.icon} text-2xl`;
+            document.getElementById('modal-header').className = `bg-gradient-to-r ${engine.color} text-white p-6`;
+            document.getElementById('modal-description').textContent = engine.description;
+            document.getElementById('modal-role').textContent = engine.role;
+
+            document.getElementById('modal-inputs').innerHTML = engine.inputs.map(i => `<li>• ${i}</li>`).join('');
+            document.getElementById('modal-outputs').innerHTML = engine.outputs.map(o => `<li>• ${o}</li>`).join('');
+            document.getElementById('modal-features').innerHTML = engine.features.map(f =>
+                `<span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">${f}</span>`
+            ).join('');
+            document.getElementById('modal-api').innerHTML = engine.api.map(a =>
+                `<div class="flex items-center gap-3">
+                    <span class="px-2 py-0.5 rounded text-xs font-bold ${a.method === 'GET' ? 'bg-green-600' : 'bg-blue-600'} text-white">${a.method}</span>
+                    <span class="text-green-400">${a.path}</span>
+                    <span class="text-gray-500 text-xs ml-auto">${a.desc}</span>
+                </div>`
+            ).join('');
+            document.getElementById('modal-docs-link').href = `http://localhost:${engine.port}/docs`;
+
+            // Database connections - now dynamic based on cached status
+            const dbHtml = [];
+            if (engine.databases.postgres) {
+                const pgConnected = cachedDbStatus.postgresql?.connected;
+                dbHtml.push(`<div class="flex items-center gap-2 px-3 py-2 ${pgConnected ? 'bg-blue-50' : 'bg-gray-100'} rounded-lg">
+                    <i class="fas fa-database ${pgConnected ? 'text-blue-600' : 'text-gray-400'}"></i>
+                    <span class="text-sm font-medium ${pgConnected ? 'text-blue-800' : 'text-gray-600'}">PostgreSQL</span>
+                    <span class="text-xs ${pgConnected ? 'text-green-600' : 'text-red-500'} ml-auto flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full ${pgConnected ? 'bg-green-500' : 'bg-red-500'}"></span>
+                        ${pgConnected ? 'Connected' : 'Disconnected'}
+                    </span>
+                </div>`);
+            }
+            if (engine.databases.redis) {
+                const redisConnected = cachedDbStatus.redis?.connected;
+                dbHtml.push(`<div class="flex items-center gap-2 px-3 py-2 ${redisConnected ? 'bg-red-50' : 'bg-gray-100'} rounded-lg">
+                    <i class="fas fa-bolt ${redisConnected ? 'text-red-600' : 'text-gray-400'}"></i>
+                    <span class="text-sm font-medium ${redisConnected ? 'text-red-800' : 'text-gray-600'}">Redis</span>
+                    <span class="text-xs ${redisConnected ? 'text-green-600' : 'text-red-500'} ml-auto flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full ${redisConnected ? 'bg-green-500' : 'bg-red-500'}"></span>
+                        ${redisConnected ? 'Connected' : 'Disconnected'}
+                    </span>
+                </div>`);
+            }
+            document.getElementById('modal-databases').innerHTML = dbHtml.length > 0 ? dbHtml.join('') : '<span class="text-gray-400 text-sm">No database connections</span>';
+            document.getElementById('modal-db-usage').textContent = engine.dbUsage || 'N/A';
+
+            // Update modal status indicator dynamically
+            const engineStatus = cachedEngineStatus[engineKey]?.status || 'offline';
+            const modalStatus = document.getElementById('modal-status');
+            if (modalStatus) {
+                const statusColor = engineStatus === 'running' ? 'bg-green-500' : engineStatus === 'error' ? 'bg-yellow-500' : 'bg-red-500';
+                const statusText = engineStatus === 'running' ? 'Running' : engineStatus === 'error' ? 'Error' : 'Offline';
+                modalStatus.innerHTML = `
+                    <span class="w-3 h-3 rounded-full ${statusColor}"></span>
+                    <span class="text-sm text-gray-600">${statusText}</span>
+                `;
+            }
+
+            // Display LLM badge if the engine uses LLM
+            const llmBadge = document.getElementById('modal-llm-badge');
+            if (llmBadge) {
+                if (engine.usesLLM) {
+                    llmBadge.innerHTML = `
+                        <div class="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600">
+                                    <i class="fas fa-robot text-white text-sm"></i>
+                                </span>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-semibold text-purple-800">LLM-Powered</span>
+                                        <span class="px-2 py-0.5 bg-purple-600 text-white text-xs font-bold rounded">${engine.llmModel}</span>
+                                    </div>
+                                    <p class="text-xs text-purple-600 mt-0.5">${engine.llmPurpose}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    llmBadge.classList.remove('hidden');
+                } else {
+                    llmBadge.innerHTML = `
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-400">
+                                    <i class="fas fa-microchip text-white text-sm"></i>
+                                </span>
+                                <div>
+                                    <span class="text-sm font-semibold text-gray-700">No LLM</span>
+                                    <p class="text-xs text-gray-500 mt-0.5">Uses traditional algorithms, ML models, or rule-based logic</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    llmBadge.classList.remove('hidden');
+                }
+            }
+
+            document.getElementById('engine-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEngineModal() {
+            document.getElementById('engine-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeEngineModal();
+        });
+
+        const stageOrder = ['authenticating', 'authenticated', 'collecting_logs', 'logs_collected',
+                           'classifying', 'classified', 'making_decisions', 'decisions_made',
+                           'generating_report', 'report_generated', 'completed'];
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+
+            const titles = {
+                'dashboard': ['Dashboard', 'Overview of compliance status'],
+                'new-audit': ['Start Audit', 'Configure and run a new compliance audit'],
+                'documents': ['Policy Documents', 'Upload and manage policy documents'],
+                'audits': ['Audit History', 'View past audit results'],
+                'reports': ['Reports', 'Download compliance reports'],
+                'controls': ['Security Controls', 'View all security controls by framework'],
+                'taxonomies': ['OS Taxonomies', 'View OS-specific audit commands'],
+                'settings': ['Settings', 'Configure system settings']
+            };
+            document.getElementById('page-title').textContent = titles[pageId][0];
+            document.getElementById('page-subtitle').textContent = titles[pageId][1];
+
+            // Load data for specific pages
+            if (pageId === 'controls') {
+                loadControls();
+            } else if (pageId === 'taxonomies') {
+                loadTaxonomies();
+            } else if (pageId === 'reports') {
+                loadReports();
+            }
+        }
+
+        function initWebSocket() {
+            socket = io(API_BASE, { transports: ['websocket', 'polling'], reconnection: true });
+            socket.on('connect', () => {
+                updateConnectionStatus(true);
+                console.log('Connected to server');
+            });
+            socket.on('disconnect', () => {
+                updateConnectionStatus(false);
+            });
+            socket.on('audit_started', handleAuditUpdate);
+            socket.on('audit_update', handleAuditUpdate);
+            socket.on('upload_progress', handleUploadProgress);
+        }
+
+        function updateConnectionStatus(socketConnected) {
+            // WebSocket connection status updates - but platform status depends on DBs
+            // Refresh DB status when socket connects to get accurate platform status
+            if (socketConnected) {
+                loadDbStatus();
+            }
+        }
+
+        function handleAuditUpdate(data) {
+            currentAuditId = data.audit_id;
+            document.getElementById('audit-id').textContent = data.audit_id;
+            document.getElementById('progress-bar').style.width = data.progress + '%';
+            document.getElementById('progress-percent').textContent = data.progress + '%';
+            document.getElementById('stage-label').textContent = data.message;
+            updateStageDots(data.stage);
+            addLogEntry(data);
+
+            const btn = document.getElementById('start-btn');
+            if (data.stage === 'completed' || data.stage === 'failed') {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-play"></i> Start New Audit';
+                btn.classList.remove('bg-gray-400');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                if (data.details) showResults(data.details);
+            }
+        }
+
+        function updateStageDots(currentStage) {
+            const stageMapping = {
+                'authenticating': 'authenticating', 'authenticated': 'authenticating',
+                'collecting_logs': 'collecting_logs', 'logs_collected': 'collecting_logs',
+                'classifying': 'classifying', 'classified': 'classifying',
+                'making_decisions': 'making_decisions', 'decisions_made': 'making_decisions',
+                'generating_report': 'generating_report', 'report_generated': 'generating_report',
+                'completed': 'completed'
+            };
+            document.querySelectorAll('.stage-item').forEach(item => {
+                const stage = item.dataset.stage;
+                const dot = item.querySelector('.stage-dot');
+                const mappedStage = stageMapping[currentStage];
+                const keys = Object.keys(stageMapping);
+                const targetIndex = keys.indexOf(stage);
+                const currentIndex = keys.indexOf(mappedStage);
+
+                dot.classList.remove('bg-gray-300', 'bg-green-500', 'bg-blue-500', 'pulse');
+                if (stage === mappedStage) {
+                    dot.classList.add('bg-blue-500', 'pulse');
+                } else if (targetIndex < currentIndex || currentStage === 'completed') {
+                    dot.classList.add('bg-green-500');
+                } else {
+                    dot.classList.add('bg-gray-300');
+                }
+            });
+        }
+
+        function addLogEntry(data) {
+            const log = document.getElementById('live-log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            let icon = 'fa-terminal';
+            let color = 'text-blue-400';
+            if (data.stage === 'completed') { icon = 'fa-check-circle'; color = 'text-green-400'; }
+            if (data.stage === 'failed') { icon = 'fa-times-circle'; color = 'text-red-400'; }
+
+            entry.innerHTML = `<span class="text-gray-500">[${time}]</span> <i class="fas ${icon} ${color} ml-1 mr-2"></i><span class="text-yellow-400">${data.stage}</span> <span class="text-gray-400">-</span> ${data.message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function showResults(details) {
+            document.getElementById('results-section').classList.remove('hidden');
+            document.getElementById('result-score').textContent = (details.overall_score || 0) + '%';
+            document.getElementById('result-compliant').textContent = details.compliant || 0;
+            document.getElementById('result-noncompliant').textContent = details.non_compliant || 0;
+            document.getElementById('result-logs').textContent = details.logs_collected || 0;
+        }
+
+        // Update audit mode UI based on selection
+        function updateAuditMode(mode) {
+            const systemConfig = document.getElementById('system-config');
+            const documentConfig = document.getElementById('document-config');
+            const modeOptions = document.querySelectorAll('.audit-mode-option');
+
+            // Update visual selection
+            modeOptions.forEach(option => {
+                if (option.dataset.mode === mode) {
+                    option.classList.add('border-blue-600', 'bg-blue-50');
+                } else {
+                    option.classList.remove('border-blue-600', 'bg-blue-50');
+                }
+            });
+
+            // Show/hide relevant configuration sections
+            if (mode === 'logs') {
+                systemConfig.classList.remove('hidden');
+                documentConfig.classList.add('hidden');
+            } else if (mode === 'documents') {
+                systemConfig.classList.add('hidden');
+                documentConfig.classList.remove('hidden');
+            } else if (mode === 'both') {
+                systemConfig.classList.remove('hidden');
+                documentConfig.classList.remove('hidden');
+            }
+        }
+
+        // Handle file selection for unified audit
+        let selectedAuditFiles = [];
+        function handleAuditFileSelect(event) {
+            const files = event.target.files;
+            selectedAuditFiles = Array.from(files);
+
+            const filesList = document.getElementById('selected-files');
+            filesList.innerHTML = '';
+
+            selectedAuditFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded text-xs';
+                fileItem.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-file-pdf text-red-600"></i>
+                        <span class="truncate">${file.name}</span>
+                    </div>
+                    <button onclick="removeAuditFile(${index})" class="text-red-600 hover:text-red-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                filesList.appendChild(fileItem);
+            });
+        }
+
+        function removeAuditFile(index) {
+            selectedAuditFiles.splice(index, 1);
+            const dt = new DataTransfer();
+            selectedAuditFiles.forEach(file => dt.items.add(file));
+            document.getElementById('file-input-audit').files = dt.files;
+            handleAuditFileSelect({ target: { files: dt.files } });
+        }
+
+        // Unified audit start function
+        async function startUnifiedAudit() {
+            const mode = document.querySelector('input[name="audit-mode"]:checked').value;
+            const framework = document.getElementById('framework').value;
+
+            const btn = document.getElementById('start-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+            btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            btn.classList.add('bg-gray-400');
+
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('live-log').innerHTML = '<div class="text-gray-500">$ Initializing audit...</div>';
+
+            try {
+                if (mode === 'logs') {
+                    // System logs audit only
+                    await startLogsAudit(framework);
+                } else if (mode === 'documents') {
+                    // Documents audit only
+                    await startDocumentsAudit(framework);
+                } else if (mode === 'both') {
+                    // Comprehensive audit - both logs and documents
+                    await startComprehensiveAudit(framework);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-play"></i> Start Audit';
+                btn.classList.remove('bg-gray-400');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                addLogEntry({ stage: 'error', message: 'Failed: ' + error.message });
+            }
+        }
+
+        // Start logs-only audit
+        async function startLogsAudit(framework) {
+            const targetHost = document.getElementById('target-host').value || 'localhost';
+            const targetUser = document.getElementById('target-user').value || '';
+            const osType = document.getElementById('os-type').value;
+
+            addLogEntry({ stage: 'init', message: `Mode: System Logs | Target: ${targetHost} | OS: ${osType} | Framework: ${framework}` });
+
+            const params = new URLSearchParams({
+                target_host: targetHost,
+                target_user: targetUser,
+                auth_method: 'local',
+                framework: framework
+            });
+            const response = await fetch(`${API_BASE}/api/v3/audits/start?${params}`, { method: 'POST' });
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.detail || `HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            handleAuditUpdate(data);
+        }
+
+        // Start documents-only audit
+        async function startDocumentsAudit(framework) {
+            if (selectedAuditFiles.length === 0) {
+                throw new Error('Please upload at least one policy document');
+            }
+
+            addLogEntry({ stage: 'init', message: `Mode: Policy Documents | Files: ${selectedAuditFiles.length} | Framework: ${framework}` });
+
+            // Upload documents first
+            for (let i = 0; i < selectedAuditFiles.length; i++) {
+                const file = selectedAuditFiles[i];
+                addLogEntry({ stage: 'upload', message: `Uploading document ${i + 1}/${selectedAuditFiles.length}: ${file.name}` });
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('framework', framework);
+
+                const uploadResponse = await fetch(`${API_BASE}/api/v3/documents/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error(`Failed to upload ${file.name}`);
+                }
+            }
+
+            addLogEntry({ stage: 'processing', message: 'Documents uploaded successfully. Processing...' });
+
+            // Start document processing audit
+            const response = await fetch(`${API_BASE}/api/v3/audits/documents/start?framework=${framework}`, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.detail || `HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            handleAuditUpdate(data);
+        }
+
+        // Start comprehensive audit (both logs and documents)
+        async function startComprehensiveAudit(framework) {
+            const targetHost = document.getElementById('target-host').value || 'localhost';
+            const targetUser = document.getElementById('target-user').value || '';
+            const osType = document.getElementById('os-type').value;
+
+            addLogEntry({ stage: 'init', message: `Mode: Comprehensive | Target: ${targetHost} | Documents: ${selectedAuditFiles.length} | Framework: ${framework}` });
+
+            // Phase 1: Upload documents if any
+            if (selectedAuditFiles.length > 0) {
+                for (let i = 0; i < selectedAuditFiles.length; i++) {
+                    const file = selectedAuditFiles[i];
+                    addLogEntry({ stage: 'upload', message: `Uploading document ${i + 1}/${selectedAuditFiles.length}: ${file.name}` });
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('framework', framework);
+
+                    const uploadResponse = await fetch(`${API_BASE}/api/v3/documents/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!uploadResponse.ok) {
+                        throw new Error(`Failed to upload ${file.name}`);
+                    }
+                }
+                addLogEntry({ stage: 'upload', message: 'All documents uploaded successfully' });
+            }
+
+            // Phase 2: Start system logs audit (which will also process documents)
+            const params = new URLSearchParams({
+                target_host: targetHost,
+                target_user: targetUser,
+                auth_method: 'local',
+                framework: framework,
+                include_documents: selectedAuditFiles.length > 0 ? 'true' : 'false'
+            });
+
+            const response = await fetch(`${API_BASE}/api/v3/audits/start?${params}`, { method: 'POST' });
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.detail || `HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            handleAuditUpdate(data);
+        }
+
+        async function startAudit() {
+            const targetHost = document.getElementById('target-host').value || 'localhost';
+            const targetUser = document.getElementById('target-user').value || '';
+            const framework = document.getElementById('framework').value;
+            const osType = document.getElementById('os-type').value;
+
+            const btn = document.getElementById('start-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+            btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            btn.classList.add('bg-gray-400');
+
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('live-log').innerHTML = '<div class="text-gray-500">$ Initializing audit...</div>';
+            addLogEntry({ stage: 'init', message: `Target: ${targetHost} | OS: ${osType} | Framework: ${framework}` });
+
+            try {
+                const params = new URLSearchParams({
+                    target_host: targetHost,
+                    target_user: targetUser,
+                    auth_method: 'local',
+                    framework: framework
+                });
+                const response = await fetch(`${API_BASE}/api/v3/audits/start?${params}`, { method: 'POST' });
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.detail || `HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                handleAuditUpdate(data);
+            } catch (error) {
+                console.error('Error:', error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-play"></i> Start Audit';
+                btn.classList.remove('bg-gray-400');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                addLogEntry({ stage: 'error', message: 'Failed: ' + error.message });
+            }
+        }
+
+        async function loadAudits() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v3/audits`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.audits && data.audits.length > 0) {
+                        const tbody = document.getElementById('audits-table');
+                        tbody.innerHTML = data.audits.map(a => `
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3 font-mono text-sm">${a.audit_id}</td>
+                                <td class="px-4 py-3 text-sm">${a.target?.host || 'localhost'}</td>
+                                <td class="px-4 py-3 text-sm">${a.framework}</td>
+                                <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded ${a.stage === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${a.stage}</span></td>
+                                <td class="px-4 py-3 font-semibold ${a.details?.overall_score >= 70 ? 'text-green-600' : 'text-red-600'}">${a.details?.overall_score || '--'}%</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">${new Date(a.started_at).toLocaleDateString()}</td>
+                            </tr>
+                        `).join('');
+
+                        document.getElementById('stat-total').textContent = data.audits.length;
+                        document.getElementById('recent-audits').innerHTML = data.audits.slice(0, 5).map(a => `
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <span class="font-mono text-sm">${a.audit_id}</span>
+                                    <span class="text-gray-500 text-sm ml-2">${a.target?.host || 'localhost'}</span>
+                                </div>
+                                <span class="font-semibold ${a.details?.overall_score >= 70 ? 'text-green-600' : 'text-red-600'}">${a.details?.overall_score || '--'}%</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (e) { console.error('Error loading audits:', e); }
+        }
+
+        // Load reports from database
+        async function loadReports() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v3/reports`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const tbody = document.getElementById('reports-table-body');
+
+                if (!data.reports || data.reports.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                <i class="fas fa-file-pdf text-4xl text-gray-300 mb-3"></i>
+                                <p>No reports generated yet</p>
+                                <p class="text-xs mt-1">Complete an audit to generate a compliance report</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = data.reports.map(report => {
+                    const generatedDate = new Date(report.created_at);
+                    const fileSize = formatFileSize(report.file_size || 0);
+                    const scoreClass = report.overall_score >= 70 ? 'text-green-600' : 'text-red-600';
+                    const reportTypeClass = {
+                        'compliance': 'bg-blue-100 text-blue-800',
+                        'executive': 'bg-purple-100 text-purple-800',
+                        'detailed': 'bg-gray-100 text-gray-800'
+                    }[report.report_type] || 'bg-gray-100 text-gray-800';
+
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-file-pdf text-red-600"></i>
+                                    <span class="font-mono text-sm">${report.id.slice(0, 8)}...</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 font-mono text-xs text-gray-600">${report.audit_id || 'N/A'}</td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 text-xs font-medium rounded ${reportTypeClass}">
+                                    ${report.report_type}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm">${report.framework || 'Rwanda-NCSA'}</td>
+                            <td class="px-6 py-4 text-sm font-semibold ${scoreClass}">
+                                ${report.overall_score ? report.overall_score + '%' : 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                ${generatedDate.toLocaleDateString()} ${generatedDate.toLocaleTimeString()}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">${fileSize}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <button onclick="downloadReport('${report.id}')"
+                                            class="text-blue-600 hover:text-blue-700 text-sm"
+                                            title="Download PDF">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button onclick="viewReport('${report.id}')"
+                                            class="text-green-600 hover:text-green-700 text-sm"
+                                            title="View Report">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button onclick="deleteReport('${report.id}')"
+                                            class="text-red-600 hover:text-red-700 text-sm"
+                                            title="Delete Report">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                const tbody = document.getElementById('reports-table-body');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="px-6 py-4 text-center text-red-500">
+                            Failed to load reports: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Download report
+        async function downloadReport(reportId) {
+            try {
+                window.open(`${API_BASE}/api/v3/reports/${reportId}/download`, '_blank');
+            } catch (error) {
+                console.error('Error downloading report:', error);
+                alert('Failed to download report');
+            }
+        }
+
+        // View report in new tab
+        async function viewReport(reportId) {
+            try {
+                window.open(`${API_BASE}/api/v3/reports/${reportId}/view`, '_blank');
+            } catch (error) {
+                console.error('Error viewing report:', error);
+                alert('Failed to view report');
+            }
+        }
+
+        // Delete report
+        async function deleteReport(reportId) {
+            if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v3/reports/${reportId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                // Reload reports table
+                await loadReports();
+                alert('Report deleted successfully');
+            } catch (error) {
+                console.error('Error deleting report:', error);
+                alert('Failed to delete report: ' + error.message);
+            }
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) uploadDocument(file);
+        }
+
+        async function uploadDocument(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('framework', document.getElementById('doc-framework').value);
+
+            document.getElementById('upload-progress').classList.remove('hidden');
+            document.getElementById('upload-filename').textContent = file.name;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v3/documents/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    document.getElementById('upload-bar').style.width = '100%';
+                    document.getElementById('upload-percent').textContent = '100%';
+                    setTimeout(() => {
+                        document.getElementById('upload-progress').classList.add('hidden');
+                    }, 2000);
+                }
+            } catch (e) { console.error('Upload error:', e); }
+        }
+
+        function handleUploadProgress(data) {
+            document.getElementById('upload-bar').style.width = data.progress + '%';
+            document.getElementById('upload-percent').textContent = data.progress + '%';
+        }
+
+        // Drag and drop
+        const dropZone = document.getElementById('drop-zone');
+        dropZone?.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone?.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) uploadDocument(e.dataTransfer.files[0]);
+        });
+
+        // Global status cache for dynamic updates
+        let cachedEngineStatus = {};
+        let cachedDbStatus = { postgresql: { connected: false }, redis: { connected: false } };
+
+        async function loadEngineStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v3/engines/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    cachedEngineStatus = data; // Cache for modal use
+
+                    const container = document.getElementById('engine-status');
+                    // Flow order: ENGINE 7 (Auth) → ENGINE 1 (Logs) → ENGINE 2 (Docs, parallel) → ENGINE 3 (XGBoost) → ENGINE 4 (Decision) → ENGINE 5 (Report)
+                    const engines = [
+                        { key: 'ENGINE 7 - Auth Engine', name: 'ENGINE 7 - Auth', icon: 'fa-shield-alt', color: 'text-indigo-600', diagramId: 'engine-7-status' },
+                        { key: 'ENGINE 1 - Log Collector', name: 'ENGINE 1 - Log Collector', icon: 'fa-stream', color: 'text-emerald-600', diagramId: 'engine-1-status' },
+                        { key: 'ENGINE 2 - Document Processor', name: 'ENGINE 2 - Document', icon: 'fa-file-alt', color: 'text-amber-600', diagramId: 'engine-2-status' },
+                        { key: 'ENGINE 3 - XGBoost Classifier', name: 'ENGINE 3 - XGBoost', icon: 'fa-brain', color: 'text-purple-600', diagramId: 'engine-3-status' },
+                        { key: 'ENGINE 4 - Decision Engine', name: 'ENGINE 4 - Decision', icon: 'fa-balance-scale', color: 'text-rose-600', diagramId: 'engine-4-status' },
+                        { key: 'ENGINE 5 - Report Generator', name: 'ENGINE 5 - Report', icon: 'fa-file-pdf', color: 'text-cyan-600', diagramId: 'engine-5-status' }
+                    ];
+
+                    container.innerHTML = engines.map(e => {
+                        const status = data[e.key]?.status || 'offline';
+                        const statusClass = status === 'running' ? 'bg-green-100 text-green-800' :
+                                           status === 'error' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+                        const statusText = status === 'running' ? 'Running' : status === 'error' ? 'Error' : 'Offline';
+                        return `<div class="engine-card flex items-center justify-between p-2 bg-gray-50 rounded" onclick="showEngineModal('${e.key}')" title="Click for details">
+                            <div class="flex items-center gap-2">
+                                <i class="fas ${e.icon} ${e.color} text-sm"></i>
+                                <span class="text-sm">${e.name}</span>
+                            </div>
+                            <span class="text-xs px-2 py-1 ${statusClass} rounded">${statusText}</span>
+                        </div>`;
+                    }).join('');
+
+                    // Update architecture diagram status indicators
+                    engines.forEach(e => {
+                        const indicator = document.getElementById(e.diagramId);
+                        if (indicator) {
+                            const status = data[e.key]?.status || 'offline';
+                            indicator.setAttribute('fill', status === 'running' ? '#22C55E' : '#EF4444');
+                        }
+                    });
+
+                    // Engine 6 is always running (it's this UI)
+                    const engine6Indicator = document.getElementById('engine-6-status');
+                    if (engine6Indicator) engine6Indicator.setAttribute('fill', '#22C55E');
+                }
+            } catch (e) { console.error('Error loading engine status:', e); }
+        }
+
+        async function loadDbStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v3/db/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    cachedDbStatus = data; // Cache for modal use
+
+                    const pgConnected = data.postgresql?.connected || false;
+                    const redisConnected = data.redis?.connected || false;
+
+                    // Update sidebar PostgreSQL status
+                    const pgStatus = document.getElementById('pg-status');
+                    const pgDot = document.getElementById('sidebar-pg-dot');
+                    if (pgStatus) pgStatus.textContent = pgConnected ? 'Connected' : 'Offline';
+                    if (pgDot) pgDot.className = `absolute -top-1 -right-1 w-2 h-2 rounded-full ${pgConnected ? 'bg-green-500' : 'bg-red-500'}`;
+
+                    // Update sidebar Redis status
+                    const redisStatus = document.getElementById('redis-status');
+                    const redisDot = document.getElementById('sidebar-redis-dot');
+                    if (redisStatus) redisStatus.textContent = redisConnected ? 'Connected' : 'Offline';
+                    if (redisDot) redisDot.className = `absolute -top-1 -right-1 w-2 h-2 rounded-full ${redisConnected ? 'bg-green-500' : 'bg-red-500'}`;
+
+                    // Update architecture diagram database indicators
+                    const pgIndicator = document.getElementById('pg-indicator');
+                    const redisIndicator = document.getElementById('redis-indicator');
+                    if (pgIndicator) pgIndicator.setAttribute('fill', pgConnected ? '#22C55E' : '#EF4444');
+                    if (redisIndicator) redisIndicator.setAttribute('fill', redisConnected ? '#22C55E' : '#EF4444');
+
+                    // Update PostgreSQL box with dynamic data
+                    const pgTableCount = document.getElementById('pg-table-count');
+                    if (pgTableCount && data.postgresql) {
+                        const tableCount = data.postgresql.tables || 0;
+                        pgTableCount.textContent = `${tableCount} table${tableCount !== 1 ? 's' : ''}`;
+                    }
+
+                    // Update Redis box with dynamic data
+                    const redisMemory = document.getElementById('redis-memory');
+                    const redisClients = document.getElementById('redis-clients');
+                    if (redisMemory && data.redis?.memory_used_mb !== undefined) {
+                        redisMemory.textContent = `${data.redis.memory_used_mb} MB used`;
+                    }
+                    if (redisClients && data.redis?.connected_clients !== undefined) {
+                        redisClients.textContent = `${data.redis.connected_clients} client${data.redis.connected_clients !== 1 ? 's' : ''}`;
+                    }
+
+                    // Update settings page database status
+                    const settingsPg = document.getElementById('settings-pg-status');
+                    const settingsRedis = document.getElementById('settings-redis-status');
+                    if (settingsPg) {
+                        settingsPg.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-database ${pgConnected ? 'text-blue-600' : 'text-gray-400'}"></i>
+                                <span class="font-medium">PostgreSQL</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm ${pgConnected ? 'text-green-600' : 'text-red-500'}">${pgConnected ? 'Connected' : 'Disconnected'}</span>
+                                <span class="w-2 h-2 rounded-full ${pgConnected ? 'bg-green-500' : 'bg-red-500'}"></span>
+                            </div>
+                        `;
+                    }
+                    if (settingsRedis) {
+                        settingsRedis.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-bolt ${redisConnected ? 'text-red-600' : 'text-gray-400'}"></i>
+                                <span class="font-medium">Redis</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm ${redisConnected ? 'text-green-600' : 'text-red-500'}">${redisConnected ? 'Connected' : 'Disconnected'}</span>
+                                <span class="w-2 h-2 rounded-full ${redisConnected ? 'bg-green-500' : 'bg-red-500'}"></span>
+                            </div>
+                        `;
+                    }
+
+                    // Update taxonomy count if available
+                    if (data.taxonomies_loaded !== undefined) {
+                        const taxonomyEl = document.getElementById('loaded-taxonomies');
+                        if (taxonomyEl) taxonomyEl.textContent = data.taxonomies_loaded ? 'Loaded' : 'Not loaded';
+                    }
+                }
+            } catch (e) { console.error('Error loading db status:', e); }
+        }
+
+        // Load system info for settings page
+        async function loadSystemInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v3/taxonomies`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const taxonomyEl = document.getElementById('loaded-taxonomies');
+                    if (taxonomyEl && data.total_commands !== undefined) {
+                        taxonomyEl.textContent = `${data.total_commands} commands`;
+                    }
+                }
+            } catch (e) { console.error('Error loading system info:', e); }
+        }
+
+        // Global storage for filtering
+        let allControls = [];
+        let allTaxonomies = {};
+
+        // Load security controls
+        async function loadControls() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v3/controls`);
+                if (response.ok) {
+                    const data = await response.json();
+                    allControls = data.controls || [];
+                    renderControls(allControls);
+                } else {
+                    document.getElementById('controls-table-body').innerHTML =
+                        '<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Failed to load controls</td></tr>';
+                }
+            } catch (e) {
+                console.error('Error loading controls:', e);
+                document.getElementById('controls-table-body').innerHTML =
+                    '<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error: ' + e.message + '</td></tr>';
+            }
+        }
+
+        function renderControls(controls) {
+            const tbody = document.getElementById('controls-table-body');
+            if (!controls || controls.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No controls found</td></tr>';
+                return;
+            }
+
+            const severityColors = {
+                'HIGH': 'bg-red-100 text-red-800',
+                'MEDIUM': 'bg-yellow-100 text-yellow-800',
+                'LOW': 'bg-green-100 text-green-800'
+            };
+
+            tbody.innerHTML = controls.map(control => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${control.control_id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${control.framework || 'Rwanda-NCSA'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${control.control_name || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${control.control_family || 'Unknown'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${severityColors[control.severity] || severityColors['MEDIUM']}">
+                            ${control.severity || 'MEDIUM'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterControls() {
+            const framework = document.getElementById('framework-filter').value;
+            if (framework === 'all') {
+                renderControls(allControls);
+            } else {
+                const filtered = allControls.filter(c => c.framework === framework);
+                renderControls(filtered);
+            }
+        }
+
+        // Load taxonomies
+        async function loadTaxonomies() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v3/taxonomies`);
+                if (response.ok) {
+                    const data = await response.json();
+                    allTaxonomies = data.taxonomies || {};
+                    renderTaxonomies(allTaxonomies);
+                } else {
+                    document.getElementById('taxonomies-grid').innerHTML =
+                        '<div class="col-span-2 text-center text-red-500 py-8">Failed to load taxonomies</div>';
+                }
+            } catch (e) {
+                console.error('Error loading taxonomies:', e);
+                document.getElementById('taxonomies-grid').innerHTML =
+                    '<div class="col-span-2 text-center text-red-500 py-8">Error: ' + e.message + '</div>';
+            }
+        }
+
+        function renderTaxonomies(taxonomies) {
+            const grid = document.getElementById('taxonomies-grid');
+            const osTypes = Object.keys(taxonomies);
+
+            if (osTypes.length === 0) {
+                grid.innerHTML = '<div class="col-span-2 text-center text-gray-500 py-8">No taxonomies found</div>';
+                return;
+            }
+
+            const osIcons = {
+                'macos': 'fa-apple',
+                'linux': 'fa-linux',
+                'windows': 'fa-windows'
+            };
+
+            grid.innerHTML = osTypes.map(osType => {
+                const commands = taxonomies[osType] || [];
+                const icon = osIcons[osType.toLowerCase()] || 'fa-server';
+
+                return `
+                    <div class="bg-white border rounded-lg p-4">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fab ${icon} text-2xl text-blue-600"></i>
+                            <div>
+                                <h4 class="font-semibold text-lg capitalize">${osType}</h4>
+                                <p class="text-sm text-gray-500">${commands.length} commands</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2 max-h-96 overflow-y-auto">
+                            ${commands.slice(0, 10).map(cmd => `
+                                <div class="border-l-2 border-blue-500 pl-3 py-2">
+                                    <div class="text-xs text-gray-500">${cmd.control_id || 'N/A'} - ${cmd.control_family || 'Unknown'}</div>
+                                    <div class="text-sm font-mono text-gray-700">${cmd.command || 'N/A'}</div>
+                                    <div class="text-xs text-gray-600 mt-1">${cmd.description || ''}</div>
+                                </div>
+                            `).join('')}
+                            ${commands.length > 10 ? `<div class="text-sm text-gray-500 text-center py-2">... and ${commands.length - 10} more</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterTaxonomies() {
+            const osFilter = document.getElementById('os-filter').value;
+            if (osFilter === 'all') {
+                renderTaxonomies(allTaxonomies);
+            } else {
+                const filtered = {};
+                filtered[osFilter] = allTaxonomies[osFilter];
+                renderTaxonomies(filtered);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            restoreSidebarState();
+            initWebSocket();
+            loadAudits();
+            loadEngineStatus();
+            loadDbStatus();
+            loadSystemInfo();
+            // Refresh status periodically
+            setInterval(loadEngineStatus, 10000);
+            setInterval(loadDbStatus, 30000);
+            setInterval(loadSystemInfo, 60000);
+        });
+    </script>
+    <!-- Engine Details Modal -->
+    <div id="engine-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeEngineModal()"></div>
+        <div class="modal-content relative mx-auto mt-20 max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div id="modal-header" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i id="modal-icon" class="fas fa-server text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 id="modal-title" class="text-xl font-bold">Engine Name</h2>
+                            <p id="modal-subtitle" class="text-blue-100 text-sm">Port: 8001</p>
+                        </div>
+                    </div>
+                    <button onclick="closeEngineModal()" class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 max-h-[60vh] overflow-y-auto">
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Description</h3>
+                    <p id="modal-description" class="text-gray-700">Engine description here...</p>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Role in Platform</h3>
+                    <p id="modal-role" class="text-gray-700">Role description...</p>
+                </div>
+                <!-- LLM Badge Section -->
+                <div id="modal-llm-badge" class="mb-6"></div>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <h4 class="text-sm font-semibold text-green-800 mb-2"><i class="fas fa-sign-in-alt mr-2"></i>Input</h4>
+                        <ul id="modal-inputs" class="text-sm text-green-700 space-y-1"></ul>
+                    </div>
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h4 class="text-sm font-semibold text-blue-800 mb-2"><i class="fas fa-sign-out-alt mr-2"></i>Output</h4>
+                        <ul id="modal-outputs" class="text-sm text-blue-700 space-y-1"></ul>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Database Connections</h3>
+                    <div id="modal-databases" class="flex gap-3 mb-2"></div>
+                    <p id="modal-db-usage" class="text-xs text-gray-500 italic"></p>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Key Features</h3>
+                    <div id="modal-features" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase mb-3">API Endpoints</h3>
+                    <div id="modal-api" class="space-y-2 font-mono text-sm"></div>
+                </div>
+            </div>
+            <div class="border-t px-6 py-4 bg-gray-50 flex justify-between items-center">
+                <div id="modal-status" class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                    <span class="text-sm text-gray-600">Running</span>
+                </div>
+                <a id="modal-docs-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-700 text-sm">
+                    <i class="fas fa-external-link-alt mr-1"></i>View API Docs
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

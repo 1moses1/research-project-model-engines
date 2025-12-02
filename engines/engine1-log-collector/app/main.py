@@ -21,6 +21,21 @@ from .services.log_normalizer import LogNormalizer
 from .services.event_enricher import EventEnricher
 from .services.streaming_pipeline import StreamingPipeline
 from .services.llm_log_analyzer import LLMLogAnalyzer
+from .services.evidence_converter import EvidenceConverter, get_evidence_converter
+
+# Import shared models for unified pipeline
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
+try:
+    from shared import (
+        RedisClient, get_redis_client, init_redis,
+        ComplianceEvidence, EvidenceSourceType, EvidenceBatch,
+        EvidenceManager, create_evidence_manager
+    )
+    SHARED_AVAILABLE = True
+except ImportError:
+    SHARED_AVAILABLE = False
+    print("⚠️ Shared module not available - running in standalone mode")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -43,6 +58,8 @@ ENGINE3_URL = os.getenv("ENGINE3_URL", "http://xgboost-api:8000")
 ENGINE4_URL = os.getenv("ENGINE4_URL", "http://decision-engine:8001")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 CONTROL_TAXONOMY_PATH = os.getenv("CONTROL_TAXONOMY_PATH")
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 # Initialize LLM analyzer (optional - works without API key in regex-only mode)
 llm_analyzer = LLMLogAnalyzer(
@@ -59,6 +76,10 @@ streaming_pipeline = StreamingPipeline(
     engine3_url=ENGINE3_URL,
     engine4_url=ENGINE4_URL
 )
+
+# Initialize evidence converter and manager (for unified pipeline)
+evidence_converter = get_evidence_converter()
+evidence_manager = None  # Will be initialized in startup event
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -454,6 +475,224 @@ async def health_check():
 
 
 # ============================================================================
+# Unified Pipeline Evidence Endpoints
+# ============================================================================
+
+@app.post("/api/v1/evidence/submit")
+async def submit_evidence(
+    audit_id: str,
+    event: LogEvent,
+    control_id: Optional[str] = None
+):
+    """
+    Submit log evidence to unified pipeline.
+
+    This endpoint:
+    1. Parses and normalizes the log event
+    2. Converts to ComplianceEvidence format
+    3. Stores in Redis via EvidenceManager
+    4. Returns evidence ID for tracking
+
+    Args:
+        audit_id: Parent audit ID
+        event: Raw log event
+        control_id: Optional pre-identified control ID
+    """
+    if not SHARED_AVAILABLE or not evidence_manager:
+        raise HTTPException(
+            status_code=503,
+            detail="Unified pipeline not available - shared module or Redis not initialized"
+        )
+
+    try:
+        # Parse raw log
+        parsed_data = log_parser.parse(event.raw_message, event.source)
+
+        # Normalize event
+        event_id = str(uuid.uuid4())
+        normalized_event = log_normalizer.normalize(
+            event_id=event_id,
+            timestamp=event.timestamp or datetime.now().isoformat(),
+            source=event.source,
+            parsed_data=parsed_data,
+            raw_message=event.raw_message,
+            severity=event.severity or "INFO",
+            metadata=event.metadata
+        )
+
+        # Get control info from LLM if not provided
+        control_info = {}
+        if not control_id and llm_analyzer.is_enabled():
+            llm_result = await llm_analyzer.analyze_log(event.raw_message, parsed_data, event.source)
+            # Extract first mapped control if available
+            if llm_result.get("mapped_controls"):
+                control_id = llm_result["mapped_controls"][0]["control_id"]
+                control_info = {
+                    "control_id": control_id,
+                    "name": llm_result["mapped_controls"][0].get("name", ""),
+                    "confidence": llm_result["mapped_controls"][0].get("confidence", 0.5)
+                }
+            else:
+                # No control mapped - will use default later
+                control_info = {}
+
+        # Convert to ComplianceEvidence
+        evidence = evidence_converter.convert_event(
+            normalized_event=normalized_event,
+            audit_id=audit_id,
+            control_id=control_id,
+            control_info=control_info
+        )
+
+        # Store in Redis
+        success = await evidence_manager.store_evidence(evidence)
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to store evidence in Redis")
+
+        print(f"✅ Evidence {evidence.evidence_id} stored for audit {audit_id}, control {control_id}")
+
+        return {
+            "success": True,
+            "evidence_id": evidence.evidence_id,
+            "audit_id": audit_id,
+            "control_id": evidence.control_id,
+            "source_type": evidence.source_type.value,
+            "timestamp": evidence.timestamp.isoformat()
+        }
+
+    except Exception as e:
+        print(f"⚠️ Evidence submission error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Evidence submission failed: {str(e)}")
+
+
+@app.post("/api/v1/evidence/submit-batch")
+async def submit_evidence_batch(
+    audit_id: str,
+    events: List[LogEvent]
+):
+    """
+    Submit batch of log evidence to unified pipeline.
+
+    Args:
+        audit_id: Parent audit ID
+        events: List of raw log events
+    """
+    if not SHARED_AVAILABLE or not evidence_manager:
+        raise HTTPException(
+            status_code=503,
+            detail="Unified pipeline not available - shared module or Redis not initialized"
+        )
+
+    try:
+        normalized_events = []
+        control_mappings = {}
+
+        # Process each event
+        for event in events:
+            event_id = str(uuid.uuid4())
+
+            # Parse and normalize
+            parsed_data = log_parser.parse(event.raw_message, event.source)
+            normalized_event = log_normalizer.normalize(
+                event_id=event_id,
+                timestamp=event.timestamp or datetime.now().isoformat(),
+                source=event.source,
+                parsed_data=parsed_data,
+                raw_message=event.raw_message,
+                severity=event.severity or "INFO",
+                metadata=event.metadata
+            )
+
+            # Get control info from LLM
+            if llm_analyzer.is_enabled():
+                llm_result = await llm_analyzer.analyze_log(event.raw_message, parsed_data, event.source)
+                if llm_result.get("mapped_controls"):
+                    control_mappings[event_id] = {
+                        "control_id": llm_result["mapped_controls"][0]["control_id"],
+                        "name": llm_result["mapped_controls"][0].get("name", ""),
+                        "confidence": llm_result["mapped_controls"][0].get("confidence", 0.5)
+                    }
+
+            normalized_events.append(normalized_event)
+
+        # Convert to EvidenceBatch
+        batch = evidence_converter.convert_batch(
+            normalized_events=normalized_events,
+            audit_id=audit_id,
+            control_mappings=control_mappings
+        )
+
+        # Store batch in Redis
+        success = await evidence_manager.store_evidence_batch(batch)
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to store evidence batch in Redis")
+
+        print(f"✅ Evidence batch {batch.batch_id} stored: {batch.processed_count} items for audit {audit_id}")
+
+        return {
+            "success": True,
+            "batch_id": batch.batch_id,
+            "audit_id": audit_id,
+            "total_count": batch.total_count,
+            "processed_count": batch.processed_count,
+            "failed_count": batch.failed_count
+        }
+
+    except Exception as e:
+        print(f"⚠️ Batch submission error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Batch submission failed: {str(e)}")
+
+
+@app.get("/api/v1/evidence/audit/{audit_id}")
+async def get_audit_evidence(
+    audit_id: str,
+    source_type: Optional[str] = None,
+    control_id: Optional[str] = None
+):
+    """
+    Retrieve evidence for an audit.
+
+    Args:
+        audit_id: Audit ID
+        source_type: Optional filter by source type (log, document, config)
+        control_id: Optional filter by control ID
+    """
+    if not SHARED_AVAILABLE or not evidence_manager:
+        raise HTTPException(
+            status_code=503,
+            detail="Unified pipeline not available"
+        )
+
+    try:
+        # Get evidence based on filters
+        if control_id:
+            evidence_list = await evidence_manager.get_evidence_by_control(audit_id, control_id)
+        elif source_type:
+            evidence_list = await evidence_manager.get_evidence_by_source(
+                audit_id,
+                EvidenceSourceType(source_type)
+            )
+        else:
+            evidence_list = await evidence_manager.get_all_evidence(audit_id)
+
+        return {
+            "audit_id": audit_id,
+            "total_count": len(evidence_list),
+            "filters": {
+                "source_type": source_type,
+                "control_id": control_id
+            },
+            "evidence": [e.model_dump() if hasattr(e, 'model_dump') else e for e in evidence_list]
+        }
+
+    except Exception as e:
+        print(f"⚠️ Evidence retrieval error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Evidence retrieval failed: {str(e)}")
+
+
+# ============================================================================
 # Background Tasks
 # ============================================================================
 
@@ -476,6 +715,8 @@ async def periodic_stats_broadcast():
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
+    global evidence_manager
+
     print("=" * 80)
     print("ENGINE 1: Log Collection Engine (LLM-Powered)")
     print("Rwanda NCSA Compliance Auditor v2.0.0")
@@ -491,12 +732,39 @@ async def startup_event():
     print(f"✨ Event Enricher: Ready")
     print(f"🌊 Streaming Pipeline: Active")
     print("=" * 80)
+
+    # Initialize unified pipeline components
+    if SHARED_AVAILABLE:
+        try:
+            # Initialize Redis client
+            redis_client = await init_redis("engine1-log-collector")
+
+            # Create evidence manager
+            evidence_manager = create_evidence_manager(redis_client)
+
+            print(f"🔄 Unified Pipeline: Active")
+            print(f"   - Redis: Connected ({REDIS_HOST}:{REDIS_PORT})")
+            print(f"   - Evidence Manager: Initialized")
+            print(f"   - Evidence Converter: Ready")
+            print(f"   - ComplianceEvidence format: Enabled")
+        except Exception as e:
+            print(f"⚠️  Unified Pipeline: Failed to initialize - {str(e)}")
+            print(f"   - Running in standalone mode")
+            evidence_manager = None
+    else:
+        print(f"⚠️  Unified Pipeline: Not available (shared module not found)")
+        print(f"   - Running in standalone mode")
+
+    print("=" * 80)
     print(f"🎯 Features:")
     print(f"   - Semantic log understanding (LLM)")
     print(f"   - Automatic control mapping (196 controls)")
     print(f"   - Multi-format support (syslog, Windows, JSON)")
     print(f"   - Read-only command execution (MCP)")
     print(f"   - Real-time compliance classification")
+    if SHARED_AVAILABLE and evidence_manager:
+        print(f"   - Unified evidence pipeline (Redis-backed)")
+        print(f"   - Gap analysis support (policy vs logs)")
     print("=" * 80)
 
     # Start periodic stats broadcast

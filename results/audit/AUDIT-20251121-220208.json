@@ -1,0 +1,503 @@
+{
+  "audit_id": "AUDIT-20251121-220208",
+  "hostname": "localhost",
+  "os_type": "darwin",
+  "username": "moiseiradukunda",
+  "timestamp": "2025-11-21T22:02:08.353793",
+  "collected_logs": [
+    {
+      "command": "login_history",
+      "raw_command": "last -10",
+      "output": "moiseiradukunda ttys014                         Fri Nov 21 10:17   still logged in\nmoiseiradukunda ttys013                         Fri Nov 21 02:02   still logged in\nmoiseiradukunda ttys012                         Fri Nov 21 02:02   still logged in\nmoiseiradukunda ttys011                         Fri Nov 21 02:02   still logged in\nmoiseiradukunda ttys010                         Fri Nov 21 02:02   still logged in\nmoiseiradukunda ttys009                         Fri Nov 21 02:02   still logged in\nmoiseiradukunda ttys008                         Fri Nov 21 02:02   still logged in\nmoiseiradukunda ttys007                         Fri Nov 21 02:02   still logged in\nmoiseiradukunda ttys006                         Fri Nov 21 02:01   still logged in\nmoiseiradukunda ttys005                         Fri Nov 21 02:01   still logged in\n",
+      "exit_code": 0,
+      "timestamp": "2025-11-21T22:02:08.377663",
+      "success": true
+    },
+    {
+      "command": "current_users",
+      "raw_command": "who",
+      "output": "moiseiradukunda  console      Nov 21 02:01 \nmoiseiradukunda  ttys000      Nov 21 02:01 \nmoiseiradukunda  ttys001      Nov 21 02:01 \nmoiseiradukunda  ttys002      Nov 21 02:01 \nmoiseiradukunda  ttys003      Nov 21 02:01 \nmoiseiradukunda  ttys004      Nov 21 02:01 \nmoiseiradukunda  ttys005      Nov 21 02:01 \nmoiseiradukunda  ttys006      Nov 21 02:01 \nmoiseiradukunda  ttys007      Nov 21 02:02 \nmoiseiradukunda  ttys008      Nov 21 02:02 \nmoiseiradukunda  ttys009      Nov 21 02:02 \nmoiseiradukunda  ttys010      Nov 21 02:02 \nmoiseiradukunda  ttys011      Nov 21 02:02 \nmoiseiradukunda  ttys012      Nov 21 02:02 \nmoiseiradukunda  ttys013      Nov 21 02:02 \nmoiseiradukunda  ttys014      Nov 21 10:17 \n",
+      "exit_code": 0,
+      "timestamp": "2025-11-21T22:02:08.382246",
+      "success": true
+    },
+    {
+      "command": "user_info",
+      "raw_command": "id",
+      "output": "uid=501(moiseiradukunda) gid=20(staff) groups=20(staff),12(everyone),61(localaccounts),79(_appserverusr),80(admin),81(_appserveradm),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)\n",
+      "exit_code": 0,
+      "timestamp": "2025-11-21T22:02:08.390514",
+      "success": true
+    },
+    {
+      "command": "process_list",
+      "raw_command": "ps aux",
+      "output": "USER               PID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND\n_mdatp           17048 205.6  1.2 410886560 193600   ??  R     9:19PM  68:47.93 /Applications/Microsoft Defender.app/Contents/MacOS/wdavdaemon_unprivileged.app/Contents/MacOS/wdavdaemon_unprivileged unprivileged 51 53 56 58 48 --log_level info\nmoiseiradukunda   6250  55.1  3.0 485690448 498240 s005  R+    2:03AM  40:19.53 claude\nroot               550   7.2  0.2 411273168  25600   ??  Ss    2:01AM   4:30.43 /Library/Application Support/JAMF/Jamf.app/Contents/MacOS/JamfDaemon.app/Contents/MacOS/JamfDaemon\nmoiseiradukunda  26452   6.4  0.1 410975936  20944   ??  S    10:02PM   0:00.07 /opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python scripts/run_compliance_audit.py\n_windowserver      393   5.8  0.4 413806288  60464   ??  Ss    2:01AM 117:29.63 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon\nroot               600   5.7  0.0 410920784   5904   ??  Ss    2:01AM   5:38.80 /Library/SystemExtensions/D12E9A16-AF30-45B8-804F-5A707E3614CF/com.microsoft.wdav.epsext.systemextension/Contents/MacOS/epsext\nmoiseiradukunda    777   4.6  0.8 413233408 140176   ??  S     2:01AM   8:34.24 /System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal\nroot               549   3.8  0.3 412280032  55376   ??  Ss    2:01AM  12:50.97 /Applications/Microsoft Defender.app/Contents/MacOS/wdavdaemon privileged\nroot               622   3.3  0.5 412005888  76608   ??  S     2:01AM  11:26.96 /Applications/Microsoft Defender.app/Contents/MacOS/wdavdaemon_enterprise.app/Contents/MacOS/wdavdaemon_enterprise edr 8 7 --log_level info\nroot               361   3.0  0.1 426958672  13184   ??  Ss    2:01AM   1:59.49 /usr/libexec/opendirectoryd\nmoiseiradukunda    685   2.6  0.1 411654176  22144   ??  S     2:01AM   1:31.38 /System/Library/CoreServices/WindowManager.app/Contents/MacOS/WindowManager\nmoiseira",
+      "exit_code": 0,
+      "timestamp": "2025-11-21T22:02:08.465073",
+      "success": true
+    },
+    {
+      "command": "network_connections",
+      "raw_command": "netstat -an",
+      "output": "Active Internet connections (including servers)\nProto Recv-Q Send-Q  Local Address          Foreign Address        (state)    \ntcp4       0   2203  192.168.1.68.49386     34.36.57.103.443       ESTABLISHED\ntcp4       0   2154  192.168.1.68.49385     34.36.57.103.443       ESTABLISHED\ntcp4       0   2163  192.168.1.68.49384     34.36.57.103.443       ESTABLISHED\ntcp4       0      0  192.168.1.68.49383     34.36.57.103.443       ESTABLISHED\ntcp4       0      0  192.168.1.68.49382     34.36.57.103.443       ESTABLISHED\ntcp4       0      0  192.168.1.68.49381     34.36.57.103.443       ESTABLISHED\ntcp4       0      0  192.168.1.68.49351     98.82.243.91.443       ESTABLISHED\ntcp6       0      0  2c0f:eb68:67b:af.49350 2c0f:fb50:4002:8.443   ESTABLISHED\ntcp4       0      0  192.168.1.68.49349     98.82.243.91.443       ESTABLISHED\ntcp6       0      0  2c0f:eb68:67b:af.49303 2a00:1450:4006:8.443   ESTABLISHED\ntcp4       0      0  192.168.1.68.49296     3.233.158.48.443       ESTABLISHED\ntcp4       0      0  192.168.1.68.49265     160.79.104.10.443      ESTABLISHED\ntcp4       0      0  127.0.0.1.5403         127.0.0.1.49215        ESTABLISHED\ntcp4       0      0  127.0.0.1.49215        127.0.0.1.5403         ESTABLISHED\ntcp6       0      0  2c0f:eb68:67b:af.49212 2c0f:fb50:4002:8.443   ESTABLISHED\ntcp6       0      0  2c0f:eb68:67b:af.49210 2c0f:fb50:4002:8.443   ESTABLISHED\ntcp4       0      0  192.168.1.68.65172     17.57.146.182.5223     ESTABLISHED\ntcp4       0      0  192.168.1.68.65085     54.161.239.226.443     ESTABLISHED\ntcp4       0      0  *.8007                 *.*                    LISTEN     \ntcp4       0      0  192.168.1.68.64713     160.79.104.10.443      ESTABLISHED\ntcp4       0      0  192.168.1.68.64659     160.79.104.10.443      ESTABLISHED\ntcp4       0      0  192.168.1.68.64653     52.84.102.22.443       ESTABLISHED\ntcp4       0      0  192.168.1.68.64645     34.120.52.64.443       ESTABLISHED\ntcp4       0      0  192.168.1.68.64635     18.97.36.3.4",
+      "exit_code": 0,
+      "timestamp": "2025-11-21T22:02:08.472642",
+      "success": true
+    },
+    {
+      "command": "disk_usage",
+      "raw_command": "df -h",
+      "output": "Filesystem                    Size    Used   Avail Capacity iused ifree %iused  Mounted on\n/dev/disk3s3s1               460Gi    16Gi    28Gi    37%    426k  294M    0%   /\ndevfs                        217Ki   217Ki     0Bi   100%     750     0  100%   /dev\n/dev/disk3s6                 460Gi   3.0Gi    28Gi    10%       3  294M    0%   /System/Volumes/VM\n/dev/disk3s4                 460Gi    14Gi    28Gi    34%    1.9k  294M    0%   /System/Volumes/Preboot\n/dev/disk3s2                 460Gi   778Mi    28Gi     3%     306  294M    0%   /System/Volumes/Update\n/dev/disk1s2                 500Mi   6.0Mi   481Mi     2%       1  4.9M    0%   /System/Volumes/xarts\n/dev/disk1s1                 500Mi   5.4Mi   481Mi     2%      33  4.9M    0%   /System/Volumes/iSCPreboot\n/dev/disk1s3                 500Mi   3.2Mi   481Mi     1%      57  4.9M    0%   /System/Volumes/Hardware\n/dev/disk3s1                 460Gi   396Gi    28Gi    94%    1.4M  294M    0%   /System/Volumes/Data\nmap auto_home                  0Bi     0Bi     0Bi   100%       0     0     -   /System/Volumes/Data/home\n/dev/disk3s3                 460Gi    16Gi    28Gi    37%    447k  294M    0%   /System/Volumes/Update/mnt1\n/dev/disk4s1                 300Mi   187Mi   113Mi    63%    1.0k  4.3G    0%   /private/var/folders/zz/zyxvpxvq6csfxvn_n0000000000000/T/D4099430-C5DA-4152-AEAC-D71DBCA91BD8\n/dev/disk5s1                 523Mi   481Mi    42Mi    92%    1.7k  4.3G    0%   /Volumes/ChatGPT Atlas Installer\n/dev/disk6s1                 780Mi   519Mi   261Mi    67%     340  4.3G    0%   /Volumes/Claude\n/Volumes/Claude/Claude.app   780Mi   519Mi   261Mi    67%     340  4.3G    0%   /private/var/folders/7v/4ffj39pj4l76kj65545ndwt40000gn/T/AppTranslocation/DEEA664F-ACB9-4486-9FAD-930E1AB98487\n",
+      "exit_code": 0,
+      "timestamp": "2025-11-21T22:02:08.482499",
+      "success": true
+    },
+    {
+      "command": "running_services",
+      "raw_command": "launchctl list",
+      "output": "PID\tStatus\tLabel\n-\t0\tcom.apple.SafariHistoryServiceAgent\n-\t-9\tcom.apple.progressd\n-\t-9\tcom.apple.cloudphotod\n-\t-9\tcom.apple.MENotificationService\n5698\t0\tcom.microsoft.wdav.tray\n787\t0\tcom.apple.Finder\n727\t0\tcom.apple.homed\n-\t-9\tcom.apple.dataaccess.dataaccessd\n-\t0\tcom.apple.quicklook\n-\t0\tcom.apple.parentalcontrols.check\n-\t78\tus.zoom.updater.gui.501\n848\t0\tcom.apple.mediaremoteagent\n745\t0\tcom.apple.FontWorker\n81285\t-9\tcom.apple.bird\n-\t0\tcom.apple.amp.mediasharingd\n-\t0\tcom.apple.knowledgeconstructiond\n-\t-9\tcom.apple.inputanalyticsd\n-\t0\tcom.apple.familycontrols.useragent\n-\t0\tcom.apple.AssetCache.agent\n5769\t0\tapplication.com.grammarly.ProjectLlama.14070927.14072125\n-\t0\tcom.apple.GameController.gamecontrolleragentd\n5926\t0\tcom.apple.universalaccessAuthWarn\n-\t0\tcom.apple.UserPictureSyncAgent\n698\t0\tcom.apple.nsurlsessiond\n-\t-9\tcom.apple.devicecheckd\n-\t0\tcom.apple.syncservices.uihandler\n-\t-9\tcom.apple.iconservices.iconservicesagent\n-\t-9\tcom.apple.diagnosticextensionsd\n-\t-9\tcom.apple.intelligenceplatformd\n-\t-9\tcom.apple.SafariBookmarksSyncAgent\n-\t0\tcom.apple.cmio.LaunchCMIOUserExtensionsAgent\n-\t0\tcom.apple.LinkedNotesUIService\n22425\t-9\tcom.apple.ndoagent\n797\t0\tcom.apple.wallpaper.agent\n-\t0\tcom.apple.bookassetd\n-\t0\tcom.apple.ManagedClientAgent.agent\n-\t-9\tcom.apple.localizationswitcherd\n-\t0\tcom.apple.screensharing.agent\n854\t0\tcom.apple.commerce\n-\t0\tcom.apple.AddressBook.SourceSync\n-\t-9\tcom.apple.installerauthagent\n5765\t0\tapplication.com.1password.1password.14055962.14055972\n-\t0\tcom.apple.languageassetd\n-\t0\tcom.apple.familynotificationd\n-\t-9\tcom.apple.ManagedSettingsAgent\n5712\t0\tcom.jamf.management.agent\n81300\t-9\tcom.apple.photolibraryd\n-\t0\tcom.docker.helper\n-\t0\tcom.apple.xpc.otherbsd\n-\t0\tcom.apple.sysdiagnose_agent\n-\t-9\tcom.apple.ThreadCommissionerService\n-\t-9\tcom.apple.tipsd\n8288\t0\tapplication.com.apple.Notes.1152921500311893562.1152921500311893567\n-\t0\tcom.apple.stickersd\n-\t-9\tcom.apple.bluetoothuserd\n-\t0\tcom.apple.timezoneupdates.tznotify\n5716\t0\tcom.apple.TextInputMenuAgent\n-\t0",
+      "exit_code": 0,
+      "timestamp": "2025-11-21T22:02:08.489536",
+      "success": true
+    },
+    {
+      "command": "system_info",
+      "raw_command": "sw_vers",
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90\n",
+      "exit_code": 0,
+      "timestamp": "2025-11-21T22:02:08.504415",
+      "success": true
+    },
+    {
+      "command": "security_assessment",
+      "raw_command": "spctl --status",
+      "output": "assessments enabled\n",
+      "exit_code": 0,
+      "timestamp": "2025-11-21T22:02:08.518742",
+      "success": true
+    },
+    {
+      "command": "firewall_status",
+      "raw_command": "defaults read /Library/Preferences/com.apple.alf globalstate",
+      "output": "2025-11-21 22:02:08.531 defaults[26462:865331] \nThe domain/default pair of (/Library/Preferences/com.apple.alf, globalstate) does not exist\n",
+      "exit_code": 1,
+      "timestamp": "2025-11-21T22:02:08.531891",
+      "success": false
+    }
+  ],
+  "classifications": [
+    {
+      "log_source": "login_history",
+      "control_id": "RWNCSA-AU-002",
+      "control_name": "Audit Events",
+      "family": "Audit and Accountability",
+      "confidence": 0.98,
+      "indicators": [
+        "Active login sessions detected",
+        "Multiple login records (11 entries)"
+      ],
+      "raw_output_sample": "moiseiradukunda ttys014                         Fri Nov 21 10:17   still logged in\nmoiseiradukunda ttys013                         Fri Nov 21 02:02   still logged in\nmoiseiradukunda ttys012           "
+    },
+    {
+      "log_source": "current_users",
+      "control_id": "RWNCSA-AC-010",
+      "control_name": "Concurrent Session Control",
+      "family": "Access Control",
+      "confidence": 0.6,
+      "indicators": [
+        "Data collected"
+      ],
+      "raw_output_sample": "moiseiradukunda  console      Nov 21 02:01 \nmoiseiradukunda  ttys000      Nov 21 02:01 \nmoiseiradukunda  ttys001      Nov 21 02:01 \nmoiseiradukunda  ttys002      Nov 21 02:01 \nmoiseiradukunda  ttys003"
+    },
+    {
+      "log_source": "user_info",
+      "control_id": "RWNCSA-AC-002",
+      "control_name": "Access Enforcement",
+      "family": "Access Control",
+      "confidence": 0.95,
+      "indicators": [
+        "User has admin privileges",
+        "SSH access enabled",
+        "Staff group membership"
+      ],
+      "raw_output_sample": "uid=501(moiseiradukunda) gid=20(staff) groups=20(staff),12(everyone),61(localaccounts),79(_appserverusr),80(admin),81(_appserveradm),701(com.apple.sharepoint.group.1),33(_appstore),98(_lpadmin),100(_l"
+    },
+    {
+      "log_source": "process_list",
+      "control_id": "RWNCSA-SI-003",
+      "control_name": "Malicious Code Protection",
+      "family": "System and Information Integrity",
+      "confidence": 0.98,
+      "indicators": [
+        "Antivirus active (Microsoft Defender)",
+        "MDM solution active (JAMF)"
+      ],
+      "raw_output_sample": "USER               PID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND\n_mdatp           17048 205.6  1.2 410886560 193600   ??  R     9:19PM  68:47.93 /Applications/Microsoft Defender."
+    },
+    {
+      "log_source": "network_connections",
+      "control_id": "RWNCSA-SC-007",
+      "control_name": "Boundary Protection",
+      "family": "System and Communications Protection",
+      "confidence": 0.8999999999999999,
+      "indicators": [
+        "Active network connections",
+        "HTTPS connections present"
+      ],
+      "raw_output_sample": "Active Internet connections (including servers)\nProto Recv-Q Send-Q  Local Address          Foreign Address        (state)    \ntcp4       0   2203  192.168.1.68.49386     34.36.57.103.443       ESTABL"
+    },
+    {
+      "log_source": "disk_usage",
+      "control_id": "RWNCSA-AU-004",
+      "control_name": "Audit Storage Capacity",
+      "family": "Audit and Accountability",
+      "confidence": 0.6,
+      "indicators": [
+        "Data collected"
+      ],
+      "raw_output_sample": "Filesystem                    Size    Used   Avail Capacity iused ifree %iused  Mounted on\n/dev/disk3s3s1               460Gi    16Gi    28Gi    37%    426k  294M    0%   /\ndevfs                      "
+    },
+    {
+      "log_source": "running_services",
+      "control_id": "RWNCSA-CM-007",
+      "control_name": "Least Functionality",
+      "family": "Configuration Management",
+      "confidence": 0.9,
+      "indicators": [
+        "Services inventory available"
+      ],
+      "raw_output_sample": "PID\tStatus\tLabel\n-\t0\tcom.apple.SafariHistoryServiceAgent\n-\t-9\tcom.apple.progressd\n-\t-9\tcom.apple.cloudphotod\n-\t-9\tcom.apple.MENotificationService\n5698\t0\tcom.microsoft.wdav.tray\n787\t0\tcom.apple.Finder\n"
+    },
+    {
+      "log_source": "system_info",
+      "control_id": "RWNCSA-CM-002",
+      "control_name": "Baseline Configuration",
+      "family": "Configuration Management",
+      "confidence": 0.6,
+      "indicators": [
+        "Data collected"
+      ],
+      "raw_output_sample": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90\n"
+    },
+    {
+      "log_source": "security_assessment",
+      "control_id": "RWNCSA-SI-007",
+      "control_name": "Software Integrity",
+      "family": "System and Information Integrity",
+      "confidence": 0.9,
+      "indicators": [
+        "System Integrity Protection enabled"
+      ],
+      "raw_output_sample": "assessments enabled\n"
+    },
+    {
+      "log_source": "firewall_status",
+      "control_id": "RWNCSA-SC-007",
+      "control_name": "Boundary Protection",
+      "family": "System and Communications Protection",
+      "confidence": 0.6,
+      "indicators": [
+        "Data collected"
+      ],
+      "raw_output_sample": "2025-11-21 22:02:08.531 defaults[26462:865331] \nThe domain/default pair of (/Library/Preferences/com.apple.alf, globalstate) does not exist\n"
+    }
+  ],
+  "compliance_decisions": [
+    {
+      "control_id": "RWNCSA-AU-002",
+      "control_name": "Audit Events",
+      "family": "Audit and Accountability",
+      "status": "COMPLIANT",
+      "confidence": 0.98,
+      "indicators": [
+        "Active login sessions detected",
+        "Multiple login records (11 entries)"
+      ],
+      "recommendation": "Continue current practices"
+    },
+    {
+      "control_id": "RWNCSA-AC-010",
+      "control_name": "Concurrent Session Control",
+      "family": "Access Control",
+      "status": "PARTIALLY_COMPLIANT",
+      "confidence": 0.6,
+      "indicators": [
+        "Data collected"
+      ],
+      "recommendation": "Review and strengthen controls"
+    },
+    {
+      "control_id": "RWNCSA-AC-002",
+      "control_name": "Access Enforcement",
+      "family": "Access Control",
+      "status": "COMPLIANT",
+      "confidence": 0.95,
+      "indicators": [
+        "User has admin privileges",
+        "SSH access enabled",
+        "Staff group membership"
+      ],
+      "recommendation": "Continue current practices"
+    },
+    {
+      "control_id": "RWNCSA-SI-003",
+      "control_name": "Malicious Code Protection",
+      "family": "System and Information Integrity",
+      "status": "COMPLIANT",
+      "confidence": 0.98,
+      "indicators": [
+        "Antivirus active (Microsoft Defender)",
+        "MDM solution active (JAMF)"
+      ],
+      "recommendation": "Continue current practices"
+    },
+    {
+      "control_id": "RWNCSA-SC-007",
+      "control_name": "Boundary Protection",
+      "family": "System and Communications Protection",
+      "status": "COMPLIANT",
+      "confidence": 0.8999999999999999,
+      "indicators": [
+        "Active network connections",
+        "HTTPS connections present"
+      ],
+      "recommendation": "Continue current practices"
+    },
+    {
+      "control_id": "RWNCSA-AU-004",
+      "control_name": "Audit Storage Capacity",
+      "family": "Audit and Accountability",
+      "status": "PARTIALLY_COMPLIANT",
+      "confidence": 0.6,
+      "indicators": [
+        "Data collected"
+      ],
+      "recommendation": "Review and strengthen controls"
+    },
+    {
+      "control_id": "RWNCSA-CM-007",
+      "control_name": "Least Functionality",
+      "family": "Configuration Management",
+      "status": "COMPLIANT",
+      "confidence": 0.9,
+      "indicators": [
+        "Services inventory available"
+      ],
+      "recommendation": "Continue current practices"
+    },
+    {
+      "control_id": "RWNCSA-CM-002",
+      "control_name": "Baseline Configuration",
+      "family": "Configuration Management",
+      "status": "PARTIALLY_COMPLIANT",
+      "confidence": 0.6,
+      "indicators": [
+        "Data collected"
+      ],
+      "recommendation": "Review and strengthen controls"
+    },
+    {
+      "control_id": "RWNCSA-SI-007",
+      "control_name": "Software Integrity",
+      "family": "System and Information Integrity",
+      "status": "COMPLIANT",
+      "confidence": 0.9,
+      "indicators": [
+        "System Integrity Protection enabled"
+      ],
+      "recommendation": "Continue current practices"
+    },
+    {
+      "control_id": "RWNCSA-SC-007",
+      "control_name": "Boundary Protection",
+      "family": "System and Communications Protection",
+      "status": "PARTIALLY_COMPLIANT",
+      "confidence": 0.6,
+      "indicators": [
+        "Data collected"
+      ],
+      "recommendation": "Review and strengthen controls"
+    }
+  ],
+  "posture": {
+    "audit_id": "AUDIT-20251121-220208",
+    "timestamp": "2025-11-21T22:02:08.532058",
+    "target": {
+      "hostname": "localhost",
+      "os": "darwin",
+      "user": "moiseiradukunda"
+    },
+    "summary": {
+      "overall_score": 80.0,
+      "total_controls": 10,
+      "compliant": 6,
+      "partially_compliant": 4,
+      "non_compliant": 0
+    },
+    "by_family": {
+      "Audit and Accountability": {
+        "compliant": 1,
+        "partial": 1,
+        "non_compliant": 0,
+        "controls": [
+          "RWNCSA-AU-002",
+          "RWNCSA-AU-004"
+        ]
+      },
+      "Access Control": {
+        "compliant": 1,
+        "partial": 1,
+        "non_compliant": 0,
+        "controls": [
+          "RWNCSA-AC-010",
+          "RWNCSA-AC-002"
+        ]
+      },
+      "System and Information Integrity": {
+        "compliant": 2,
+        "partial": 0,
+        "non_compliant": 0,
+        "controls": [
+          "RWNCSA-SI-003",
+          "RWNCSA-SI-007"
+        ]
+      },
+      "System and Communications Protection": {
+        "compliant": 1,
+        "partial": 1,
+        "non_compliant": 0,
+        "controls": [
+          "RWNCSA-SC-007",
+          "RWNCSA-SC-007"
+        ]
+      },
+      "Configuration Management": {
+        "compliant": 1,
+        "partial": 1,
+        "non_compliant": 0,
+        "controls": [
+          "RWNCSA-CM-007",
+          "RWNCSA-CM-002"
+        ]
+      }
+    },
+    "decisions": [
+      {
+        "control_id": "RWNCSA-AU-002",
+        "control_name": "Audit Events",
+        "family": "Audit and Accountability",
+        "status": "COMPLIANT",
+        "confidence": 0.98,
+        "indicators": [
+          "Active login sessions detected",
+          "Multiple login records (11 entries)"
+        ],
+        "recommendation": "Continue current practices"
+      },
+      {
+        "control_id": "RWNCSA-AC-010",
+        "control_name": "Concurrent Session Control",
+        "family": "Access Control",
+        "status": "PARTIALLY_COMPLIANT",
+        "confidence": 0.6,
+        "indicators": [
+          "Data collected"
+        ],
+        "recommendation": "Review and strengthen controls"
+      },
+      {
+        "control_id": "RWNCSA-AC-002",
+        "control_name": "Access Enforcement",
+        "family": "Access Control",
+        "status": "COMPLIANT",
+        "confidence": 0.95,
+        "indicators": [
+          "User has admin privileges",
+          "SSH access enabled",
+          "Staff group membership"
+        ],
+        "recommendation": "Continue current practices"
+      },
+      {
+        "control_id": "RWNCSA-SI-003",
+        "control_name": "Malicious Code Protection",
+        "family": "System and Information Integrity",
+        "status": "COMPLIANT",
+        "confidence": 0.98,
+        "indicators": [
+          "Antivirus active (Microsoft Defender)",
+          "MDM solution active (JAMF)"
+        ],
+        "recommendation": "Continue current practices"
+      },
+      {
+        "control_id": "RWNCSA-SC-007",
+        "control_name": "Boundary Protection",
+        "family": "System and Communications Protection",
+        "status": "COMPLIANT",
+        "confidence": 0.8999999999999999,
+        "indicators": [
+          "Active network connections",
+          "HTTPS connections present"
+        ],
+        "recommendation": "Continue current practices"
+      },
+      {
+        "control_id": "RWNCSA-AU-004",
+        "control_name": "Audit Storage Capacity",
+        "family": "Audit and Accountability",
+        "status": "PARTIALLY_COMPLIANT",
+        "confidence": 0.6,
+        "indicators": [
+          "Data collected"
+        ],
+        "recommendation": "Review and strengthen controls"
+      },
+      {
+        "control_id": "RWNCSA-CM-007",
+        "control_name": "Least Functionality",
+        "family": "Configuration Management",
+        "status": "COMPLIANT",
+        "confidence": 0.9,
+        "indicators": [
+          "Services inventory available"
+        ],
+        "recommendation": "Continue current practices"
+      },
+      {
+        "control_id": "RWNCSA-CM-002",
+        "control_name": "Baseline Configuration",
+        "family": "Configuration Management",
+        "status": "PARTIALLY_COMPLIANT",
+        "confidence": 0.6,
+        "indicators": [
+          "Data collected"
+        ],
+        "recommendation": "Review and strengthen controls"
+      },
+      {
+        "control_id": "RWNCSA-SI-007",
+        "control_name": "Software Integrity",
+        "family": "System and Information Integrity",
+        "status": "COMPLIANT",
+        "confidence": 0.9,
+        "indicators": [
+          "System Integrity Protection enabled"
+        ],
+        "recommendation": "Continue current practices"
+      },
+      {
+        "control_id": "RWNCSA-SC-007",
+        "control_name": "Boundary Protection",
+        "family": "System and Communications Protection",
+        "status": "PARTIALLY_COMPLIANT",
+        "confidence": 0.6,
+        "indicators": [
+          "Data collected"
+        ],
+        "recommendation": "Review and strengthen controls"
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+# Rwanda NCSA Compliance Auditor CLI
+# Dependencies
+
+# CLI Framework
+click>=8.1.0
+
+# Beautiful Terminal Output
+rich>=13.0.0
+
+# HTTP Client
+httpx>=0.25.0
+
+# Async Support
+asyncio
+
+# Environment
+python-dotenv>=1.0.0

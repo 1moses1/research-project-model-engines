@@ -76,4 +76,5 @@ beautifulsoup4~=4.12.0
 anthropic~=0.25.0
 
 # Security (TIGHTENED)
-cryptography~=42.0.0flask==3.0.0
+cryptography~=42.0.0
+flask==3.0.0

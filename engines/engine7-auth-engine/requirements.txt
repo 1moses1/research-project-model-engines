@@ -1,0 +1,25 @@
+# ENGINE 7: Authentication Engine
+# Rwanda NCSA Compliance Auditor
+
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.2
+
+# Authentication
+PyJWT==2.8.0
+python-multipart==0.0.6
+
+# Security
+passlib[bcrypt]==1.7.4
+cryptography==41.0.7
+
+# SSH/Remote Connections (optional - for production)
+# paramiko==3.4.0
+# asyncssh==2.14.2
+
+# Async Support
+aiofiles==23.2.1
+
+# Environment
+python-dotenv==1.0.0

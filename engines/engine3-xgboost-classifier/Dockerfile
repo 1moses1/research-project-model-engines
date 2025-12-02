@@ -1,31 +1,30 @@
 # ENGINE 3: XGBoost Compliance Classifier
-# Rwanda NCSA Compliance Auditor
-# Self-contained deployment with all model artifacts included
+# Lightweight real-time inference engine
 
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (for better caching)
-COPY requirements.txt .
-
-# Install Python dependencies
+# Copy requirements
+COPY engine3-xgboost-classifier/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy shared module FIRST (for unified pipeline)
+COPY shared/ ./shared/
+
 # Copy application code
-COPY app/ ./app/
+COPY engine3-xgboost-classifier/app/ ./app/
 
 # Copy model artifacts (self-contained!)
-COPY models/ ./models/
+COPY engine3-xgboost-classifier/models/ ./models/
 
-# Verify models are present
+# Verify model artifacts are present
 RUN ls -lh /app/models/ && \
     test -f /app/models/rwanda_ncsa_compliance_auditor.json && \
     test -f /app/models/label_encoder.pkl && \
@@ -34,10 +33,8 @@ RUN ls -lh /app/models/ && \
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:8003/health')" || exit 1
 
-# Expose port
-EXPOSE 8000
+EXPOSE 8003
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8003"]

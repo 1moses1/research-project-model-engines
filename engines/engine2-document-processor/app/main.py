@@ -21,6 +21,21 @@ from app.extractors.excel_extractor import ExcelExtractor
 from app.services.llm_processor import LLMProcessor
 from app.services.control_mapper import ControlMapper
 from app.services.semantic_matcher import SemanticControlMatcher
+from app.services.evidence_converter import DocumentEvidenceConverter, get_document_evidence_converter
+
+# Import shared models for unified pipeline
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
+try:
+    from shared import (
+        RedisClient, get_redis_client, init_redis,
+        ComplianceEvidence, EvidenceSourceType, EvidenceBatch,
+        EvidenceManager, create_evidence_manager
+    )
+    SHARED_AVAILABLE = True
+except ImportError:
+    SHARED_AVAILABLE = False
+    print("⚠️ Shared module not available - running in standalone mode")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -45,9 +60,13 @@ excel_extractor = None
 llm_processor = None
 control_mapper = None
 semantic_matcher = None
+evidence_converter = None
+evidence_manager = None
 
 # Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 
 class DocumentMetadata(BaseModel):
@@ -86,6 +105,7 @@ class ProcessingResult(BaseModel):
 async def startup_event():
     """Initialize services on startup"""
     global pdf_extractor, docx_extractor, excel_extractor, llm_processor, control_mapper, semantic_matcher
+    global evidence_converter, evidence_manager
 
     print("=" * 80)
     print("ENGINE 2: Document Processing Engine - Starting Up")
@@ -117,6 +137,34 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️  Semantic matcher failed to initialize: {str(e)}")
         semantic_matcher = None
+
+    # Initialize unified pipeline components
+    if SHARED_AVAILABLE:
+        try:
+            # Initialize evidence converter
+            evidence_converter = get_document_evidence_converter()
+
+            # Initialize Redis client
+            redis_client = get_redis_client()
+            await init_redis(redis_client, host=REDIS_HOST, port=REDIS_PORT)
+
+            # Create evidence manager
+            evidence_manager = create_evidence_manager(redis_client)
+
+            print(f"🔄 Unified Pipeline: Active")
+            print(f"   - Redis: Connected ({REDIS_HOST}:{REDIS_PORT})")
+            print(f"   - Evidence Manager: Initialized")
+            print(f"   - Document Evidence Converter: Ready")
+            print(f"   - ComplianceEvidence format: Enabled")
+        except Exception as e:
+            print(f"⚠️  Unified Pipeline: Failed to initialize - {str(e)}")
+            print(f"   - Running in standalone mode")
+            evidence_manager = None
+            evidence_converter = get_document_evidence_converter()  # Still create converter
+    else:
+        print(f"⚠️  Unified Pipeline: Not available (shared module not found)")
+        print(f"   - Running in standalone mode")
+        evidence_converter = get_document_evidence_converter()
 
     print("\n✅ All services initialized")
     print("=" * 80)
@@ -507,6 +555,183 @@ async def get_metrics():
         "supported_formats": ["PDF", "DOCX", "XLSX", "TXT", "MD"],
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+# ============================================================================
+# Unified Pipeline Evidence Endpoints
+# ============================================================================
+
+@app.post("/api/v1/evidence/submit-document")
+async def submit_document_evidence(
+    audit_id: str,
+    file: UploadFile = File(...),
+    company_name: str = "Unknown Company"
+):
+    """
+    Process document and submit extracted controls as evidence to unified pipeline.
+
+    This endpoint:
+    1. Processes the uploaded document
+    2. Extracts controls using LLM
+    3. Maps to Rwanda NCSA taxonomy
+    4. Converts to ComplianceEvidence format
+    5. Stores in Redis via EvidenceManager
+
+    Args:
+        audit_id: Parent audit ID
+        file: Uploaded policy document
+        company_name: Organization name
+    """
+    if not SHARED_AVAILABLE or not evidence_manager:
+        raise HTTPException(
+            status_code=503,
+            detail="Unified pipeline not available - shared module or Redis not initialized"
+        )
+
+    try:
+        import time
+        import uuid
+        start_time = time.time()
+
+        # Get file extension
+        file_ext = os.path.splitext(file.filename)[1].lower()
+
+        # Validate file type
+        if file_ext not in ['.pdf', '.docx', '.xlsx', '.txt', '.md']:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {file_ext}"
+            )
+
+        # Save file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_path = tmp_file.name
+
+        # Extract text based on file type
+        print(f"\n📄 Processing: {file.filename} for audit {audit_id}")
+
+        if file_ext == '.pdf':
+            extracted_text = pdf_extractor.extract(tmp_path)
+        elif file_ext == '.docx':
+            extracted_text = docx_extractor.extract(tmp_path)
+        elif file_ext == '.xlsx':
+            extracted_text = excel_extractor.extract(tmp_path)
+        elif file_ext in ['.txt', '.md']:
+            with open(tmp_path, 'r', encoding='utf-8') as f:
+                extracted_text = f.read()
+        else:
+            extracted_text = ""
+
+        # Clean up temp file
+        os.unlink(tmp_path)
+
+        # Process with LLM to extract controls
+        print(f"🤖 Extracting controls with LLM...")
+        llm_result = await llm_processor.extract_controls(
+            text=extracted_text,
+            framework="Rwanda-NCSA",
+            company_name=company_name
+        )
+
+        # Map to Rwanda NCSA controls
+        print(f"🗺️  Mapping to Rwanda NCSA...")
+        matched_results = control_mapper.find_matching_controls(
+            extracted_controls=llm_result['controls'],
+            threshold=0.6
+        )
+
+        # Convert all extracted controls to ComplianceEvidence
+        evidence_items = []
+        for match_result in matched_results:
+            control = match_result['extracted']
+
+            # Use matched Rwanda controls if available
+            rwanda_matches = match_result.get('matches', [])
+            if rwanda_matches:
+                # Add matched Rwanda control IDs to metadata
+                control['mapped_rwanda_controls'] = [m['control_id'] for m in rwanda_matches]
+
+            # Convert to ComplianceEvidence
+            evidence = evidence_converter.convert_extracted_control(
+                extracted_control=control,
+                audit_id=audit_id,
+                source_file=file.filename,
+                document_metadata={
+                    "type": file_ext[1:],  # Remove dot
+                    "company_name": company_name,
+                    "size_bytes": len(content)
+                }
+            )
+            evidence_items.append(evidence)
+
+        # Create evidence batch
+        batch = EvidenceBatch(
+            batch_id=str(uuid.uuid4()),
+            audit_id=audit_id,
+            source_type=EvidenceSourceType.DOCUMENT,
+            evidence_items=evidence_items,
+            total_count=len(evidence_items),
+            processed_count=len(evidence_items),
+            failed_count=0
+        )
+
+        # Store batch in Redis
+        success = await evidence_manager.store_evidence_batch(batch)
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to store evidence batch in Redis")
+
+        processing_time = time.time() - start_time
+
+        print(f"✅ Document evidence batch {batch.batch_id} stored: {batch.processed_count} controls for audit {audit_id}")
+
+        return {
+            "success": True,
+            "batch_id": batch.batch_id,
+            "audit_id": audit_id,
+            "filename": file.filename,
+            "controls_extracted": batch.processed_count,
+            "processing_time_seconds": round(processing_time, 2)
+        }
+
+    except Exception as e:
+        print(f"⚠️ Document evidence submission error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Document processing failed: {str(e)}")
+
+
+@app.get("/api/v1/evidence/audit/{audit_id}/documents")
+async def get_document_evidence(audit_id: str):
+    """
+    Retrieve all document evidence for an audit.
+
+    Args:
+        audit_id: Audit ID
+    """
+    if not SHARED_AVAILABLE or not evidence_manager:
+        raise HTTPException(
+            status_code=503,
+            detail="Unified pipeline not available"
+        )
+
+    try:
+        # Get all document evidence
+        evidence_list = await evidence_manager.get_evidence_by_source(
+            audit_id,
+            EvidenceSourceType.DOCUMENT
+        )
+
+        return {
+            "audit_id": audit_id,
+            "total_count": len(evidence_list),
+            "source_type": "document",
+            "evidence": [e.model_dump() if hasattr(e, 'model_dump') else e for e in evidence_list]
+        }
+
+    except Exception as e:
+        print(f"⚠️ Document evidence retrieval error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Evidence retrieval failed: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -14,11 +14,30 @@ from datetime import datetime
 import asyncio
 import httpx
 from enum import Enum
+import os
+import sys
+from pathlib import Path
 
 from app.services.scoring import ComplianceScorer
 from app.services.risk import RiskAssessor
 from app.services.learning import ContinuousLearner
 from app.services.database import DatabaseService
+from app.services.gap_analyzer import GapAnalyzer, GapType, GapSeverity
+
+# Import shared models for unified pipeline
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'shared'))
+try:
+    from shared import (
+        RedisClient, get_redis_client, init_redis,
+        ComplianceEvidence, EvidenceSourceType,
+        ClassificationResult as SharedClassificationResult,
+        ComplianceDecision, ComplianceStatus,
+        EvidenceManager, create_evidence_manager
+    )
+    SHARED_AVAILABLE = True
+except ImportError:
+    SHARED_AVAILABLE = False
+    print("⚠️ Shared module not available - running in standalone mode")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -41,9 +60,13 @@ scorer = None
 risk_assessor = None
 learner = None
 db_service = None
+gap_analyzer = None
+evidence_manager = None
 
 # Configuration
 ENGINE3_URL = "http://xgboost-api:8000"
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 
 class ConfidenceLevel(str, Enum):
@@ -107,7 +130,7 @@ class FeedbackRequest(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    global scorer, risk_assessor, learner, db_service
+    global scorer, risk_assessor, learner, db_service, gap_analyzer, evidence_manager
 
     print("=" * 80)
     print("ENGINE 4: Decision & Scoring Engine - Starting Up")
@@ -120,6 +143,35 @@ async def startup_event():
     db_service = DatabaseService()
 
     await db_service.initialize()
+
+    # Initialize unified pipeline components
+    if SHARED_AVAILABLE:
+        try:
+            print("\n🔄 Initializing unified pipeline components...")
+
+            # Initialize Redis connection
+            redis_client = await init_redis(
+                host=REDIS_HOST,
+                port=REDIS_PORT,
+                db=0
+            )
+
+            # Initialize Evidence Manager
+            evidence_manager = create_evidence_manager(redis_client)
+
+            # Initialize Gap Analyzer
+            gap_analyzer = GapAnalyzer()
+
+            print("✅ Redis connected and Evidence Manager initialized")
+            print("✅ Gap Analyzer initialized for policy-reality comparison")
+            print("📊 Unified pipeline: ACTIVE (Logs + Documents with Gap Analysis)")
+        except Exception as e:
+            print(f"⚠️ Failed to initialize unified pipeline: {e}")
+            print("⚠️ Running in standalone mode (legacy decision engine only)")
+            gap_analyzer = None
+            evidence_manager = None
+    else:
+        print("\n⚠️ Shared module not available - running in standalone mode")
 
     print("\n✅ All services initialized")
     print("=" * 80)
@@ -418,6 +470,343 @@ async def get_metrics():
         "feedback_count": await learner.get_feedback_count(),
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+# ============================================================================
+# UNIFIED PIPELINE ENDPOINTS - Gap Analysis & Decision Making
+# ============================================================================
+
+@app.post("/api/v1/decision/audit/{audit_id}")
+async def make_audit_decisions(
+    audit_id: str,
+    log_weight: float = 0.6,
+    document_weight: float = 0.4
+):
+    """
+    Make compliance decisions for an audit with gap analysis.
+
+    This endpoint:
+    1. Retrieves all classifications from Redis (both log and document evidence)
+    2. Groups them by control_id
+    3. Performs gap analysis comparing policy claims vs log findings
+    4. Applies weighted scoring (default: 60% logs, 40% documents)
+    5. Stores ComplianceDecision results back to Redis
+
+    Args:
+        audit_id: The audit identifier
+        log_weight: Weight for log-based evidence (default: 0.6)
+        document_weight: Weight for document-based evidence (default: 0.4)
+
+    Returns:
+        Decision summary with gap analysis results
+    """
+    if not SHARED_AVAILABLE or not evidence_manager or not gap_analyzer:
+        raise HTTPException(
+            status_code=503,
+            detail="Unified pipeline not available. Gap analysis requires shared module."
+        )
+
+    try:
+        # Validate weights
+        if not abs(log_weight + document_weight - 1.0) < 0.01:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Weights must sum to 1.0 (got {log_weight + document_weight})"
+            )
+
+        print(f"\n{'='*80}")
+        print(f"🎯 Making compliance decisions for audit: {audit_id}")
+        print(f"   Log weight: {log_weight:.0%} | Document weight: {document_weight:.0%}")
+        print(f"{'='*80}\n")
+
+        # Get all evidence for this audit
+        all_evidence = await evidence_manager.get_all_evidence(audit_id)
+
+        if not all_evidence:
+            return {
+                "success": False,
+                "audit_id": audit_id,
+                "error": "No evidence found for this audit",
+                "decisions_made": 0
+            }
+
+        # Group evidence by control_id
+        evidence_by_control = {}
+        for evidence in all_evidence:
+            control_id = evidence.control_id
+            if control_id not in evidence_by_control:
+                evidence_by_control[control_id] = {
+                    "log_evidence": [],
+                    "document_evidence": [],
+                    "control_name": evidence.control_name,
+                    "control_family": evidence.control_family
+                }
+
+            if evidence.source_type == EvidenceSourceType.LOG:
+                evidence_by_control[control_id]["log_evidence"].append(evidence)
+            elif evidence.source_type == EvidenceSourceType.DOCUMENT:
+                evidence_by_control[control_id]["document_evidence"].append(evidence)
+
+        print(f"📊 Found evidence for {len(evidence_by_control)} controls")
+
+        # Process each control
+        decisions_made = 0
+        gaps_detected = 0
+
+        for control_id, control_data in evidence_by_control.items():
+            log_evidence = control_data["log_evidence"]
+            doc_evidence = control_data["document_evidence"]
+
+            print(f"\n  Processing {control_id}: {len(log_evidence)} logs, {len(doc_evidence)} docs")
+
+            # Get classifications for this control
+            log_classifications = []
+            doc_classifications = []
+
+            for evidence in log_evidence:
+                classification = await evidence_manager.get_classification(audit_id, evidence.evidence_id)
+                if classification:
+                    log_classifications.append(classification)
+
+            for evidence in doc_evidence:
+                classification = await evidence_manager.get_classification(audit_id, evidence.evidence_id)
+                if classification:
+                    doc_classifications.append(classification)
+
+            # Perform gap analysis
+            gap = gap_analyzer.analyze_control(
+                control_id=control_id,
+                control_name=control_data["control_name"],
+                log_classifications=log_classifications,
+                doc_classifications=doc_classifications,
+                log_evidence=[e.model_dump() if hasattr(e, 'model_dump') else e for e in log_evidence],
+                doc_evidence=[e.model_dump() if hasattr(e, 'model_dump') else e for e in doc_evidence]
+            )
+
+            if gap:
+                gaps_detected += 1
+                print(f"    ⚠️  Gap detected: {gap.gap_type.value} (severity: {gap.severity.value})")
+
+            # Calculate weighted compliance score
+            log_score = _calculate_compliance_score(log_classifications)
+            doc_score = _calculate_compliance_score(doc_classifications)
+
+            # Apply weights
+            if log_classifications and doc_classifications:
+                # Both sources available - use weighted average
+                final_score = (log_weight * log_score) + (document_weight * doc_score)
+                audit_mode = "FULL_AUDIT"
+            elif log_classifications:
+                # Only logs available
+                final_score = log_score
+                audit_mode = "LOGS_ONLY"
+            elif doc_classifications:
+                # Only documents available
+                final_score = doc_score
+                audit_mode = "DOCUMENTS_ONLY"
+            else:
+                # No classifications (shouldn't happen)
+                final_score = 0.0
+                audit_mode = "UNKNOWN"
+
+            # Determine final status
+            if final_score >= 0.80:
+                final_status = ComplianceStatus.COMPLIANT
+            elif final_score >= 0.50:
+                final_status = ComplianceStatus.PARTIAL
+            else:
+                final_status = ComplianceStatus.NON_COMPLIANT
+
+            # Calculate confidence
+            all_classifications = log_classifications + doc_classifications
+            avg_confidence = sum(c.confidence for c in all_classifications) / len(all_classifications) if all_classifications else 0.0
+
+            # Create ComplianceDecision
+            decision = ComplianceDecision(
+                decision_id=f"decision_{control_id}_{audit_id[:8]}",
+                audit_id=audit_id,
+                control_id=control_id,
+                control_name=control_data["control_name"],
+                control_family=control_data["control_family"],
+                final_status=final_status,
+                confidence=avg_confidence,
+                compliance_score=final_score,
+                log_evidence_count=len(log_evidence),
+                document_evidence_count=len(doc_evidence),
+                log_score=log_score,
+                document_score=doc_score,
+                weights_applied={
+                    "log_weight": log_weight,
+                    "document_weight": document_weight
+                },
+                gap_detected=gap is not None,
+                gap_type=gap.gap_type.value if gap else None,
+                gap_severity=gap.severity.value if gap else None,
+                gap_description=gap.description if gap else None,
+                recommendation=gap.recommendation if gap else "No gaps detected - control is properly implemented and documented",
+                evidence_ids=[e.evidence_id for e in log_evidence + doc_evidence],
+                decided_at=datetime.utcnow()
+            )
+
+            # Store decision in Redis
+            await evidence_manager.store_decision(decision)
+            decisions_made += 1
+
+            print(f"    ✅ Decision: {final_status.value} (score: {final_score:.2f}, confidence: {avg_confidence:.2f})")
+
+        # Get gap summary
+        gap_summary = gap_analyzer.get_gap_summary()
+
+        print(f"\n{'='*80}")
+        print(f"✅ Completed: {decisions_made} decisions made, {gaps_detected} gaps detected")
+        print(f"{'='*80}\n")
+
+        return {
+            "success": True,
+            "audit_id": audit_id,
+            "decisions_made": decisions_made,
+            "controls_assessed": len(evidence_by_control),
+            "gaps_detected": gaps_detected,
+            "gap_summary": gap_summary,
+            "weights_used": {
+                "log_weight": log_weight,
+                "document_weight": document_weight
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        print(f"❌ Error making decisions: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Decision making error: {str(e)}")
+
+
+@app.get("/api/v1/decision/audit/{audit_id}/gaps")
+async def get_audit_gaps(audit_id: str):
+    """
+    Get all detected gaps for an audit.
+
+    Returns:
+        List of gaps with details and recommendations
+    """
+    if not SHARED_AVAILABLE or not gap_analyzer:
+        raise HTTPException(
+            status_code=503,
+            detail="Gap analysis not available. Requires unified pipeline."
+        )
+
+    gaps = gap_analyzer.get_all_gaps()
+    gap_summary = gap_analyzer.get_gap_summary()
+
+    return {
+        "audit_id": audit_id,
+        "total_gaps": len(gaps),
+        "gaps": [gap.to_dict() for gap in gaps],
+        "summary": gap_summary
+    }
+
+
+@app.get("/api/v1/decision/audit/{audit_id}/results")
+async def get_audit_decisions(audit_id: str):
+    """
+    Get all compliance decisions for an audit.
+
+    Returns:
+        List of decisions with scores and gap information
+    """
+    if not SHARED_AVAILABLE or not evidence_manager:
+        raise HTTPException(
+            status_code=503,
+            detail="Unified pipeline not available"
+        )
+
+    try:
+        # Get all evidence to determine control IDs
+        all_evidence = await evidence_manager.get_all_evidence(audit_id)
+
+        if not all_evidence:
+            return {
+                "audit_id": audit_id,
+                "decisions": [],
+                "total_controls": 0
+            }
+
+        # Get unique control IDs
+        control_ids = list(set(e.control_id for e in all_evidence))
+
+        # Get decisions for each control
+        decisions = []
+        for control_id in control_ids:
+            decision = await evidence_manager.get_decision(audit_id, control_id)
+            if decision:
+                decisions.append(decision.model_dump() if hasattr(decision, 'model_dump') else decision)
+
+        # Calculate summary statistics
+        compliant_count = sum(1 for d in decisions if d.get('final_status') == 'compliant')
+        non_compliant_count = sum(1 for d in decisions if d.get('final_status') == 'non_compliant')
+        partial_count = sum(1 for d in decisions if d.get('final_status') == 'partial')
+
+        gaps_count = sum(1 for d in decisions if d.get('gap_detected', False))
+
+        return {
+            "audit_id": audit_id,
+            "total_controls": len(decisions),
+            "decisions": decisions,
+            "summary": {
+                "compliant": compliant_count,
+                "non_compliant": non_compliant_count,
+                "partial": partial_count,
+                "compliance_rate": (compliant_count / len(decisions) * 100) if decisions else 0,
+                "gaps_detected": gaps_count
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving decisions: {str(e)}")
+
+
+def _calculate_compliance_score(classifications: List) -> float:
+    """
+    Calculate compliance score from a list of classifications.
+
+    Args:
+        classifications: List of ClassificationResult objects
+
+    Returns:
+        Compliance score between 0.0 and 1.0
+    """
+    if not classifications:
+        return 0.0
+
+    # Count statuses
+    compliant_count = 0
+    partial_count = 0
+    non_compliant_count = 0
+
+    for cls in classifications:
+        status = cls.prediction if hasattr(cls, 'prediction') else cls.get('prediction')
+
+        if hasattr(status, 'value'):
+            status = status.value
+
+        if status == 'compliant' or status == ComplianceStatus.COMPLIANT:
+            compliant_count += 1
+        elif status == 'partial' or status == ComplianceStatus.PARTIAL:
+            partial_count += 1
+        else:
+            non_compliant_count += 1
+
+    total = len(classifications)
+
+    # Calculate weighted score
+    # Compliant = 1.0, Partial = 0.5, Non-compliant = 0.0
+    score = (compliant_count * 1.0 + partial_count * 0.5) / total
+
+    return score
+
+
+# ============================================================================
+# END UNIFIED PIPELINE ENDPOINTS
+# ============================================================================
 
 
 async def calculate_and_store_risk(event_id: str, prediction: str, confidence: float, status_code: int):

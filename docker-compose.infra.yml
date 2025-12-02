@@ -1,0 +1,93 @@
+# Rwanda NCSA Compliance Auditor - Infrastructure Services
+# PostgreSQL + Redis - Persistent, Auto-Start with Docker
+#
+# USAGE:
+#   Start services:    docker-compose -f docker-compose.infra.yml up -d
+#   Stop services:     docker-compose -f docker-compose.infra.yml down
+#   View logs:         docker-compose -f docker-compose.infra.yml logs -f
+#   Check status:      docker-compose -f docker-compose.infra.yml ps
+#
+# CONNECTION INFO:
+#   PostgreSQL: 127.0.0.1:5432
+#   Redis:      127.0.0.1:6379
+#
+# These services will:
+#   - Auto-start when Docker starts (restart: always)
+#   - Persist data across restarts (named volumes)
+#   - Be available at 127.0.0.1 (localhost)
+
+services:
+  # ==========================================================================
+  # POSTGRESQL - Persistent Storage for Audits, Reports, Organizations
+  # ==========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: rwanda-ncsa-postgres
+    restart: always  # Auto-start with Docker daemon
+    ports:
+      - "127.0.0.1:5432:5432"  # Bind to localhost only for security
+    environment:
+      POSTGRES_DB: rwanda_ncsa
+      POSTGRES_USER: rwanda_admin
+      POSTGRES_PASSWORD: rwanda_secure_2024
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      # Persist PostgreSQL data to named volume
+      - postgres_data:/var/lib/postgresql/data
+      # Init scripts run on first startup only
+      - ./database/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rwanda_admin -d rwanda_ncsa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - rwanda-infra
+
+  # ==========================================================================
+  # REDIS - Session Management, Caching, Real-time Updates
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: rwanda-ncsa-redis
+    restart: always  # Auto-start with Docker daemon
+    ports:
+      - "127.0.0.1:6379:6379"  # Bind to localhost only for security
+    volumes:
+      # Persist Redis data to named volume
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1
+      --save 300 10
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - rwanda-infra
+
+# ==========================================================================
+# VOLUMES - Persistent Storage on Host Machine
+# ==========================================================================
+volumes:
+  postgres_data:
+    driver: local
+    name: rwanda_ncsa_postgres_data
+  redis_data:
+    driver: local
+    name: rwanda_ncsa_redis_data
+
+# ==========================================================================
+# NETWORKS
+# ==========================================================================
+networks:
+  rwanda-infra:
+    driver: bridge
+    name: rwanda-ncsa-infra

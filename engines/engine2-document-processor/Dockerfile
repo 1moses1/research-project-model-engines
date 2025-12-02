@@ -13,19 +13,22 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
-COPY requirements.txt .
+COPY engine2-document-processor/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy shared module FIRST (for unified pipeline)
+COPY shared/ ./shared/
+
 # Copy application code
-COPY app/ ./app/
+COPY engine2-document-processor/app/ ./app/
 
 # Copy control taxonomy (self-contained!)
-COPY data/ ./data/
+COPY engine2-document-processor/data/ ./data/
 
 # Copy sample documents for testing
-COPY sample_documents/ ./sample_documents/
+COPY engine2-document-processor/sample_documents/ ./sample_documents/
 
 # Verify control taxonomy is present
 RUN test -f /app/data/control_taxonomy_validated.json && \

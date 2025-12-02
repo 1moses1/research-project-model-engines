@@ -1,0 +1,427 @@
+{
+  "metadata": {
+    "framework": "Rwanda National Cyber Security Authority (NCSA)",
+    "version": "1.0",
+    "last_updated": "2025-11-28",
+    "description": "Rwanda NCSA cybersecurity control requirements for macOS compliance auditing"
+  },
+  "controls": {
+    "RWNCSA-AC-001": {
+      "family": "Access Control",
+      "name": "Account Management - Login History Monitoring",
+      "description": "Organizations must maintain and monitor user login history to detect unauthorized access attempts and maintain accountability",
+      "severity": "HIGH",
+      "requirements": {
+        "login_logging_enabled": true,
+        "minimum_retention_days": 90,
+        "monitoring_frequency": "continuous",
+        "failed_login_alerts": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": [
+          "Login history logs accessible",
+          "Logs contain timestamp, username, source",
+          "Logs retained for minimum 90 days",
+          "Failed login attempts logged"
+        ],
+        "fail_conditions": [
+          "No login history available",
+          "Logs incomplete or missing critical fields",
+          "Retention period less than 90 days"
+        ]
+      },
+      "macos_implementation": {
+        "audit_command": "last -10",
+        "expected_output_pattern": "^\\w+\\s+\\w+.*\\w{3}\\s+\\w{3}\\s+\\d+",
+        "parser_logic": "extract_login_entries",
+        "validation": "count_unique_users > 0 AND entries_have_timestamps"
+      },
+      "remediation": {
+        "steps": [
+          "Enable login auditing: sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowLaunchesRelaunchApps -bool false",
+          "Configure retention: sudo defaults write /Library/Preferences/com.apple.alf loggingenabled -bool true",
+          "Verify with: last -10"
+        ],
+        "verification_command": "last -10 | wc -l",
+        "expected_result": "Should show recent login entries"
+      },
+      "risk_assessment": {
+        "if_non_compliant": "HIGH - Cannot detect unauthorized access, no audit trail for security incidents",
+        "business_impact": "Inability to investigate security breaches, compliance violation",
+        "likelihood": "MEDIUM"
+      }
+    },
+    "RWNCSA-AC-002": {
+      "family": "Access Control",
+      "name": "Account Management - User Account Control",
+      "description": "Organizations must maintain inventory of user accounts and ensure principle of least privilege",
+      "severity": "HIGH",
+      "requirements": {
+        "user_inventory_maintained": true,
+        "system_accounts_secured": true,
+        "privileged_accounts_monitored": true,
+        "inactive_account_detection": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": [
+          "User account list accessible",
+          "System accounts (_*) properly configured",
+          "User groups properly assigned",
+          "No unauthorized privileged accounts"
+        ],
+        "fail_conditions": [
+          "Cannot enumerate user accounts",
+          "Unknown privileged users detected",
+          "Excessive admin privileges"
+        ]
+      },
+      "macos_implementation": {
+        "audit_commands": ["dscl . -list /Users", "id"],
+        "expected_output_pattern": "_.*|[a-z]+",
+        "parser_logic": "extract_user_accounts",
+        "validation": "system_accounts_prefixed_with_underscore AND user_accounts_valid"
+      },
+      "remediation": {
+        "steps": [
+          "Review user list: dscl . -list /Users",
+          "Check privileged users: dscl . -read /Groups/admin GroupMembership",
+          "Remove unauthorized admin: sudo dseditgroup -o edit -d username -t user admin"
+        ],
+        "verification_command": "dscl . -list /Users | grep -v '^_'",
+        "expected_result": "Only authorized non-system users"
+      },
+      "risk_assessment": {
+        "if_non_compliant": "CRITICAL - Unauthorized access, privilege escalation possible",
+        "business_impact": "Data breach, system compromise",
+        "likelihood": "HIGH"
+      }
+    },
+    "RWNCSA-AC-010": {
+      "family": "Access Control",
+      "name": "Concurrent Session Control",
+      "description": "Monitor and control concurrent user sessions to prevent unauthorized access",
+      "severity": "MEDIUM",
+      "requirements": {
+        "session_monitoring_enabled": true,
+        "maximum_concurrent_sessions": 5,
+        "idle_session_timeout": 900,
+        "session_logging": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": [
+          "Active sessions monitored",
+          "Session count within limits",
+          "Session information includes user, terminal, start time"
+        ],
+        "fail_conditions": [
+          "Cannot enumerate active sessions",
+          "Excessive concurrent sessions",
+          "Unknown session sources"
+        ]
+      },
+      "macos_implementation": {
+        "audit_command": "who",
+        "expected_output_pattern": "^\\w+\\s+\\w+\\s+",
+        "parser_logic": "extract_active_sessions",
+        "validation": "session_count <= max_sessions AND all_sessions_authenticated"
+      },
+      "remediation": {
+        "steps": [
+          "Check active sessions: who",
+          "Terminate unauthorized: sudo pkill -KILL -u username",
+          "Set idle timeout: sudo systemsetup -setcomputersleep 15"
+        ],
+        "verification_command": "who | wc -l",
+        "expected_result": "Reasonable number of active sessions"
+      },
+      "risk_assessment": {
+        "if_non_compliant": "MEDIUM - Session hijacking, unauthorized access possible",
+        "business_impact": "Account compromise, data exposure",
+        "likelihood": "MEDIUM"
+      }
+    },
+    "RWNCSA-AU-002": {
+      "family": "Audit and Accountability",
+      "name": "Audit Events Logging",
+      "description": "System must generate audit records for security-relevant events",
+      "severity": "HIGH",
+      "requirements": {
+        "audit_logging_enabled": true,
+        "events_logged": ["authentication", "authorization", "system_changes", "file_access"],
+        "log_format": "structured",
+        "log_protection": "read_only"
+      },
+      "compliance_criteria": {
+        "pass_conditions": [
+          "System logging operational",
+          "Logs contain timestamp, event type, user, outcome",
+          "Security events captured",
+          "Logs accessible for review"
+        ],
+        "fail_conditions": [
+          "Logging disabled",
+          "Logs empty or incomplete",
+          "Critical events not logged"
+        ]
+      },
+      "macos_implementation": {
+        "audit_command": "log show --predicate 'eventType == logEvent' --last 10m --style compact | head -100",
+        "expected_output_pattern": "\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}",
+        "parser_logic": "extract_log_entries",
+        "validation": "log_entries_count > 0 AND entries_have_timestamps"
+      },
+      "remediation": {
+        "steps": [
+          "Enable logging: sudo log config --mode 'level:default'",
+          "Verify logging: log show --last 5m",
+          "Configure retention: sudo log config --subsystem com.apple.system --category default --ttl 90"
+        ],
+        "verification_command": "log show --last 1m | wc -l",
+        "expected_result": "Recent log entries present"
+      },
+      "risk_assessment": {
+        "if_non_compliant": "CRITICAL - No audit trail, cannot detect or investigate incidents",
+        "business_impact": "Compliance violation, inability to forensic analysis",
+        "likelihood": "HIGH"
+      }
+    },
+    "RWNCSA-AU-004": {
+      "family": "Audit and Accountability",
+      "name": "Audit Storage Capacity",
+      "description": "Ensure adequate storage for audit logs and prevent log loss due to space constraints",
+      "severity": "MEDIUM",
+      "requirements": {
+        "minimum_free_space_percent": 10,
+        "alert_threshold_percent": 15,
+        "log_rotation_enabled": true,
+        "retention_period_days": 90
+      },
+      "compliance_criteria": {
+        "pass_conditions": [
+          "Disk usage below 90%",
+          "Sufficient space for 90 days of logs",
+          "Monitoring configured"
+        ],
+        "fail_conditions": [
+          "Disk usage above 90%",
+          "Insufficient space for log retention",
+          "No monitoring of disk space"
+        ]
+      },
+      "macos_implementation": {
+        "audit_command": "df -h",
+        "expected_output_pattern": "\\s+(\\d+)%\\s+",
+        "parser_logic": "extract_disk_usage",
+        "validation": "root_partition_usage < 90 AND var_partition_usage < 90"
+      },
+      "remediation": {
+        "steps": [
+          "Check disk usage: df -h",
+          "Clean old logs: sudo rm -rf /var/log/*.old",
+          "Enable log rotation: sudo periodic daily weekly monthly",
+          "Monitor space: sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist DiskSpaceWarningLevel -int 15"
+        ],
+        "verification_command": "df -h / | tail -1 | awk '{print $5}'",
+        "expected_result": "Usage below 90%"
+      },
+      "risk_assessment": {
+        "if_non_compliant": "MEDIUM - Log loss, audit trail gaps, compliance issues",
+        "business_impact": "Inability to investigate incidents, regulatory penalties",
+        "likelihood": "LOW"
+      }
+    },
+    "RWNCSA-CM-002": {
+      "family": "Configuration Management",
+      "name": "Baseline Configuration",
+      "description": "Maintain baseline configuration of system components for security and compliance",
+      "severity": "MEDIUM",
+      "requirements": {
+        "system_inventory": true,
+        "configuration_documented": true,
+        "version_tracking": true,
+        "hardware_inventory": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": [
+          "System version documented",
+          "Hardware configuration known",
+          "Build information accessible",
+          "System model identified"
+        ],
+        "fail_conditions": [
+          "Cannot determine system version",
+          "Hardware information unavailable",
+          "Unknown system configuration"
+        ]
+      },
+      "macos_implementation": {
+        "audit_commands": ["sw_vers", "system_profiler SPHardwareDataType"],
+        "expected_output_pattern": "ProductVersion|Model Name",
+        "parser_logic": "extract_system_info",
+        "validation": "has_version AND has_model AND has_serial"
+      },
+      "remediation": {
+        "steps": [
+          "Document system: sw_vers",
+          "Document hardware: system_profiler SPHardwareDataType",
+          "Create baseline: sudo system_profiler > /var/log/system_baseline.txt"
+        ],
+        "verification_command": "sw_vers -productVersion",
+        "expected_result": "Valid macOS version number"
+      },
+      "risk_assessment": {
+        "if_non_compliant": "LOW - Configuration drift, patch management issues",
+        "business_impact": "Inconsistent security posture, update challenges",
+        "likelihood": "LOW"
+      }
+    },
+    "RWNCSA-IA-005": {
+      "family": "Identification and Authentication",
+      "name": "Authenticator Management - Password Policy",
+      "description": "Enforce strong password requirements to prevent unauthorized access",
+      "severity": "CRITICAL",
+      "requirements": {
+        "minimum_length": 12,
+        "complexity_required": true,
+        "maximum_age_days": 90,
+        "minimum_age_days": 1,
+        "password_history": 5,
+        "lockout_threshold": 5,
+        "lockout_duration_minutes": 30
+      },
+      "compliance_criteria": {
+        "pass_conditions": [
+          "Minimum length >= 12 characters",
+          "Complexity enabled (uppercase, lowercase, numbers, symbols)",
+          "Maximum age <= 90 days",
+          "Account lockout after 5 failed attempts",
+          "Password history prevents reuse (5 previous)"
+        ],
+        "fail_conditions": [
+          "Minimum length < 12",
+          "No complexity requirements",
+          "Passwords never expire",
+          "No account lockout policy"
+        ]
+      },
+      "macos_implementation": {
+        "audit_command": "pwpolicy getaccountpolicies",
+        "expected_output_pattern": "policyAttributePassword|policyAttributeFailedAuthentications",
+        "parser_logic": "parse_password_policy_xml",
+        "validation": "min_length >= 12 AND complexity_enabled AND max_age <= 90 AND lockout_enabled"
+      },
+      "remediation": {
+        "steps": [
+          "Set min length: sudo pwpolicy -setglobalpolicy 'minChars=12'",
+          "Enable complexity: sudo pwpolicy -setglobalpolicy 'requiresAlpha=1 requiresNumeric=1'",
+          "Set max age: sudo pwpolicy -setglobalpolicy 'maxMinutesUntilChangePassword=129600'",
+          "Enable lockout: sudo pwpolicy -setglobalpolicy 'maxFailedLoginAttempts=5'",
+          "Verify: pwpolicy -getaccountpolicies"
+        ],
+        "verification_command": "pwpolicy getaccountpolicies",
+        "expected_result": "Policy XML showing length >= 12, complexity, expiry, lockout"
+      },
+      "risk_assessment": {
+        "if_non_compliant": "CRITICAL - Weak passwords, brute force attacks, unauthorized access",
+        "business_impact": "Account compromise, data breach, compliance violation",
+        "likelihood": "VERY HIGH"
+      }
+    },
+    "RWNCSA-SI-003": {
+      "family": "System and Information Integrity",
+      "name": "Malicious Code Protection - Process Monitoring",
+      "description": "Monitor running processes for malicious or unauthorized software",
+      "severity": "HIGH",
+      "requirements": {
+        "process_monitoring_enabled": true,
+        "unauthorized_software_detection": true,
+        "malware_scanning": "recommended",
+        "process_baseline": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": [
+          "Process list accessible",
+          "System processes running normally",
+          "No known malicious processes",
+          "Critical services operational"
+        ],
+        "fail_conditions": [
+          "Cannot enumerate processes",
+          "Suspicious processes detected",
+          "Critical services missing"
+        ]
+      },
+      "macos_implementation": {
+        "audit_command": "ps aux | head -50",
+        "expected_output_pattern": "^\\w+\\s+\\d+",
+        "parser_logic": "extract_process_list",
+        "validation": "has_system_processes AND no_suspicious_processes"
+      },
+      "remediation": {
+        "steps": [
+          "List processes: ps aux",
+          "Check for malware: sudo launchctl list | grep -v com.apple",
+          "Kill suspicious: sudo kill -9 <PID>",
+          "Install XProtect updates: sudo softwareupdate -i -a"
+        ],
+        "verification_command": "ps aux | wc -l",
+        "expected_result": "Reasonable number of processes running"
+      },
+      "risk_assessment": {
+        "if_non_compliant": "HIGH - Malware infection, data theft, system compromise",
+        "business_impact": "Data breach, system downtime, reputational damage",
+        "likelihood": "MEDIUM"
+      }
+    },
+    "RWNCSA-SI-007": {
+      "family": "System and Information Integrity",
+      "name": "System Integrity Protection",
+      "description": "Enable system-level protections against unauthorized modifications and malware",
+      "severity": "CRITICAL",
+      "requirements": {
+        "sip_enabled": true,
+        "gatekeeper_enabled": true,
+        "xprotect_enabled": true,
+        "firewall_enabled": "recommended"
+      },
+      "compliance_criteria": {
+        "pass_conditions": [
+          "System Integrity Protection (SIP) enabled",
+          "Gatekeeper enabled (app signature verification)",
+          "XProtect enabled (malware protection)",
+          "All three protections active"
+        ],
+        "fail_conditions": [
+          "SIP disabled",
+          "Gatekeeper disabled",
+          "Any critical protection missing"
+        ]
+      },
+      "macos_implementation": {
+        "audit_commands": ["csrutil status", "spctl --status"],
+        "expected_output_pattern": "enabled",
+        "parser_logic": "check_security_features",
+        "validation": "sip_enabled == true AND gatekeeper_enabled == true"
+      },
+      "remediation": {
+        "steps": [
+          "Enable SIP (requires Recovery Mode):",
+          "  1. Restart Mac and hold Cmd+R",
+          "  2. Open Terminal from Utilities",
+          "  3. Run: csrutil enable",
+          "  4. Restart normally",
+          "Enable Gatekeeper: sudo spctl --master-enable",
+          "Verify SIP: csrutil status",
+          "Verify Gatekeeper: spctl --status"
+        ],
+        "verification_command": "csrutil status && spctl --status",
+        "expected_result": "Both show 'enabled'"
+      },
+      "risk_assessment": {
+        "if_non_compliant": "CRITICAL - System vulnerable to rootkits, kernel exploits, unsigned malware",
+        "business_impact": "Complete system compromise, data theft, malware infection",
+        "likelihood": "VERY HIGH if disabled"
+      }
+    }
+  }
+}

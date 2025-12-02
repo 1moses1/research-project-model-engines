@@ -1,0 +1,327 @@
+
+    # ===================================================================
+    # PHASE 1 DECISION FUNCTIONS (21 controls)
+    # ===================================================================
+
+    def _decide_binary_control(self, control_id: str, evidence_list: List[Dict], control: Dict, 
+                                feature_key: str, expected_value: bool = True) -> Dict:
+        """Generic binary decision (enabled/disabled)"""
+        actual_value = False
+        for ev in evidence_list:
+            if feature_key in ev.get('actual_state', {}):
+                actual_value = ev['actual_state'][feature_key]
+                break
+        
+        is_compliant = (actual_value == expected_value)
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {
+            "control_id": control_id,
+            "control_name": control['name'],
+            "final_decision": "compliant" if is_compliant else "non_compliant",
+            "compliance_score": 100.0 if is_compliant else 0.0,
+            "confidence": 0.98,
+            "decision_method": "binary_check",
+            "gaps": gaps,
+            "severity": control['severity'],
+            "remediation_priority": "CRITICAL" if control['severity'] == "CRITICAL" else "HIGH" if not is_compliant else "LOW"
+        }
+
+    def _decide_ac_003_admin_access(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Admin access control - requires 1-3 admins"""
+        admin_count = 0
+        for ev in evidence_list:
+            admin_count = ev.get('actual_state', {}).get('count', 0)
+        
+        is_compliant = 1 <= admin_count <= 3
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 50.0, "confidence": 0.95, "decision_method": "threshold_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "HIGH" if not is_compliant else "LOW"}
+
+    def _decide_ac_004_ssh_config(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """SSH config - requires root disabled AND password auth disabled"""
+        root_disabled = False
+        password_disabled = False
+        for ev in evidence_list:
+            state = ev.get('actual_state', {})
+            root_disabled = state.get('permit_root_login', False)
+            password_disabled = state.get('password_auth_disabled', False)
+        
+        is_compliant = root_disabled and password_disabled
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 25.0, "confidence": 0.99, "decision_method": "config_requirements", "gaps": gaps, "severity": "CRITICAL", "remediation_priority": "CRITICAL" if not is_compliant else "LOW"}
+
+    def _decide_ac_005_file_permissions(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """File permissions - no world-writable files"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'insecure_count', False)
+
+    def _decide_ac_006_sudo_config(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Sudo config - NOPASSWD should not be present"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'nopasswd_present', False)
+
+    def _decide_ac_007_screen_lock(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Screen lock - timeout <= 300 seconds"""
+        timeout = None
+        for ev in evidence_list:
+            timeout = ev.get('actual_state', {}).get('timeout_seconds')
+        
+        is_compliant = timeout is not None and timeout <= 300
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 50.0, "confidence": 0.90, "decision_method": "threshold_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "MEDIUM" if not is_compliant else "LOW"}
+
+    def _decide_ac_008_remote_desktop(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Remote desktop - should be disabled"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'screensharing_enabled', False)
+
+    def _decide_au_001_audit_system(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Audit system - must be running"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'audit_running', True)
+
+    def _decide_au_003_time_sync(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Time sync - must be enabled"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'ntp_enabled', True)
+
+    def _decide_co_001_software_inventory(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Software inventory - must be available"""
+        app_count = 0
+        for ev in evidence_list:
+            app_count = ev.get('actual_state', {}).get('app_count', 0)
+        
+        is_compliant = app_count > 0
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 0.0, "confidence": 0.85, "decision_method": "inventory_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "MEDIUM" if not is_compliant else "LOW"}
+
+    def _decide_co_003_patch_status(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Patch status - no critical patches pending"""
+        critical_pending = False
+        for ev in evidence_list:
+            critical_pending = ev.get('actual_state', {}).get('critical_pending', False)
+        
+        is_compliant = not critical_pending
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 0.0, "confidence": 0.99, "decision_method": "critical_check", "gaps": gaps, "severity": "CRITICAL", "remediation_priority": "CRITICAL" if not is_compliant else "LOW"}
+
+    def _decide_co_004_configuration_profiles(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Config profiles - should be documented"""
+        return self._standard_decision(control_id, evidence_list, control, 0.85)
+
+    def _decide_id_002_biometric(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Biometric - should be enabled if available"""
+        return self._standard_decision(control_id, evidence_list, control, 0.90)
+
+    def _decide_sy_001_firewall(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Firewall - MUST be enabled (CRITICAL)"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'firewall_enabled', True)
+
+    def _decide_sy_002_filevault(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """FileVault - MUST be enabled (CRITICAL)"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'filevault_enabled', True)
+
+    def _decide_sy_003_bluetooth(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Bluetooth - should be disabled when not needed"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'bluetooth_enabled', False)
+
+    def _decide_sy_004_network_config(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Network config - should be present"""
+        return self._standard_decision(control_id, evidence_list, control, 0.90)
+
+    def _decide_sy_005_antimalware(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Anti-malware - XProtect should be present"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'xprotect_enabled', True)
+
+    def _decide_sy_006_file_sharing(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """File sharing - should be disabled unless required"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'sharing_enabled', False)
+
+    def _decide_sy_007_wifi(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Wi-Fi - no open/WEP networks"""
+        open_count = 0
+        for ev in evidence_list:
+            open_count = ev.get('actual_state', {}).get('open_networks', 0)
+        
+        is_compliant = open_count == 0
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 0.0, "confidence": 0.95, "decision_method": "security_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "HIGH" if not is_compliant else "LOW"}
+
+    def _decide_sy_008_vpn(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """VPN - should be configured"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'vpn_configured', True)
+
+    def _decide_sy_009_dns(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """DNS - trusted servers configured"""
+        dns_count = 0
+        for ev in evidence_list:
+            dns_count = ev.get('actual_state', {}).get('count', 0)
+        
+        is_compliant = dns_count > 0
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 0.0, "confidence": 0.88, "decision_method": "config_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "MEDIUM" if not is_compliant else "LOW"}
+
+    # ===================================================================
+    # WEEK 1 ACCESS CONTROL DECISION FUNCTIONS (17 controls)
+    # ===================================================================
+
+    def _decide_ac_009_mfa(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """MFA - certificates should be configured"""
+        cert_count = 0
+        for ev in evidence_list:
+            cert_count = ev.get('actual_state', {}).get('certificates', 0)
+        
+        is_compliant = cert_count > 0
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 0.0, "confidence": 0.90, "decision_method": "mfa_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "HIGH" if not is_compliant else "LOW"}
+
+    def _decide_ac_011_lockout(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Account lockout - max attempts <= 5"""
+        max_attempts = None
+        for ev in evidence_list:
+            max_attempts = ev.get('actual_state', {}).get('max_attempts')
+        
+        is_compliant = max_attempts is not None and max_attempts <= 5
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 0.0, "confidence": 0.95, "decision_method": "threshold_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "MEDIUM" if not is_compliant else "LOW"}
+
+    def _decide_ac_012_guest(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Guest account - must be disabled"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'guest_disabled', True)
+
+    def _decide_ac_013_autologin(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Auto-login - must be disabled"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'auto_login_disabled', True)
+
+    def _decide_ac_014_fast_user_switching(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Fast user switching - configuration documented"""
+        return self._standard_decision(control_id, evidence_list, control, 0.80)
+
+    def _decide_ac_015_password_reset(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Password reset policy - should be configured"""
+        return self._standard_decision(control_id, evidence_list, control, 0.85)
+
+    def _decide_ac_016_inactive_accounts(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Inactive accounts - should be tracked"""
+        return self._standard_decision(control_id, evidence_list, control, 0.85)
+
+    def _decide_ac_017_root_status(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Root account - MUST be disabled (CRITICAL)"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'root_disabled', True)
+
+    def _decide_ac_018_home_permissions(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Home directory permissions - no insecure directories"""
+        insecure_count = 0
+        for ev in evidence_list:
+            insecure_count = ev.get('actual_state', {}).get('insecure_count', 0)
+        
+        is_compliant = insecure_count == 0
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 50.0, "confidence": 0.95, "decision_method": "permission_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "HIGH" if not is_compliant else "LOW"}
+
+    def _decide_ac_019_shared_folders(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Shared folders - should be documented"""
+        return self._standard_decision(control_id, evidence_list, control, 0.85)
+
+    def _decide_ac_020_login_banner(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Login banner - should have warning"""
+        banner_exists = False
+        has_warning = False
+        for ev in evidence_list:
+            state = ev.get('actual_state', {})
+            banner_exists = state.get('banner_exists', False)
+            has_warning = state.get('has_warning', False)
+        
+        is_compliant = banner_exists and has_warning
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 0.0, "confidence": 0.85, "decision_method": "content_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "LOW" if not is_compliant else "LOW"}
+
+    def _decide_ac_021_grace_time(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Grace time - must be 0"""
+        grace_time = None
+        for ev in evidence_list:
+            grace_time = ev.get('actual_state', {}).get('grace_time')
+        
+        is_compliant = grace_time == 0
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 50.0, "confidence": 0.92, "decision_method": "threshold_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "MEDIUM" if not is_compliant else "LOW"}
+
+    def _decide_ac_022_system_prefs(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """System preferences - must require admin"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'requires_admin', True)
+
+    def _decide_ac_023_keychain(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Keychain - should be configured"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'has_keychains', True)
+
+    def _decide_ac_024_terminal(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Terminal access - should be controlled"""
+        return self._standard_decision(control_id, evidence_list, control, 0.85)
+
+    def _decide_ac_025_ssh_keys(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """SSH keys - must have secure permissions"""
+        has_keys = False
+        insecure_count = 0
+        for ev in evidence_list:
+            state = ev.get('actual_state', {})
+            has_keys = state.get('has_keys', False)
+            insecure_count = state.get('insecure_count', 0)
+        
+        is_compliant = has_keys and insecure_count == 0
+        gaps = []
+        for ev in evidence_list:
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": 100.0 if is_compliant else 50.0, "confidence": 0.95, "decision_method": "permission_check", "gaps": gaps, "severity": control['severity'], "remediation_priority": "HIGH" if not is_compliant else "LOW"}
+
+    def _decide_ac_026_pf_rules(self, control_id: str, evidence_list: List[Dict], control: Dict) -> Dict:
+        """Packet filter rules - should be configured"""
+        return self._decide_binary_control(control_id, evidence_list, control, 'has_rules', True)
+
+    def _standard_decision(self, control_id: str, evidence_list: List[Dict], control: Dict, confidence: float) -> Dict:
+        """Standard decision based on evidence compliance_status"""
+        is_compliant = False
+        compliance_score = 0.0
+        gaps = []
+        
+        for ev in evidence_list:
+            if ev.get('compliance_status') == 'COMPLIANT':
+                is_compliant = True
+            compliance_score = max(compliance_score, ev.get('compliance_score', 0.0))
+            gaps.extend(ev.get('gaps', []))
+        
+        return {"control_id": control_id, "control_name": control['name'], "final_decision": "compliant" if is_compliant else "non_compliant", "compliance_score": compliance_score, "confidence": confidence, "decision_method": "evidence_based", "gaps": gaps, "severity": control['severity'], "remediation_priority": "HIGH" if not is_compliant and control['severity'] in ["CRITICAL", "HIGH"] else "MEDIUM" if not is_compliant else "LOW"}
+

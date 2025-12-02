@@ -399,6 +399,14 @@ class SemanticControlMatcher:
 
     def get_statistics(self) -> Dict:
         """Get matcher statistics"""
+        # Safely get embedding dimensions
+        embedding_dims = 0
+        if self.control_embeddings is not None:
+            if len(self.control_embeddings.shape) > 1:
+                embedding_dims = self.control_embeddings.shape[1]
+            elif len(self.control_embeddings.shape) == 1:
+                embedding_dims = self.control_embeddings.shape[0]
+
         return {
             'available': self.available,
             'model_name': self.model_name,
@@ -406,5 +414,5 @@ class SemanticControlMatcher:
             'rwanda_controls': len([c for c in self.controls if c['framework'] == 'Rwanda-NCSA']),
             'nist_controls': len([c for c in self.controls if 'NIST' in c['framework']]),
             'embeddings_cached': self.embeddings_cache_path.exists(),
-            'embedding_dimensions': self.control_embeddings.shape[1] if self.control_embeddings is not None else 0
+            'embedding_dimensions': embedding_dims
         }

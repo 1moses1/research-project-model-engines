@@ -20,6 +20,22 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
 import time
 from datetime import datetime
+import os
+import sys
+
+# Import shared models for unified pipeline
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'shared'))
+try:
+    from shared import (
+        RedisClient, get_redis_client, init_redis,
+        ComplianceEvidence, EvidenceSourceType,
+        ClassificationResult, ComplianceStatus,
+        EvidenceManager, create_evidence_manager
+    )
+    SHARED_AVAILABLE = True
+except ImportError:
+    SHARED_AVAILABLE = False
+    print("⚠️ Shared module not available - running in standalone mode")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -44,6 +60,11 @@ DAY_ENCODER = None  # For encoding day_of_week
 VECTORIZER = None
 FEATURES = None
 MODEL_METADATA = {}
+evidence_manager = None
+
+# Configuration
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 # Paths - ENGINE 3 is now self-contained with local models
 MODEL_DIR = Path("/app/models")
@@ -120,7 +141,7 @@ class BatchPredictionResponse(BaseModel):
 @app.on_event("startup")
 async def load_model():
     """Load XGBoost model and artifacts on startup"""
-    global MODEL, LABEL_ENCODER, DAY_ENCODER, VECTORIZER, FEATURES, MODEL_METADATA
+    global MODEL, LABEL_ENCODER, DAY_ENCODER, VECTORIZER, FEATURES, MODEL_METADATA, evidence_manager
 
     try:
         print("=" * 80)
@@ -179,6 +200,29 @@ async def load_model():
         print(f"   Total Controls: {MODEL_METADATA.get('total_controls', 196)}")
         print(f"   - Rwanda NCSA: {MODEL_METADATA.get('rwanda_controls', 169)}")
         print(f"   - NIST SP 800-53: {MODEL_METADATA.get('nist_controls', 27)}")
+
+        # Initialize unified pipeline components
+        if SHARED_AVAILABLE:
+            try:
+                # Initialize Redis client
+                redis_client = get_redis_client()
+                await init_redis(redis_client, host=REDIS_HOST, port=REDIS_PORT)
+
+                # Create evidence manager
+                evidence_manager = create_evidence_manager(redis_client)
+
+                print(f"\n🔄 Unified Pipeline: Active")
+                print(f"   - Redis: Connected ({REDIS_HOST}:{REDIS_PORT})")
+                print(f"   - Evidence Manager: Initialized")
+                print(f"   - Classification results will be stored in Redis")
+            except Exception as e:
+                print(f"\n⚠️  Unified Pipeline: Failed to initialize - {str(e)}")
+                print(f"   - Running in standalone mode")
+                evidence_manager = None
+        else:
+            print(f"\n⚠️  Unified Pipeline: Not available (shared module not found)")
+            print(f"   - Running in standalone mode")
+
         print("\n" + "=" * 80)
 
     except Exception as e:
@@ -457,6 +501,176 @@ async def classify_batch(batch: BatchLogEvents):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch prediction error: {str(e)}")
+
+
+# ============================================================================
+# Unified Pipeline Classification Endpoints
+# ============================================================================
+
+@app.post("/api/v1/classify/audit/{audit_id}")
+async def classify_audit_evidence(audit_id: str, control_id: Optional[str] = None):
+    """
+    Classify all evidence for an audit from Redis and store results.
+
+    This endpoint:
+    1. Retrieves evidence from Redis via EvidenceManager
+    2. Classifies each evidence item using XGBoost
+    3. Stores ClassificationResult back to Redis
+    4. Returns summary of classifications
+
+    Args:
+        audit_id: Audit ID to classify
+        control_id: Optional - only classify specific control
+    """
+    if not SHARED_AVAILABLE or not evidence_manager:
+        raise HTTPException(
+            status_code=503,
+            detail="Unified pipeline not available - shared module or Redis not initialized"
+        )
+
+    if MODEL is None:
+        raise HTTPException(status_code=503, detail="XGBoost model not loaded")
+
+    try:
+        start_time = time.time()
+
+        # Get evidence from Redis
+        if control_id:
+            evidence_list = await evidence_manager.get_evidence_by_control(audit_id, control_id)
+        else:
+            evidence_list = await evidence_manager.get_all_evidence(audit_id)
+
+        if not evidence_list:
+            return {
+                "audit_id": audit_id,
+                "total_evidence": 0,
+                "classified": 0,
+                "message": "No evidence found for this audit"
+            }
+
+        print(f"\n🔬 Classifying {len(evidence_list)} evidence items for audit {audit_id}")
+
+        classified_count = 0
+        results_by_status = {"compliant": 0, "non_compliant": 0, "partial": 0}
+
+        for evidence in evidence_list:
+            # Extract features from evidence
+            features_dict = evidence.features if hasattr(evidence, 'features') else {}
+
+            # Build feature vector matching training format
+            feature_vector = _build_feature_vector(evidence, features_dict)
+
+            # Classify
+            prediction = MODEL.predict(feature_vector)[0]
+            probabilities = MODEL.predict_proba(feature_vector)[0]
+
+            # Decode prediction
+            predicted_class = LABEL_ENCODER.inverse_transform([prediction])[0]
+            confidence = float(probabilities[prediction])
+
+            # Map to ComplianceStatus
+            if predicted_class == "compliant":
+                status = ComplianceStatus.COMPLIANT
+            elif predicted_class == "non_compliant":
+                status = ComplianceStatus.NON_COMPLIANT
+            else:
+                status = ComplianceStatus.PARTIAL
+
+            results_by_status[predicted_class] = results_by_status.get(predicted_class, 0) + 1
+
+            # Create ClassificationResult
+            classification = ClassificationResult(
+                evidence_id=evidence.evidence_id,
+                audit_id=audit_id,
+                control_id=evidence.control_id,
+                prediction=status,
+                confidence=confidence,
+                probabilities={
+                    "compliant": float(probabilities[0]) if len(probabilities) > 0 else 0.0,
+                    "non_compliant": float(probabilities[1]) if len(probabilities) > 1 else 0.0
+                },
+                model_version=MODEL_METADATA.get('version', '3.0.0'),
+                features_used=list(features_dict.keys()),
+                inference_time_ms=0.0,  # Will be updated
+                classified_at=datetime.utcnow()
+            )
+
+            # Store classification result in Redis
+            await evidence_manager.store_classification(classification)
+            classified_count += 1
+
+        processing_time = (time.time() - start_time) * 1000
+
+        print(f"✅ Classified {classified_count} items in {processing_time:.2f}ms")
+        print(f"   Results: {results_by_status}")
+
+        return {
+            "success": True,
+            "audit_id": audit_id,
+            "total_evidence": len(evidence_list),
+            "classified": classified_count,
+            "results_summary": results_by_status,
+            "processing_time_ms": round(processing_time, 2),
+            "avg_time_per_item_ms": round(processing_time / len(evidence_list), 2) if evidence_list else 0
+        }
+
+    except Exception as e:
+        print(f"⚠️ Classification error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Classification failed: {str(e)}")
+
+
+def _build_feature_vector(evidence: Any, features_dict: Dict) -> np.ndarray:
+    """
+    Build feature vector from ComplianceEvidence for XGBoost prediction.
+
+    Args:
+        evidence: ComplianceEvidence object
+        features_dict: Pre-extracted features from evidence
+
+    Returns:
+        Feature vector ready for XGBoost
+    """
+    # Extract text features using TF-IDF
+    evidence_text = evidence.evidence_text if hasattr(evidence, 'evidence_text') else ""
+    tfidf_features = VECTORIZER.transform([evidence_text]).toarray()[0]
+
+    # Get temporal features from evidence timestamp
+    timestamp = evidence.timestamp if hasattr(evidence, 'timestamp') else datetime.utcnow()
+    if isinstance(timestamp, datetime):
+        hour_of_day = timestamp.hour
+        day_name = timestamp.strftime('%A')
+        is_business_hours = timestamp.weekday() < 5 and 8 <= hour_of_day < 18
+    else:
+        hour_of_day = 12
+        day_name = "Monday"
+        is_business_hours = True
+
+    # Get other features from features_dict or defaults
+    status_code = features_dict.get('status_code', 200)
+    port = features_dict.get('port', 443)
+
+    # Encode day_of_week if encoder available
+    if DAY_ENCODER:
+        try:
+            day_encoded = DAY_ENCODER.transform([day_name])[0]
+        except:
+            day_encoded = 0
+    else:
+        day_encoded = 0
+
+    # Build complete feature vector
+    other_features = np.array([
+        hour_of_day,
+        day_encoded,
+        1 if is_business_hours else 0,
+        status_code,
+        port
+    ])
+
+    # Combine all features
+    feature_vector = np.concatenate([tfidf_features, other_features]).reshape(1, -1)
+
+    return feature_vector
 
 
 @app.get("/metrics")

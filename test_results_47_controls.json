@@ -1,0 +1,382 @@
+{
+  "total_controls": 47,
+  "tested": 47,
+  "parser_success": 43,
+  "parser_failed": 1,
+  "decision_success": 42,
+  "decision_failed": 1,
+  "controls": [
+    {
+      "control_id": "RWNCSA-AC-001",
+      "name": "Account Management - Login History Monitoring",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-AC-002",
+      "name": "Account Management - User Account Control",
+      "parser_status": "SKIPPED",
+      "decision_status": "SKIPPED",
+      "reason": "No audit command"
+    },
+    {
+      "control_id": "RWNCSA-AC-003",
+      "name": "Least Privilege - Administrative Access",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.95
+    },
+    {
+      "control_id": "RWNCSA-AC-004",
+      "name": "Remote Access - SSH Configuration",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.99
+    },
+    {
+      "control_id": "RWNCSA-AC-005",
+      "name": "File and Directory Permissions",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AC-006",
+      "name": "Sudo Configuration Security",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AC-007",
+      "name": "Screen Lock Enforcement",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.9
+    },
+    {
+      "control_id": "RWNCSA-AC-008",
+      "name": "Remote Desktop and Screen Sharing Security",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AC-009",
+      "name": "Multi-Factor Authentication Status",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.9
+    },
+    {
+      "control_id": "RWNCSA-AC-010",
+      "name": "Concurrent Session Control",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-AC-011",
+      "name": "Account Lockout Policy",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.95
+    },
+    {
+      "control_id": "RWNCSA-AC-012",
+      "name": "Guest Account Status",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AC-013",
+      "name": "Automatic Login Disabled",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AC-014",
+      "name": "Fast User Switching Configuration",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.8
+    },
+    {
+      "control_id": "RWNCSA-AC-015",
+      "name": "Password Reset Requirements",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-AC-016",
+      "name": "Inactive Account Detection",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-AC-017",
+      "name": "Root Account Status",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AC-018",
+      "name": "User Home Directory Permissions",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.95
+    },
+    {
+      "control_id": "RWNCSA-AC-019",
+      "name": "Shared Folder Permissions",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-AC-020",
+      "name": "Login Banner Configuration",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-AC-021",
+      "name": "Login Grace Time Configuration",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.92
+    },
+    {
+      "control_id": "RWNCSA-AC-022",
+      "name": "System Preferences Access Control",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AC-023",
+      "name": "Keychain Access Control",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AC-024",
+      "name": "Terminal Access Restrictions",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-AC-025",
+      "name": "SSH Key Authentication",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.95
+    },
+    {
+      "control_id": "RWNCSA-AC-026",
+      "name": "Network Access Control (Packet Filter)",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AU-001",
+      "name": "Audit System Configuration",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AU-002",
+      "name": "Audit Events Logging",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.95
+    },
+    {
+      "control_id": "RWNCSA-AU-003",
+      "name": "Time Synchronization",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-AU-004",
+      "name": "Audit Storage Capacity",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-CM-002",
+      "name": "Baseline Configuration",
+      "parser_status": "SKIPPED",
+      "decision_status": "SKIPPED",
+      "reason": "No audit command"
+    },
+    {
+      "control_id": "RWNCSA-CO-001",
+      "name": "Software Inventory",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-CO-003",
+      "name": "Patch Management",
+      "parser_status": "COMMAND_FAILED",
+      "decision_status": "NOT_TESTED",
+      "error": "Command '['softwareupdate', '-l']' timed out after 10 seconds"
+    },
+    {
+      "control_id": "RWNCSA-CO-004",
+      "name": "Configuration Profiles Management",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-IA-005",
+      "name": "Authenticator Management - Password Policy",
+      "parser_status": "SUCCESS",
+      "decision_status": "ERROR",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-ID-002",
+      "name": "Biometric Authentication Configuration",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.9
+    },
+    {
+      "control_id": "RWNCSA-SI-003",
+      "name": "Malicious Code Protection - Process Monitoring",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.85
+    },
+    {
+      "control_id": "RWNCSA-SI-007",
+      "name": "System Integrity Protection",
+      "parser_status": "SKIPPED",
+      "decision_status": "SKIPPED",
+      "reason": "No audit command"
+    },
+    {
+      "control_id": "RWNCSA-SY-001",
+      "name": "Application Firewall",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-SY-002",
+      "name": "FileVault Disk Encryption",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-SY-003",
+      "name": "Bluetooth Security",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-SY-004",
+      "name": "Network Configuration Security",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.9
+    },
+    {
+      "control_id": "RWNCSA-SY-005",
+      "name": "Anti-Malware Protection",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-SY-006",
+      "name": "File Sharing Services",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-SY-007",
+      "name": "Wi-Fi Security Configuration",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "COMPLIANT",
+      "confidence": 0.95
+    },
+    {
+      "control_id": "RWNCSA-SY-008",
+      "name": "VPN Configuration and Usage",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.98
+    },
+    {
+      "control_id": "RWNCSA-SY-009",
+      "name": "DNS Security Configuration",
+      "parser_status": "SUCCESS",
+      "decision_status": "SUCCESS",
+      "compliance": "NON_COMPLIANT",
+      "confidence": 0.88
+    }
+  ]
+}
