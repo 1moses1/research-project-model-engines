@@ -15,6 +15,16 @@ BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOGS_DIR="$BASE_DIR/logs"
 mkdir -p "$LOGS_DIR"
 
+# Prefer project-level virtual environment
+PROJECT_VENV="$BASE_DIR/venv"
+if [ -d "$PROJECT_VENV/bin" ]; then
+    PYTHON_BIN="$PROJECT_VENV/bin/python3"
+    echo "🐍 Using project virtualenv interpreter: $PYTHON_BIN"
+else
+    PYTHON_BIN="$(command -v python3)"
+    echo "⚠️  Project virtualenv not found. Falling back to system Python: $PYTHON_BIN"
+fi
+
 # Environment variables
 export REDIS_HOST="localhost"
 export REDIS_PORT="6379"
@@ -70,14 +80,15 @@ start_engine() {
 
     cd "$BASE_DIR/engines/engine$engine_num-$engine_name"
 
-    # Activate virtual environment if it exists, otherwise use system Python
-    if [ -d "venv" ]; then
-        source venv/bin/activate
+    # Use engine-specific interpreter if present, otherwise fallback to project interpreter
+    local engine_python="$PYTHON_BIN"
+    if [ -x "venv/bin/python3" ]; then
+        engine_python="$(pwd)/venv/bin/python3"
     fi
 
     # Start uvicorn in background using python3 -m
     PYTHONPATH="$BASE_DIR/engines:$PYTHONPATH" \
-    python3 -m uvicorn "$app_path:app" \
+    "$engine_python" -m uvicorn "$app_path:app" \
         --host 0.0.0.0 \
         --port "$port" \
         --log-level info \

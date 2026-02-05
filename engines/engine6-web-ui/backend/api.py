@@ -27,10 +27,40 @@ import random
 import subprocess
 import uuid
 import sys
+import logging
 
-# Import real audit runner
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Import real audit runner and audit service
 sys.path.insert(0, str(Path(__file__).parent))
 from real_audit_runner import RealAuditRunner
+from audit_service import (
+    AuditService, AuditConfig, AuditType, AuditStatus,
+    get_audit_service
+)
+from pydantic import BaseModel
+from typing import Optional as OptionalType
+
+# Pydantic models for API requests
+class AuditConfigRequest(BaseModel):
+    audit_type: str = "full"
+    log_sources: List[Dict] = []
+    document_ids: List[str] = []
+    control_families: List[str] = []
+    time_range: OptionalType[Dict] = None
+    target_host: str = "localhost"
+    company_name: str = "Demo Organization"
+    framework: str = "Rwanda-NCSA"
+
+class StartAuditRequest(BaseModel):
+    config: OptionalType[AuditConfigRequest] = None
+    # Legacy fields for backward compatibility
+    target_host: OptionalType[str] = None
+    target_user: OptionalType[str] = None
+    auth_method: str = "local"
+    framework: str = "Rwanda-NCSA"
 
 # Redis imports (optional)
 try:
@@ -120,7 +150,7 @@ system_status = {
     "engines": {
         "ENGINE 1 - Log Collector": {"status": "running", "port": 8001, "requests_per_minute": 1234},
         "ENGINE 2 - Document Processor": {"status": "running", "port": 8002, "requests_per_minute": 45},
-        "ENGINE 3 - XGBoost Classifier": {"status": "running", "port": 8003, "requests_per_minute": 5678},
+        "ENGINE 3 - MCP+LLM Analyzer": {"status": "running", "port": 8003, "requests_per_minute": 5678, "model": "hybrid"},
         "ENGINE 4 - Decision Engine": {"status": "running", "port": 8004, "requests_per_minute": 5678},
         "ENGINE 5 - Report Generator": {"status": "running", "port": 8005, "requests_per_minute": 12},
         "ENGINE 6 - Web UI": {"status": "running", "port": 8006, "requests_per_minute": 100},
@@ -432,7 +462,7 @@ async def api_info():
         "engine_urls": {
             "log_collector": ENGINE1_URL,
             "document_processor": ENGINE2_URL,
-            "xgboost_classifier": ENGINE3_URL,
+            "mcp_llm_analyzer": ENGINE3_URL,  # Updated: MCP+LLM hybrid analyzer
             "decision_engine": ENGINE4_URL,
             "report_generator": ENGINE5_URL,
             "auth_engine": ENGINE7_URL
@@ -472,7 +502,7 @@ async def fetch_engine_statuses() -> Dict:
     engines = {
         "ENGINE 1 - Log Collector": f"{ENGINE1_URL}/health",
         "ENGINE 2 - Document Processor": f"{ENGINE2_URL}/health",
-        "ENGINE 3 - XGBoost Classifier": f"{ENGINE3_URL}/health",
+        "ENGINE 3 - MCP+LLM Analyzer": f"{ENGINE3_URL}/health",
         "ENGINE 4 - Decision Engine": f"{ENGINE4_URL}/health",
         "ENGINE 5 - Report Generator": f"{ENGINE5_URL}/health",
         "ENGINE 7 - Auth Engine": f"{ENGINE7_URL}/health"
@@ -501,7 +531,495 @@ async def fetch_engine_statuses() -> Dict:
 
 
 # =============================================================================
-# Audit Management API
+# NEW: UI Integration API Endpoints (per UI_INTEGRATION_PLAN.md)
+# =============================================================================
+
+@app.get("/api/audits/recent")
+async def get_recent_audits(limit: int = 10):
+    """Get recent audits for dashboard landing page"""
+    audit_service = get_audit_service()
+    sessions = audit_service.list_sessions(limit=limit)
+
+    # Also check PostgreSQL for historical audits
+    db_audits = []
+    if pg_pool:
+        try:
+            async with pg_pool.acquire() as conn:
+                rows = await conn.fetch("""
+                    SELECT audit_id, framework, status, target_hostname,
+                           overall_score, total_controls, compliant_controls,
+                           started_at, completed_at
+                    FROM audits
+                    ORDER BY created_at DESC
+                    LIMIT $1
+                """, limit)
+                db_audits = [dict(row) for row in rows]
+        except Exception as e:
+            print(f"Error fetching audits from DB: {e}")
+
+    # Merge in-memory and DB audits
+    all_audits = [s.to_dict() for s in sessions]
+
+    # Add DB audits that aren't in memory
+    memory_ids = {s.audit_id for s in sessions}
+    for db_audit in db_audits:
+        if db_audit.get("audit_id") not in memory_ids:
+            all_audits.append({
+                "audit_id": db_audit.get("audit_id"),
+                "status": db_audit.get("status", "completed"),
+                "config": {
+                    "target_host": db_audit.get("target_hostname", "unknown"),
+                    "framework": db_audit.get("framework", "Rwanda-NCSA")
+                },
+                "results": {
+                    "summary": {
+                        "compliance_rate": float(db_audit.get("overall_score", 0)),
+                        "total_controls": db_audit.get("total_controls", 0),
+                        "compliant": db_audit.get("compliant_controls", 0)
+                    }
+                },
+                "started_at": db_audit.get("started_at").isoformat() if db_audit.get("started_at") else None,
+                "completed_at": db_audit.get("completed_at").isoformat() if db_audit.get("completed_at") else None
+            })
+
+    return {
+        "total": len(all_audits),
+        "audits": all_audits[:limit]
+    }
+
+
+@app.get("/api/stats/overview")
+async def get_stats_overview():
+    """Get overview statistics for dashboard"""
+    audit_service = get_audit_service()
+    sessions = audit_service.list_sessions(limit=100)
+
+    # Calculate stats
+    total_audits = len(sessions)
+    completed_audits = [s for s in sessions if s.status == AuditStatus.COMPLETED]
+
+    avg_compliance = 0
+    if completed_audits:
+        compliance_rates = [
+            s.results.get("summary", {}).get("compliance_rate", 0)
+            for s in completed_audits if s.results
+        ]
+        avg_compliance = sum(compliance_rates) / len(compliance_rates) if compliance_rates else 0
+
+    # Determine overall risk level
+    risk_level = "LOW" if avg_compliance >= 80 else "MEDIUM" if avg_compliance >= 60 else "HIGH"
+
+    # Count pending reviews (non-compliant items needing attention)
+    pending_reviews = 0
+    for s in completed_audits:
+        if s.results:
+            pending_reviews += s.results.get("summary", {}).get("non_compliant", 0)
+
+    return {
+        "compliance_rate": round(avg_compliance, 1),
+        "risk_level": risk_level,
+        "pending_reviews": pending_reviews,
+        "total_audits": total_audits,
+        "completed_audits": len(completed_audits),
+        "running_audits": len([s for s in sessions if s.status == AuditStatus.RUNNING])
+    }
+
+
+@app.post("/api/audit/configure")
+async def configure_audit(config: AuditConfigRequest):
+    """Configure a new audit session (Step 1 of wizard)"""
+    audit_service = get_audit_service()
+
+    # Convert request to AuditConfig
+    audit_config = AuditConfig(
+        audit_type=AuditType(config.audit_type) if config.audit_type in [e.value for e in AuditType] else AuditType.FULL_AUDIT,
+        log_sources=config.log_sources,
+        document_ids=config.document_ids,
+        control_families=config.control_families,
+        time_range=config.time_range,
+        target_host=config.target_host,
+        company_name=config.company_name,
+        framework=config.framework
+    )
+
+    # Create session
+    session = await audit_service.create_session(audit_config)
+
+    return {
+        "audit_id": session.audit_id,
+        "status": "configured",
+        "config": session.config.to_dict(),
+        "message": "Audit configured successfully. Upload documents or start audit."
+    }
+
+
+@app.post("/api/audit/upload-documents")
+async def upload_audit_documents(
+    audit_id: str,
+    files: List[UploadFile] = File(...)
+):
+    """Upload documents for a specific audit session"""
+    audit_service = get_audit_service()
+    session = audit_service.get_session(audit_id)
+
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Audit session not found: {audit_id}")
+
+    uploaded_docs = []
+
+    for file in files:
+        # Validate file type
+        allowed_types = [
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain'
+        ]
+
+        if file.content_type not in allowed_types:
+            continue
+
+        # Save file
+        upload_dir = Path(f"uploads/{audit_id}")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        file_path = upload_dir / file.filename
+
+        async with aiofiles.open(file_path, 'wb') as out_file:
+            content = await file.read()
+            await out_file.write(content)
+
+        doc_id = str(uuid.uuid4())
+        uploaded_docs.append({
+            "doc_id": doc_id,
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "file_path": str(file_path),
+            "uploaded_at": datetime.now().isoformat()
+        })
+
+        # Add to session's document list
+        session.documents.append({
+            "doc_id": doc_id,
+            "filename": file.filename
+        })
+        session.config.document_ids.append(doc_id)
+
+    return {
+        "audit_id": audit_id,
+        "documents_uploaded": len(uploaded_docs),
+        "documents": uploaded_docs
+    }
+
+
+@app.post("/api/audit/start")
+async def start_new_audit(request: StartAuditRequest):
+    """
+    Start a new compliance audit.
+
+    Can either:
+    1. Create and immediately start an audit with the provided config
+    2. Start an already-configured audit session
+    """
+    audit_service = get_audit_service()
+
+    # Create config from request
+    if request.config:
+        audit_config = AuditConfig(
+            audit_type=AuditType(request.config.audit_type) if request.config.audit_type in [e.value for e in AuditType] else AuditType.FULL_AUDIT,
+            log_sources=request.config.log_sources,
+            document_ids=request.config.document_ids,
+            control_families=request.config.control_families,
+            time_range=request.config.time_range,
+            target_host=request.config.target_host or request.target_host or "localhost",
+            company_name=request.config.company_name,
+            framework=request.config.framework or request.framework
+        )
+    else:
+        # Legacy mode - simple config
+        audit_config = AuditConfig(
+            target_host=request.target_host or "localhost",
+            framework=request.framework
+        )
+
+    # Create session
+    session = await audit_service.create_session(audit_config)
+    audit_id = session.audit_id
+
+    # Store in legacy active_audits for backward compatibility
+    active_audits[audit_id] = session.to_dict()
+
+    # Broadcast initial state
+    await sio.emit('audit_started', session.to_dict())
+
+    # Start the audit in background
+    asyncio.create_task(run_ui_audit_workflow(audit_id, audit_service))
+
+    return {
+        "audit_id": audit_id,
+        "status": "started",
+        "config": session.config.to_dict(),
+        "message": "Audit started. Connect to WebSocket for real-time updates."
+    }
+
+
+async def run_ui_audit_workflow(audit_id: str, audit_service: AuditService):
+    """Run audit workflow with UI-friendly updates"""
+
+    async def progress_callback(state: Dict):
+        """Callback for audit progress updates"""
+        # Update in-memory state
+        active_audits[audit_id] = state
+
+        # Store in Redis if available
+        if redis_client:
+            await redis_client.set(f"audit:{audit_id}:state", json.dumps(state))
+            await redis_client.publish(f"audit:{audit_id}:updates", json.dumps(state))
+
+        # Broadcast via Socket.IO
+        await sio.emit('audit_update', state)
+
+        # Broadcast via native WebSocket
+        for ws in list(active_websocket_clients):
+            try:
+                await ws.send_json({'type': 'audit_update', 'data': state})
+            except Exception:
+                active_websocket_clients.discard(ws)
+
+    try:
+        results = await audit_service.run_audit(audit_id, progress_callback)
+
+        # Store results in PostgreSQL if available
+        if pg_pool:
+            session = audit_service.get_session(audit_id)
+            if session and session.results:
+                try:
+                    async with pg_pool.acquire() as conn:
+                        summary = session.results.get("summary", {})
+                        await conn.execute("""
+                            INSERT INTO audits (
+                                audit_id, organization_id, framework, status,
+                                target_hostname, overall_score, total_controls,
+                                compliant_controls, non_compliant_controls, results
+                            )
+                            SELECT $1, id, $2, $3, $4, $5, $6, $7, $8, $9
+                            FROM organizations
+                            WHERE name = 'Demo Organization'
+                            LIMIT 1
+                        """,
+                            audit_id,
+                            session.config.framework,
+                            "completed",
+                            session.config.target_host,
+                            summary.get("compliance_rate", 0),
+                            summary.get("total_controls", 0),
+                            summary.get("compliant", 0),
+                            summary.get("non_compliant", 0),
+                            json.dumps(session.results)
+                        )
+                except Exception as e:
+                    print(f"Error storing audit in DB: {e}")
+
+        return results
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        # Error already handled in audit_service
+        raise
+
+
+@app.get("/api/audit/{audit_id}/status")
+async def get_audit_status(audit_id: str):
+    """Get current status and progress of an audit"""
+    audit_service = get_audit_service()
+    session = audit_service.get_session(audit_id)
+
+    if not session:
+        # Try Redis or in-memory
+        if audit_id in active_audits:
+            return active_audits[audit_id]
+        raise HTTPException(status_code=404, detail=f"Audit not found: {audit_id}")
+
+    return session.to_dict()
+
+
+@app.get("/api/audit/{audit_id}/results")
+async def get_audit_results(audit_id: str):
+    """Get complete audit results"""
+    audit_service = get_audit_service()
+    session = audit_service.get_session(audit_id)
+
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Audit not found: {audit_id}")
+
+    if session.status != AuditStatus.COMPLETED:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Audit not yet completed. Current status: {session.status.value}"
+        )
+
+    return {
+        "audit_id": audit_id,
+        "status": "completed",
+        "summary": session.results.get("summary", {}),
+        "log_analysis": session.log_analysis,
+        "document_analysis": session.document_analysis,
+        "control_families": session.control_families_breakdown,
+        "timestamp": session.completed_at
+    }
+
+
+@app.get("/api/audit/{audit_id}/report/preview")
+async def preview_audit_report(audit_id: str):
+    """Get report preview data"""
+    audit_service = get_audit_service()
+    session = audit_service.get_session(audit_id)
+
+    if not session or not session.results:
+        raise HTTPException(status_code=404, detail="Audit results not found")
+
+    # Return structured data for UI preview
+    summary = session.results.get("summary", {})
+    return {
+        "audit_id": audit_id,
+        "company_name": session.config.company_name,
+        "framework": session.config.framework,
+        "generated_at": session.completed_at,
+        "summary": {
+            "compliance_rate": summary.get("compliance_rate", 0),
+            "risk_level": summary.get("risk_level", "UNKNOWN"),
+            "total_controls": summary.get("total_controls", 0),
+            "compliant": summary.get("compliant", 0),
+            "non_compliant": summary.get("non_compliant", 0),
+            "partial": summary.get("partial", 0)
+        },
+        "control_families": session.control_families_breakdown,
+        "top_findings": session.results.get("decisions", [])[:10]
+    }
+
+
+@app.get("/api/audit/{audit_id}/report/download")
+async def download_audit_report(audit_id: str, format: str = "pdf"):
+    """Download audit report in specified format"""
+    audit_service = get_audit_service()
+    session = audit_service.get_session(audit_id)
+
+    if not session or not session.results:
+        raise HTTPException(status_code=404, detail="Audit results not found")
+
+    if format == "json":
+        return JSONResponse(
+            content=session.to_dict(),
+            headers={
+                "Content-Disposition": f"attachment; filename=audit_report_{audit_id}.json"
+            }
+        )
+
+    elif format == "pdf":
+        # Try to find existing PDF or generate one
+        report_path = Path(f"/tmp/audit_{audit_id}/compliance_report.pdf")
+
+        # Also check the report info from results
+        if session.results.get("report", {}).get("pdf_path"):
+            report_path = Path(session.results["report"]["pdf_path"])
+
+        if report_path.exists():
+            return FileResponse(
+                path=str(report_path),
+                filename=f"compliance_report_{audit_id}.pdf",
+                media_type="application/pdf"
+            )
+
+        # Try to generate via Engine 5
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    f"{ENGINE5_URL}/api/v3/generate",
+                    json={
+                        "audit_id": audit_id,
+                        "results": session.results,
+                        "format": "pdf"
+                    }
+                )
+                if response.status_code == 200:
+                    # Save and return
+                    pdf_path = Path(f"/tmp/audit_{audit_id}")
+                    pdf_path.mkdir(parents=True, exist_ok=True)
+                    pdf_file = pdf_path / "compliance_report.pdf"
+                    with open(pdf_file, "wb") as f:
+                        f.write(response.content)
+                    return FileResponse(
+                        path=str(pdf_file),
+                        filename=f"compliance_report_{audit_id}.pdf",
+                        media_type="application/pdf"
+                    )
+        except Exception as e:
+            print(f"Error generating PDF: {e}")
+
+        raise HTTPException(status_code=404, detail="PDF report not available")
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+
+
+@app.post("/api/audit/{audit_id}/report/email")
+async def email_audit_report(audit_id: str, email: str):
+    """Email audit report (placeholder for future implementation)"""
+    return {
+        "status": "queued",
+        "message": f"Report will be sent to {email}",
+        "audit_id": audit_id
+    }
+
+
+@app.post("/api/audit/{audit_id}/cancel")
+async def cancel_audit(audit_id: str):
+    """Cancel a running audit"""
+    audit_service = get_audit_service()
+    success = audit_service.cancel_audit(audit_id)
+
+    if not success:
+        raise HTTPException(status_code=400, detail="Cannot cancel audit - not running or not found")
+
+    return {"status": "cancelled", "audit_id": audit_id}
+
+
+@app.get("/api/control-families")
+async def get_control_families():
+    """Get available control families for audit configuration"""
+    # Load from shared controls
+    controls_file = Path(__file__).parent.parent.parent.parent / "engines/shared/rwanda_ncsa_controls_expanded.json"
+
+    families = set()
+    if controls_file.exists():
+        try:
+            with open(controls_file, 'r') as f:
+                data = json.load(f)
+                for ctrl in data.get("controls", {}).values():
+                    family = ctrl.get("family")
+                    if family:
+                        families.add(family)
+        except Exception:
+            pass
+
+    # Default families if file not found
+    if not families:
+        families = {
+            "Access Control",
+            "Audit and Accountability",
+            "Configuration Management",
+            "Identification and Authentication",
+            "Incident Response",
+            "System and Communications Protection"
+        }
+
+    return {
+        "families": sorted(list(families)),
+        "total": len(families)
+    }
+
+
+# =============================================================================
+# Audit Management API (Legacy - kept for backward compatibility)
 # =============================================================================
 
 @app.get("/api/v3/audits")

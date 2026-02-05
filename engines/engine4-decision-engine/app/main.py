@@ -64,7 +64,7 @@ gap_analyzer = None
 evidence_manager = None
 
 # Configuration
-ENGINE3_URL = "http://xgboost-api:8000"
+ENGINE3_URL = os.getenv("ENGINE3_URL", "http://mcp-analyzer:8000")  # Updated for MCP+LLM Engine 3
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
@@ -88,8 +88,18 @@ class LogEvent(BaseModel):
     timestamp: Optional[str] = None
 
 
+class ControlInfo(BaseModel):
+    """NCSA Control information from MCP Analyzer"""
+    control_id: Optional[str] = None
+    control_name: Optional[str] = None
+    control_family: Optional[str] = None
+    compliance_status: Optional[str] = None
+    confidence: Optional[float] = None
+    relevance: Optional[float] = None
+
+
 class ClassificationResult(BaseModel):
-    """Result from ENGINE 3 classification"""
+    """Result from ENGINE 3 (MCP+LLM Analyzer) classification"""
     event_id: str
     prediction: str
     confidence: float
@@ -97,6 +107,15 @@ class ClassificationResult(BaseModel):
     timestamp: str
     route_decision: str
     needs_human_review: bool
+
+    # Enhanced MCP+LLM fields
+    primary_control: Optional[ControlInfo] = None
+    secondary_controls: Optional[List[ControlInfo]] = None
+    reasoning: Optional[str] = None
+    evidence_indicators: Optional[List[str]] = None
+    risk_indicators: Optional[List[str]] = None
+    recommended_actions: Optional[List[str]] = None
+    model_used: Optional[str] = None
 
 
 class ComplianceScoreResponse(BaseModel):
@@ -224,7 +243,7 @@ async def check_engine3_connection() -> bool:
 async def process_single_event(event: LogEvent, background_tasks: BackgroundTasks):
     """
     Process a single log event through the complete pipeline:
-    1. Call ENGINE 3 for classification
+    1. Call ENGINE 3 (MCP+LLM Analyzer) for classification
     2. Apply confidence routing
     3. Calculate risk score
     4. Store in database
@@ -235,7 +254,7 @@ async def process_single_event(event: LogEvent, background_tasks: BackgroundTask
         if not event.event_id:
             event.event_id = f"evt_{datetime.utcnow().timestamp()}"
 
-        # Step 1: Call ENGINE 3 for classification
+        # Step 1: Call ENGINE 3 (MCP+LLM Analyzer) for classification
         async with httpx.AsyncClient() as client:
             classify_response = await client.post(
                 f"{ENGINE3_URL}/classify",
@@ -243,24 +262,43 @@ async def process_single_event(event: LogEvent, background_tasks: BackgroundTask
                     "log_message": event.log_message,
                     "status_code": event.status_code,
                     "hour_of_day": event.hour_of_day,
-                    "port": event.port
+                    "port": event.port,
+                    "context": {
+                        "user_id": event.user_id,
+                        "resource": event.resource,
+                        "source_ip": event.source_ip
+                    },
+                    "include_reasoning": True
                 },
-                timeout=10.0
+                timeout=15.0  # Increased timeout for LLM analysis
             )
             classify_response.raise_for_status()
             classification = classify_response.json()
 
         # Step 2: Apply confidence routing
-        confidence = classification['confidence']
-        prediction = classification['prediction']
+        confidence = classification.get('confidence', 0.5)
+        prediction = classification.get('prediction', 'unknown')
 
-        # Determine route decision
+        # Extract MCP+LLM enhanced data
+        primary_control = classification.get('primary_control', {})
+        reasoning = classification.get('reasoning')
+        risk_indicators = classification.get('risk_indicators', [])
+
+        # Determine route decision based on confidence and risk
         if confidence >= 0.90:
             if prediction == 'compliant':
                 route_decision = "auto_accept"
                 needs_review = False
             else:  # non-compliant with high confidence
                 route_decision = "flag_for_review"
+                needs_review = True
+        elif confidence >= 0.70:
+            # Medium confidence - check for risk indicators
+            if risk_indicators:
+                route_decision = "flag_for_review"
+                needs_review = True
+            else:
+                route_decision = "queue_for_verification"
                 needs_review = True
         else:  # Low confidence
             route_decision = "queue_for_verification"
@@ -275,31 +313,45 @@ async def process_single_event(event: LogEvent, background_tasks: BackgroundTask
             event.status_code or 200
         )
 
-        # Step 4: Store classification result
+        # Step 4: Store classification result with enhanced data
         await db_service.store_classification(
             event_id=event.event_id,
             log_message=event.log_message,
             prediction=prediction,
             confidence=confidence,
             route_decision=route_decision,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
+            # Enhanced MCP data
+            control_id=primary_control.get('control_id'),
+            control_name=primary_control.get('control_name'),
+            reasoning=reasoning,
+            model_used=classification.get('model_used')
         )
 
         # Step 5: Update compliance scores (background)
         background_tasks.add_task(scorer.update_scores, prediction)
 
+        # Build response with MCP+LLM enhanced data
         return ClassificationResult(
             event_id=event.event_id,
             prediction=prediction,
             confidence=confidence,
-            probabilities=classification['probabilities'],
-            timestamp=classification['timestamp'],
+            probabilities=classification.get('probabilities', {'compliant': 0.5, 'non_compliant': 0.5}),
+            timestamp=classification.get('timestamp', datetime.utcnow().isoformat()),
             route_decision=route_decision,
-            needs_human_review=needs_review
+            needs_human_review=needs_review,
+            # Enhanced MCP+LLM fields
+            primary_control=ControlInfo(**primary_control) if primary_control else None,
+            secondary_controls=[ControlInfo(**c) for c in classification.get('secondary_controls', [])],
+            reasoning=reasoning,
+            evidence_indicators=classification.get('evidence_indicators', []),
+            risk_indicators=risk_indicators,
+            recommended_actions=classification.get('recommended_actions', []),
+            model_used=classification.get('model_used')
         )
 
     except httpx.HTTPError as e:
-        raise HTTPException(status_code=503, detail=f"ENGINE 3 connection error: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"ENGINE 3 (MCP Analyzer) connection error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
 
@@ -307,56 +359,73 @@ async def process_single_event(event: LogEvent, background_tasks: BackgroundTask
 @app.post("/process/batch")
 async def process_batch_events(events: List[LogEvent], background_tasks: BackgroundTasks):
     """
-    Process multiple events in batch
+    Process multiple events in batch through MCP+LLM Analyzer
     """
     try:
-        # Prepare batch for ENGINE 3
-        engine3_batch = {
-            "events": [
-                {
-                    "log_message": e.log_message,
-                    "status_code": e.status_code,
-                    "hour_of_day": e.hour_of_day,
-                    "port": e.port
-                }
-                for e in events
-            ]
-        }
+        # Prepare batch for ENGINE 3 (MCP+LLM format)
+        log_entries = []
+        for e in events:
+            log_entries.append({
+                "log_message": e.log_message,
+                "status_code": e.status_code,
+                "hour_of_day": e.hour_of_day,
+                "port": e.port,
+                "timestamp": e.timestamp,
+                "source_ip": e.source_ip,
+                "user_id": e.user_id,
+                "resource": e.resource
+            })
 
-        # Call ENGINE 3 batch endpoint
+        # Call ENGINE 3 batch endpoint (MCP+LLM format)
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{ENGINE3_URL}/classify/batch",
-                json=engine3_batch,
-                timeout=30.0
+                json={
+                    "logs": log_entries,
+                    "include_reasoning": True,
+                    "include_recommendations": True
+                },
+                timeout=60.0  # Increased timeout for LLM batch processing
             )
             response.raise_for_status()
             batch_results = response.json()
 
+        # Get results from new format (uses 'results' instead of 'predictions')
+        classification_results = batch_results.get('results', batch_results.get('predictions', []))
+
         # Process each result
         results = []
-        for i, (event, prediction_result) in enumerate(zip(events, batch_results['predictions'])):
+        for i, (event, prediction_result) in enumerate(zip(events, classification_results)):
             event_id = event.event_id or f"evt_batch_{i}_{datetime.utcnow().timestamp()}"
 
-            confidence = prediction_result['confidence']
-            prediction = prediction_result['prediction']
+            confidence = prediction_result.get('confidence', 0.5)
+            prediction = prediction_result.get('prediction', 'unknown')
+            primary_control = prediction_result.get('primary_control', {})
+            risk_indicators = prediction_result.get('risk_indicators', [])
 
-            # Apply routing logic
+            # Apply routing logic with risk awareness
             if confidence >= 0.90:
                 route_decision = "auto_accept" if prediction == 'compliant' else "flag_for_review"
                 needs_review = prediction != 'compliant'
+            elif confidence >= 0.70 and risk_indicators:
+                route_decision = "flag_for_review"
+                needs_review = True
             else:
                 route_decision = "queue_for_verification"
                 needs_review = True
 
-            # Store result
+            # Store result with enhanced MCP data
             await db_service.store_classification(
                 event_id=event_id,
                 log_message=event.log_message,
                 prediction=prediction,
                 confidence=confidence,
                 route_decision=route_decision,
-                timestamp=datetime.utcnow().isoformat()
+                timestamp=datetime.utcnow().isoformat(),
+                control_id=primary_control.get('control_id'),
+                control_name=primary_control.get('control_name'),
+                reasoning=prediction_result.get('reasoning'),
+                model_used=prediction_result.get('model_used')
             )
 
             results.append({
@@ -364,17 +433,24 @@ async def process_batch_events(events: List[LogEvent], background_tasks: Backgro
                 "prediction": prediction,
                 "confidence": confidence,
                 "route_decision": route_decision,
-                "needs_human_review": needs_review
+                "needs_human_review": needs_review,
+                "primary_control": primary_control,
+                "reasoning": prediction_result.get('reasoning'),
+                "model_used": prediction_result.get('model_used')
             })
 
         # Update scores in background
-        for result in batch_results['predictions']:
-            background_tasks.add_task(scorer.update_scores, result['prediction'])
+        for result in classification_results:
+            background_tasks.add_task(scorer.update_scores, result.get('prediction', 'unknown'))
 
         return {
             "total_processed": len(results),
             "results": results,
-            "avg_inference_time_ms": batch_results.get('avg_inference_time_ms', 0)
+            "compliant_count": batch_results.get('compliant_count', 0),
+            "non_compliant_count": batch_results.get('non_compliant_count', 0),
+            "average_confidence": batch_results.get('average_confidence', 0),
+            "total_latency_ms": batch_results.get('total_latency_ms', 0),
+            "model_used": batch_results.get('model_used', 'unknown')
         }
 
     except Exception as e:

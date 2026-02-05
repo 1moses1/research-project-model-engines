@@ -134,52 +134,79 @@ class StreamingPipeline:
 
     async def _classify_batch(self, events: List[Dict]):
         """
-        Send batch to ENGINE 3 for classification
+        Send batch to ENGINE 3 (MCP+LLM Analyzer) for classification
 
         Args:
             events: List of events
         """
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # Prepare batch for ENGINE 3
-                classification_requests = []
+                # Prepare batch for ENGINE 3 MCP+LLM Analyzer
+                # Format: BatchAnalysisRequest with 'logs' array of LogEntry
+                log_entries = []
 
                 for event in events:
-                    classification_requests.append({
+                    # Extract hour from timestamp if available
+                    hour_of_day = None
+                    timestamp = event.get("timestamp")
+                    if timestamp:
+                        try:
+                            if isinstance(timestamp, str):
+                                dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                                hour_of_day = dt.hour
+                        except (ValueError, AttributeError):
+                            pass
+
+                    log_entries.append({
                         "log_message": event.get("log_message", ""),
-                        "user": event.get("user"),
-                        "ip_address": event.get("ip_address"),
+                        "timestamp": timestamp,
+                        "source_ip": event.get("ip_address") or event.get("source_ip"),
+                        "destination_ip": event.get("destination_ip"),
+                        "port": event.get("port", 22),
+                        "status_code": event.get("status_code", 200),
+                        "hour_of_day": hour_of_day,
+                        "is_business_hours": 9 <= (hour_of_day or 12) <= 17,
+                        "user_id": event.get("user") or event.get("user_id"),
                         "resource": event.get("resource"),
                         "action": event.get("action"),
-                        "status_code": event.get("status_code"),
-                        "timestamp": event.get("timestamp"),
-                        "source": event.get("source"),
                     })
 
-                # Send to ENGINE 3 batch endpoint
+                # Send to ENGINE 3 batch endpoint (MCP+LLM format)
                 try:
                     response = await client.post(
                         f"{self.engine3_url}/classify/batch",
-                        json={"events": classification_requests},
+                        json={
+                            "logs": log_entries,
+                            "include_reasoning": True,
+                            "include_recommendations": True
+                        },
                         timeout=30.0
                     )
 
                     if response.status_code == 200:
-                        classifications = response.json().get("classifications", [])
+                        response_data = response.json()
+                        # New format uses 'results' instead of 'classifications'
+                        classifications = response_data.get("results", response_data.get("classifications", []))
 
-                        # Send each classified event to ENGINE 4
+                        # Send each classified event to ENGINE 4 with enhanced data
                         for event, classification in zip(events, classifications):
                             await self._send_to_engine4(event, classification)
 
                         self.stats["total_classified"] += len(classifications)
-                        print(f"✅ Classified {len(classifications)} events")
+
+                        # Log summary from MCP analyzer
+                        compliant = response_data.get("compliant_count", 0)
+                        non_compliant = response_data.get("non_compliant_count", 0)
+                        model_used = response_data.get("model_used", "unknown")
+                        print(f"✅ Classified {len(classifications)} events via {model_used} "
+                              f"(compliant: {compliant}, non_compliant: {non_compliant})")
 
                     else:
                         print(f"⚠️ ENGINE 3 error: {response.status_code}")
                         self.stats["total_failed"] += len(events)
 
                 except httpx.ConnectError:
-                    print(f"⚠️ ENGINE 3 not available, skipping classification")
+                    print(f"⚠️ ENGINE 3 (MCP Analyzer) not available, skipping classification")
                 except httpx.TimeoutException:
                     print(f"⚠️ ENGINE 3 timeout")
                 except Exception as e:
@@ -194,26 +221,52 @@ class StreamingPipeline:
 
         Args:
             event: Original event
-            classification: Classification result from ENGINE 3
+            classification: Classification result from ENGINE 3 (MCP+LLM Analyzer)
         """
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                # Prepare event for ENGINE 4
+                # Extract primary control from MCP analyzer result
+                primary_control = classification.get("primary_control", {})
+
+                # Prepare event for ENGINE 4 with enhanced MCP data
                 decision_request = {
                     "event_id": event.get("event_id"),
                     "log_message": event.get("log_message"),
-                    "user": event.get("user"),
-                    "ip_address": event.get("ip_address"),
+                    "user": event.get("user") or event.get("user_id"),
+                    "ip_address": event.get("ip_address") or event.get("source_ip"),
                     "resource": event.get("resource"),
                     "action": event.get("action"),
                     "status_code": event.get("status_code"),
                     "timestamp": event.get("timestamp"),
                     "source": event.get("source"),
                     "severity": event.get("severity"),
-                    # Add classification results
+
+                    # Core classification results
                     "prediction": classification.get("prediction"),
                     "confidence": classification.get("confidence"),
                     "probabilities": classification.get("probabilities"),
+
+                    # Enhanced MCP+LLM data
+                    "primary_control": {
+                        "control_id": primary_control.get("control_id"),
+                        "control_name": primary_control.get("control_name"),
+                        "control_family": primary_control.get("control_family"),
+                        "compliance_status": primary_control.get("compliance_status"),
+                        "confidence": primary_control.get("confidence"),
+                        "relevance": primary_control.get("relevance"),
+                    } if primary_control else None,
+                    "secondary_controls": classification.get("secondary_controls", []),
+
+                    # Reasoning and evidence from LLM
+                    "reasoning": classification.get("reasoning"),
+                    "evidence_indicators": classification.get("evidence_indicators", []),
+                    "risk_indicators": classification.get("risk_indicators", []),
+                    "recommended_actions": classification.get("recommended_actions", []),
+
+                    # Model metadata
+                    "model_used": classification.get("model_used"),
+                    "latency_ms": classification.get("latency_ms"),
+                    "cached": classification.get("cached", False),
                 }
 
                 # Send to ENGINE 4
@@ -226,7 +279,9 @@ class StreamingPipeline:
 
                     if response.status_code == 200:
                         result = response.json()
-                        print(f"✅ ENGINE 4 processed: {event.get('event_id')} -> {result.get('route_decision')}")
+                        control_id = primary_control.get("control_id", "N/A")
+                        print(f"✅ ENGINE 4 processed: {event.get('event_id')} -> "
+                              f"{result.get('route_decision')} (control: {control_id})")
                     else:
                         print(f"⚠️ ENGINE 4 error: {response.status_code}")
 

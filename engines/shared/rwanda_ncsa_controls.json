@@ -1,10 +1,11 @@
 {
   "metadata": {
     "framework": "Rwanda National Cyber Security Authority (NCSA)",
-    "version": "1.0",
-    "last_updated": "2025-11-28",
-    "description": "Rwanda NCSA cybersecurity control requirements for macOS compliance auditing - 47 system-auditable controls",
-    "total_controls": 47
+    "version": "2.0",
+    "last_updated": "2026-02-05",
+    "description": "Rwanda NCSA cybersecurity control requirements for macOS compliance auditing - 60 system-auditable controls with dedicated evidence parsers",
+    "total_controls": 60,
+    "evidence_parsers": 60
   },
   "controls": {
     "RWNCSA-AC-001": {
@@ -2156,6 +2157,293 @@
         "if_non_compliant": "MEDIUM - Network traffic not controlled, unnecessary ports exposed",
         "business_impact": "Network-based attacks, unauthorized connections",
         "likelihood": "MEDIUM"
+      }
+    },
+    "RWNCSA-AU-005": {
+      "family": "Audit and Accountability",
+      "name": "Audit Log Retention",
+      "description": "Audit logs must be retained for a minimum period to support incident investigation and compliance",
+      "severity": "MEDIUM",
+      "requirements": {
+        "minimum_retention_days": 90,
+        "log_rotation_enabled": true,
+        "secure_storage": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["Logs retained >= 90 days", "Log rotation configured", "Logs stored securely"],
+        "fail_conditions": ["Retention < 90 days", "Logs auto-deleted", "Logs accessible to unauthorized users"]
+      },
+      "macos_implementation": {
+        "audit_command": "sudo cat /etc/asl.conf | grep ttl",
+        "expected_output_pattern": "ttl=\\d+",
+        "parser_logic": "check_log_retention"
+      },
+      "remediation": {
+        "steps": ["Configure log retention in /etc/asl.conf", "Set ttl=90 minimum", "Enable log rotation"]
+      }
+    },
+    "RWNCSA-AU-006": {
+      "family": "Audit and Accountability",
+      "name": "Audit Events",
+      "description": "System must be configured to audit security-relevant events",
+      "severity": "HIGH",
+      "requirements": {
+        "login_logout_logged": true,
+        "authorization_logged": true,
+        "file_modifications_logged": true,
+        "admin_actions_logged": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["Login/logout events logged", "Authorization events logged", "Admin actions logged"],
+        "fail_conditions": ["No audit events configured", "Critical events not logged"]
+      },
+      "macos_implementation": {
+        "audit_command": "sudo cat /etc/security/audit_control",
+        "expected_output_pattern": "flags:.*lo|aa|fm|ad",
+        "parser_logic": "check_audit_flags"
+      },
+      "remediation": {
+        "steps": ["Configure audit flags in /etc/security/audit_control", "Enable: lo,aa,fm,ad,pc flags"]
+      }
+    },
+    "RWNCSA-AU-007": {
+      "family": "Audit and Accountability",
+      "name": "Audit Reduction and Report Generation",
+      "description": "System must support audit reduction and report generation capabilities",
+      "severity": "LOW",
+      "requirements": {
+        "audit_tools_available": true,
+        "report_generation_capability": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["Audit tools available (praudit, auditreduce)", "Can generate compliance reports"],
+        "fail_conditions": ["No audit analysis tools", "Cannot generate reports"]
+      },
+      "macos_implementation": {
+        "audit_command": "which praudit auditreduce",
+        "parser_logic": "check_audit_tools"
+      },
+      "remediation": {
+        "steps": ["Verify praudit and auditreduce are available", "Configure unified logging access"]
+      }
+    },
+    "RWNCSA-AU-008": {
+      "family": "Audit and Accountability",
+      "name": "Audit Record Timestamps",
+      "description": "Audit records must contain accurate timestamps synchronized to authoritative time source",
+      "severity": "MEDIUM",
+      "requirements": {
+        "ntp_enabled": true,
+        "timestamps_utc": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["NTP synchronization enabled", "Timestamps in UTC format"],
+        "fail_conditions": ["No time synchronization", "Timestamps not reliable"]
+      },
+      "macos_implementation": {
+        "audit_command": "systemsetup -getusingnetworktime",
+        "expected_output_pattern": "On",
+        "parser_logic": "check_time_sync"
+      },
+      "remediation": {
+        "steps": ["Enable NTP: sudo systemsetup -setusingnetworktime on", "Configure NTP server"]
+      }
+    },
+    "RWNCSA-IA-001": {
+      "family": "Identification and Authentication",
+      "name": "User Identification and Uniqueness",
+      "description": "All users must have unique identifiers for authentication and accountability",
+      "severity": "HIGH",
+      "requirements": {
+        "unique_user_ids": true,
+        "no_shared_accounts": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["All user IDs are unique", "No shared accounts"],
+        "fail_conditions": ["Duplicate user IDs found", "Shared accounts in use"]
+      },
+      "macos_implementation": {
+        "audit_command": "dscl . -list /Users UniqueID",
+        "parser_logic": "check_unique_users"
+      },
+      "remediation": {
+        "steps": ["Review user accounts: dscl . -list /Users", "Remove duplicate accounts", "Disable shared accounts"]
+      }
+    },
+    "RWNCSA-IA-002": {
+      "family": "Identification and Authentication",
+      "name": "Device Identification and Authentication",
+      "description": "Devices must be uniquely identified and authenticated before network access",
+      "severity": "MEDIUM",
+      "requirements": {
+        "device_uuid": true,
+        "device_certificates": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["Device has unique hardware UUID", "Device certificate configured"],
+        "fail_conditions": ["No device identification", "No device authentication"]
+      },
+      "macos_implementation": {
+        "audit_command": "system_profiler SPHardwareDataType | grep -E 'UUID|Serial'",
+        "parser_logic": "check_device_id"
+      },
+      "remediation": {
+        "steps": ["Verify hardware UUID: system_profiler SPHardwareDataType", "Configure device certificates"]
+      }
+    },
+    "RWNCSA-IA-003": {
+      "family": "Identification and Authentication",
+      "name": "Authenticator Management",
+      "description": "Authenticators (passwords, tokens) must be managed throughout their lifecycle",
+      "severity": "HIGH",
+      "requirements": {
+        "password_expiry": true,
+        "password_history": true,
+        "complexity_requirements": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["Password expiry configured", "Password history enforced", "Complexity requirements met"],
+        "fail_conditions": ["No password expiry", "Passwords can be reused", "Weak passwords allowed"]
+      },
+      "macos_implementation": {
+        "audit_command": "pwpolicy -getaccountpolicies",
+        "parser_logic": "check_password_policies"
+      },
+      "remediation": {
+        "steps": ["Configure password policies: pwpolicy -setaccountpolicies", "Set expiry, history, and complexity"]
+      }
+    },
+    "RWNCSA-IA-004": {
+      "family": "Identification and Authentication",
+      "name": "Authenticator Feedback",
+      "description": "Authentication feedback must be obscured to prevent disclosure",
+      "severity": "LOW",
+      "requirements": {
+        "password_obscured": true,
+        "no_clear_text_display": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["Password fields obscured", "No clear-text feedback"],
+        "fail_conditions": ["Passwords displayed in clear text"]
+      },
+      "macos_implementation": {
+        "audit_command": "defaults read NSGlobalDomain",
+        "parser_logic": "check_auth_feedback"
+      },
+      "remediation": {
+        "steps": ["Verify password fields use secure text entry", "Check application configurations"]
+      }
+    },
+    "RWNCSA-SI-001": {
+      "family": "System and Information Integrity",
+      "name": "Flaw Remediation",
+      "description": "Security flaws must be identified and corrected through patch management",
+      "severity": "HIGH",
+      "requirements": {
+        "automatic_updates": true,
+        "security_patches_applied": true,
+        "patch_schedule": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["Automatic updates enabled", "Security patches current", "Patch schedule defined"],
+        "fail_conditions": ["Auto-update disabled", "Critical patches missing", "No patch management"]
+      },
+      "macos_implementation": {
+        "audit_command": "defaults read /Library/Preferences/com.apple.SoftwareUpdate",
+        "expected_output_pattern": "AutomaticCheckEnabled = 1",
+        "parser_logic": "check_software_update"
+      },
+      "remediation": {
+        "steps": ["Enable auto-update: sudo softwareupdate --schedule on", "Apply pending updates: sudo softwareupdate -ia"]
+      }
+    },
+    "RWNCSA-SI-002": {
+      "family": "System and Information Integrity",
+      "name": "Malicious Code Protection",
+      "description": "System must employ malicious code protection mechanisms",
+      "severity": "CRITICAL",
+      "requirements": {
+        "xprotect_enabled": true,
+        "gatekeeper_enabled": true,
+        "mrt_enabled": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["XProtect enabled and updated", "Gatekeeper enabled", "MRT active"],
+        "fail_conditions": ["XProtect disabled", "Gatekeeper bypassed", "No malware protection"]
+      },
+      "macos_implementation": {
+        "audit_command": "spctl --status && system_profiler SPInstallHistoryDataType | grep -A 2 XProtect",
+        "parser_logic": "check_malware_protection"
+      },
+      "remediation": {
+        "steps": ["Enable Gatekeeper: sudo spctl --master-enable", "Update XProtect: softwareupdate --background-critical"]
+      }
+    },
+    "RWNCSA-CM-001": {
+      "family": "Configuration Management",
+      "name": "Baseline Configuration",
+      "description": "System must have documented baseline configuration for security settings",
+      "severity": "MEDIUM",
+      "requirements": {
+        "baseline_documented": true,
+        "configuration_profiles": true,
+        "deviation_detection": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["Baseline configuration documented", "Configuration profiles deployed", "Deviations detected"],
+        "fail_conditions": ["No baseline", "No configuration management", "Unmanaged settings"]
+      },
+      "macos_implementation": {
+        "audit_command": "profiles list -verbose",
+        "parser_logic": "check_config_profiles"
+      },
+      "remediation": {
+        "steps": ["Document baseline settings", "Deploy configuration profiles via MDM", "Monitor for deviations"]
+      }
+    },
+    "RWNCSA-SC-001": {
+      "family": "System and Communications Protection",
+      "name": "Application Partitioning",
+      "description": "Applications must be partitioned to prevent unauthorized access between components",
+      "severity": "HIGH",
+      "requirements": {
+        "app_sandbox": true,
+        "sip_enabled": true,
+        "process_isolation": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["App Sandbox enforced", "SIP enabled", "Process isolation active"],
+        "fail_conditions": ["Sandbox disabled", "SIP disabled", "No process isolation"]
+      },
+      "macos_implementation": {
+        "audit_command": "csrutil status && codesign -dvvv /Applications/*.app 2>&1 | grep -i sandbox",
+        "parser_logic": "check_app_partitioning"
+      },
+      "remediation": {
+        "steps": ["Enable SIP: csrutil enable (from Recovery)", "Use sandboxed applications", "Review app entitlements"]
+      }
+    },
+    "RWNCSA-SC-002": {
+      "family": "System and Communications Protection",
+      "name": "Protection of Information at Rest",
+      "description": "Data at rest must be protected using encryption",
+      "severity": "CRITICAL",
+      "requirements": {
+        "filevault_enabled": true,
+        "apfs_encryption": true,
+        "recovery_key_secured": true
+      },
+      "compliance_criteria": {
+        "pass_conditions": ["FileVault enabled", "APFS encryption active", "Recovery key secured"],
+        "fail_conditions": ["FileVault disabled", "No disk encryption", "Recovery key exposed"]
+      },
+      "macos_implementation": {
+        "audit_command": "fdesetup status && diskutil apfs list | grep -i encryption",
+        "expected_output_pattern": "FileVault is On",
+        "parser_logic": "check_encryption"
+      },
+      "remediation": {
+        "steps": ["Enable FileVault: sudo fdesetup enable", "Secure recovery key", "Verify encryption status"]
       }
     }
   }

@@ -1,0 +1,59 @@
+# Engine 3: MCP Compliance Analyzer Configuration
+# ================================================
+
+# LLM Provider Settings
+llm:
+  # Provider: "anthropic" or "openai"
+  provider: "anthropic"
+
+  # Model to use
+  # Anthropic: claude-opus-4-20250514, claude-sonnet-4-20250514, claude-3-haiku-20240307
+  # OpenAI: gpt-4-turbo, gpt-4o, gpt-3.5-turbo
+  model: "claude-sonnet-4-20250514"
+
+  # API Keys (prefer environment variables)
+  # anthropic_api_key: ${ANTHROPIC_API_KEY}
+  # openai_api_key: ${OPENAI_API_KEY}
+
+# Hybrid Mode Settings
+hybrid:
+  # Enable hybrid rule-based + LLM analysis
+  enabled: true
+
+  # Confidence threshold for rule-based to skip LLM
+  confidence_threshold: 0.95
+
+  # Max latency before falling back to rule-based (ms)
+  llm_timeout_ms: 5000
+
+# Caching Settings
+cache:
+  enabled: true
+  max_size: 10000
+  ttl_seconds: 3600
+
+# Rate Limiting
+rate_limit:
+  # Max requests per minute per client
+  requests_per_minute: 100
+
+  # Max concurrent LLM requests
+  max_concurrent_llm: 10
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"
+  include_request_body: false
+
+# Monitoring
+monitoring:
+  prometheus_enabled: true
+  metrics_path: "/metrics"
+
+# Model Selection Strategy
+# Use cheaper models for batch processing
+model_strategy:
+  single_request: "claude-sonnet-4-20250514"
+  batch_processing: "claude-3-haiku-20240307"
+  high_stakes: "claude-opus-4-20250514"

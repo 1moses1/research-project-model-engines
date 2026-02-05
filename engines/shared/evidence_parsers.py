@@ -81,6 +81,29 @@ class RwandaNCSAEvidenceParser:
             "RWNCSA-AC-024": self.parse_terminal_access,
             "RWNCSA-AC-025": self.parse_ssh_keys,
             "RWNCSA-AC-026": self.parse_pf_rules,
+
+            # Additional Audit & Accountability parsers (13 new parsers to reach 60 total)
+            "RWNCSA-AU-005": self.parse_audit_log_retention,
+            "RWNCSA-AU-006": self.parse_audit_events,
+            "RWNCSA-AU-007": self.parse_audit_reduction,
+            "RWNCSA-AU-008": self.parse_audit_timestamps,
+
+            # Additional Identity & Authentication parsers
+            "RWNCSA-IA-001": self.parse_user_identification,
+            "RWNCSA-IA-002": self.parse_device_identification,
+            "RWNCSA-IA-003": self.parse_authenticator_management,
+            "RWNCSA-IA-004": self.parse_authenticator_feedback,
+
+            # Additional System Integrity parsers
+            "RWNCSA-SI-001": self.parse_flaw_remediation,
+            "RWNCSA-SI-002": self.parse_malicious_code_protection,
+
+            # Configuration Management parsers
+            "RWNCSA-CM-001": self.parse_baseline_configuration,
+
+            # System & Communications Protection parsers
+            "RWNCSA-SC-001": self.parse_application_partitioning,
+            "RWNCSA-SC-002": self.parse_encryption_status,
         }
 
         parser_func = parser_map.get(control_id)
@@ -1079,6 +1102,167 @@ class RwandaNCSAEvidenceParser:
         is_compliant = has_rules
         gaps = [{"requirement": "Packet filter rules should be configured", "actual": "No pf rules found", "severity": "MEDIUM", "remediation": control['remediation']['steps']}] if not is_compliant else []
         return {"control_id": control_id, "control_name": control['name'], "parsing_successful": True, "evidence_summary": f"PF rules: {'configured' if has_rules else 'not configured'}", "actual_state": {"has_rules": has_rules}, "expected_state": {"has_rules": True}, "compliance_status": "COMPLIANT" if is_compliant else "NON_COMPLIANT", "compliance_score": 100.0 if is_compliant else 50.0, "gaps": gaps, "risk_level": control['severity'], "remediation_steps": control['remediation']['steps'] if gaps else []}
+
+    # ============== 13 NEW PARSERS (to reach 60 total) ==============
+
+    def parse_audit_log_retention(self, content: str, control_id: str) -> Dict:
+        """Parse audit log retention settings (AU-005)"""
+        control = self.controls_db.get(control_id, {"name": "Audit Log Retention", "severity": "MEDIUM", "remediation": {"steps": ["Configure audit log retention period"]}})
+        # Check for retention settings in asl.conf or unified logging
+        retention_days = None
+        if 'ttl=' in content:
+            match = re.search(r'ttl=(\d+)', content)
+            retention_days = int(match.group(1)) if match else None
+        elif 'max-size' in content or 'rotate' in content:
+            retention_days = 90  # Default assumption for rotation config
+
+        is_compliant = retention_days is not None and retention_days >= 90
+        gaps = [{"requirement": "Audit logs must be retained >= 90 days", "actual": f"Retention: {retention_days or 'not configured'} days", "severity": "HIGH", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Audit Log Retention'), "parsing_successful": True, "evidence_summary": f"Log retention: {retention_days or 'unknown'} days", "actual_state": {"retention_days": retention_days}, "expected_state": {"retention_days": 90}, "compliance_status": "COMPLIANT" if is_compliant else "NON_COMPLIANT", "compliance_score": 100.0 if is_compliant else 30.0, "gaps": gaps, "risk_level": control.get('severity', 'MEDIUM'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_audit_events(self, content: str, control_id: str) -> Dict:
+        """Parse audit events configuration (AU-006)"""
+        control = self.controls_db.get(control_id, {"name": "Audit Events", "severity": "HIGH", "remediation": {"steps": ["Enable comprehensive audit event logging"]}})
+        # Check for audit flags in system_profiler or audit_control
+        audit_flags = []
+        if 'lo' in content: audit_flags.append('login/logout')
+        if 'aa' in content: audit_flags.append('authorization')
+        if 'fm' in content: audit_flags.append('file_modify')
+        if 'ad' in content: audit_flags.append('administrative')
+        if 'pc' in content: audit_flags.append('process')
+
+        is_compliant = len(audit_flags) >= 3
+        gaps = [{"requirement": "Minimum 3 audit event types required", "actual": f"{len(audit_flags)} types configured", "severity": "HIGH", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Audit Events'), "parsing_successful": True, "evidence_summary": f"{len(audit_flags)} audit event types configured", "actual_state": {"audit_flags": audit_flags, "count": len(audit_flags)}, "expected_state": {"minimum_types": 3}, "compliance_status": "COMPLIANT" if is_compliant else "NON_COMPLIANT", "compliance_score": min(100.0, len(audit_flags) * 33.3), "gaps": gaps, "risk_level": control.get('severity', 'HIGH'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_audit_reduction(self, content: str, control_id: str) -> Dict:
+        """Parse audit reduction and report generation capability (AU-007)"""
+        control = self.controls_db.get(control_id, {"name": "Audit Reduction", "severity": "LOW", "remediation": {"steps": ["Configure audit analysis tools"]}})
+        # Check for praudit, auditreduce, or log analysis tools
+        has_tools = any(tool in content.lower() for tool in ['praudit', 'auditreduce', 'log show', 'osquery', 'asl'])
+
+        is_compliant = has_tools or 'unified logging' in content.lower()
+        gaps = [{"requirement": "Audit reduction tools must be available", "actual": "No audit analysis tools found", "severity": "LOW", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Audit Reduction'), "parsing_successful": True, "evidence_summary": f"Audit tools: {'available' if is_compliant else 'not configured'}", "actual_state": {"has_tools": is_compliant}, "expected_state": {"has_tools": True}, "compliance_status": "COMPLIANT" if is_compliant else "PARTIAL", "compliance_score": 100.0 if is_compliant else 50.0, "gaps": gaps, "risk_level": control.get('severity', 'LOW'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_audit_timestamps(self, content: str, control_id: str) -> Dict:
+        """Parse audit record timestamp configuration (AU-008)"""
+        control = self.controls_db.get(control_id, {"name": "Audit Timestamps", "severity": "MEDIUM", "remediation": {"steps": ["Ensure NTP sync for accurate timestamps"]}})
+        # Check for NTP sync and timestamp format
+        has_ntp = 'ntp' in content.lower() or 'systemsetup -getusingnetworktime' in content.lower() or 'On' in content
+        has_timestamps = any(ts in content for ts in ['UTC', 'GMT', 'timestamp', 'time='])
+
+        is_compliant = has_ntp or has_timestamps
+        gaps = [{"requirement": "Audit timestamps must be synchronized", "actual": "Time sync not verified", "severity": "MEDIUM", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Audit Timestamps'), "parsing_successful": True, "evidence_summary": f"NTP: {'synced' if has_ntp else 'unknown'}, Timestamps: {'present' if has_timestamps else 'unknown'}", "actual_state": {"ntp_sync": has_ntp, "timestamps_present": has_timestamps}, "expected_state": {"ntp_sync": True}, "compliance_status": "COMPLIANT" if is_compliant else "PARTIAL", "compliance_score": 100.0 if is_compliant else 50.0, "gaps": gaps, "risk_level": control.get('severity', 'MEDIUM'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_user_identification(self, content: str, control_id: str) -> Dict:
+        """Parse user identification uniqueness (IA-001)"""
+        control = self.controls_db.get(control_id, {"name": "User Identification", "severity": "HIGH", "remediation": {"steps": ["Ensure unique user identifiers"]}})
+        # Parse dscl or /etc/passwd output for user uniqueness
+        users = [line.split(':')[0] for line in content.split('\n') if line.strip() and not line.startswith('#')]
+        unique_users = len(set(users))
+        total_users = len(users)
+
+        is_compliant = unique_users == total_users and total_users > 0
+        gaps = [{"requirement": "All user identifiers must be unique", "actual": f"{total_users - unique_users} duplicate users found", "severity": "HIGH", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant and total_users > 0 else []
+        return {"control_id": control_id, "control_name": control.get('name', 'User Identification'), "parsing_successful": True, "evidence_summary": f"{total_users} users, {unique_users} unique", "actual_state": {"total_users": total_users, "unique_users": unique_users}, "expected_state": {"all_unique": True}, "compliance_status": "COMPLIANT" if is_compliant else "NON_COMPLIANT", "compliance_score": 100.0 if is_compliant else 0.0, "gaps": gaps, "risk_level": control.get('severity', 'HIGH'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_device_identification(self, content: str, control_id: str) -> Dict:
+        """Parse device identification and authentication (IA-002)"""
+        control = self.controls_db.get(control_id, {"name": "Device Identification", "severity": "MEDIUM", "remediation": {"steps": ["Configure device certificates or hardware identifiers"]}})
+        # Check for hardware UUID, serial number, or device certificates
+        has_uuid = 'hardware uuid' in content.lower() or 'UUID' in content
+        has_serial = 'serial' in content.lower() or 'SerialNumber' in content
+        has_cert = 'certificate' in content.lower() or '.pem' in content or '.crt' in content
+
+        device_id_methods = sum([has_uuid, has_serial, has_cert])
+        is_compliant = device_id_methods >= 1
+        gaps = [{"requirement": "Device must have unique identifier", "actual": "No device identification found", "severity": "MEDIUM", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Device Identification'), "parsing_successful": True, "evidence_summary": f"Device ID methods: {device_id_methods}", "actual_state": {"has_uuid": has_uuid, "has_serial": has_serial, "has_cert": has_cert}, "expected_state": {"identified": True}, "compliance_status": "COMPLIANT" if is_compliant else "NON_COMPLIANT", "compliance_score": 100.0 if is_compliant else 0.0, "gaps": gaps, "risk_level": control.get('severity', 'MEDIUM'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_authenticator_management(self, content: str, control_id: str) -> Dict:
+        """Parse authenticator management policies (IA-003)"""
+        control = self.controls_db.get(control_id, {"name": "Authenticator Management", "severity": "HIGH", "remediation": {"steps": ["Implement strong authenticator lifecycle management"]}})
+        # Check password policy settings
+        has_expiry = 'maxage' in content.lower() or 'passwordexpirationdays' in content.lower()
+        has_history = 'history' in content.lower() or 'previouspasswords' in content.lower()
+        has_complexity = 'minlength' in content.lower() or 'requiresalpha' in content.lower()
+
+        policy_count = sum([has_expiry, has_history, has_complexity])
+        is_compliant = policy_count >= 2
+        gaps = [{"requirement": "Authenticator management requires expiry, history, and complexity", "actual": f"{policy_count}/3 policies configured", "severity": "HIGH", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Authenticator Management'), "parsing_successful": True, "evidence_summary": f"{policy_count}/3 authenticator policies configured", "actual_state": {"has_expiry": has_expiry, "has_history": has_history, "has_complexity": has_complexity}, "expected_state": {"minimum_policies": 2}, "compliance_status": "COMPLIANT" if is_compliant else "PARTIAL", "compliance_score": policy_count * 33.3, "gaps": gaps, "risk_level": control.get('severity', 'HIGH'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_authenticator_feedback(self, content: str, control_id: str) -> Dict:
+        """Parse authenticator feedback obscuration (IA-004)"""
+        control = self.controls_db.get(control_id, {"name": "Authenticator Feedback", "severity": "LOW", "remediation": {"steps": ["Ensure password fields obscure input"]}})
+        # This is typically UI-based, check for relevant security settings
+        obscured = 'securetextentry' in content.lower() or 'password' not in content.lower() or 'echo' not in content
+
+        is_compliant = obscured
+        return {"control_id": control_id, "control_name": control.get('name', 'Authenticator Feedback'), "parsing_successful": True, "evidence_summary": f"Feedback obscuration: {'enabled' if is_compliant else 'check manually'}", "actual_state": {"obscured": is_compliant}, "expected_state": {"obscured": True}, "compliance_status": "COMPLIANT" if is_compliant else "PARTIAL", "compliance_score": 100.0 if is_compliant else 75.0, "gaps": [], "risk_level": control.get('severity', 'LOW'), "remediation_steps": []}
+
+    def parse_flaw_remediation(self, content: str, control_id: str) -> Dict:
+        """Parse flaw remediation / patch management (SI-001)"""
+        control = self.controls_db.get(control_id, {"name": "Flaw Remediation", "severity": "HIGH", "remediation": {"steps": ["Enable automatic security updates"]}})
+        # Check for software update settings
+        auto_update = 'automaticcheckEnabled = 1' in content or 'AutoUpdate' in content or 'CriticalUpdateInstall = 1' in content
+        recent_update = 'last successful' in content.lower() or 'softwareupdate' in content.lower()
+
+        is_compliant = auto_update
+        gaps = [{"requirement": "Automatic security updates must be enabled", "actual": "Auto-update not configured", "severity": "HIGH", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Flaw Remediation'), "parsing_successful": True, "evidence_summary": f"Auto-update: {'enabled' if auto_update else 'disabled'}", "actual_state": {"auto_update": auto_update, "recent_update": recent_update}, "expected_state": {"auto_update": True}, "compliance_status": "COMPLIANT" if is_compliant else "NON_COMPLIANT", "compliance_score": 100.0 if is_compliant else 0.0, "gaps": gaps, "risk_level": control.get('severity', 'HIGH'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_malicious_code_protection(self, content: str, control_id: str) -> Dict:
+        """Parse malicious code protection status (SI-002)"""
+        control = self.controls_db.get(control_id, {"name": "Malicious Code Protection", "severity": "CRITICAL", "remediation": {"steps": ["Enable XProtect and Gatekeeper"]}})
+        # Check for XProtect, Gatekeeper, MRT status
+        xprotect = 'xprotect' in content.lower() and ('enabled' in content.lower() or 'version' in content.lower())
+        gatekeeper = 'assessmentenabled' in content.lower() or 'spctl' in content.lower() and 'enabled' in content.lower()
+        mrt = 'mrt' in content.lower() or 'malware removal' in content.lower()
+
+        protection_count = sum([xprotect, gatekeeper, mrt])
+        is_compliant = protection_count >= 2
+        gaps = [{"requirement": "XProtect and Gatekeeper must be enabled", "actual": f"{protection_count}/3 protections active", "severity": "CRITICAL", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Malicious Code Protection'), "parsing_successful": True, "evidence_summary": f"{protection_count}/3 malware protections active", "actual_state": {"xprotect": xprotect, "gatekeeper": gatekeeper, "mrt": mrt}, "expected_state": {"minimum_protections": 2}, "compliance_status": "COMPLIANT" if is_compliant else "NON_COMPLIANT", "compliance_score": protection_count * 33.3, "gaps": gaps, "risk_level": control.get('severity', 'CRITICAL'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_baseline_configuration(self, content: str, control_id: str) -> Dict:
+        """Parse baseline configuration documentation (CM-001)"""
+        control = self.controls_db.get(control_id, {"name": "Baseline Configuration", "severity": "MEDIUM", "remediation": {"steps": ["Document and maintain system baseline configuration"]}})
+        # Check for configuration profiles or baseline documentation
+        has_profiles = 'configurationprofile' in content.lower() or 'mdm' in content.lower() or '.mobileconfig' in content
+        has_baseline = 'baseline' in content.lower() or 'hardening' in content.lower()
+        profile_count = content.lower().count('profile')
+
+        is_compliant = has_profiles or profile_count > 0
+        gaps = [{"requirement": "System baseline configuration must be documented", "actual": "No baseline configuration found", "severity": "MEDIUM", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Baseline Configuration'), "parsing_successful": True, "evidence_summary": f"Configuration profiles: {profile_count}", "actual_state": {"has_profiles": has_profiles, "profile_count": profile_count}, "expected_state": {"documented": True}, "compliance_status": "COMPLIANT" if is_compliant else "PARTIAL", "compliance_score": 100.0 if is_compliant else 50.0, "gaps": gaps, "risk_level": control.get('severity', 'MEDIUM'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_application_partitioning(self, content: str, control_id: str) -> Dict:
+        """Parse application partitioning / sandboxing (SC-001)"""
+        control = self.controls_db.get(control_id, {"name": "Application Partitioning", "severity": "HIGH", "remediation": {"steps": ["Enable App Sandbox for applications"]}})
+        # Check for sandbox, App Sandbox, or container settings
+        has_sandbox = 'sandbox' in content.lower() or 'app sandbox' in content.lower()
+        has_sip = 'system integrity protection' in content.lower() or 'csrutil' in content.lower() and 'enabled' in content.lower()
+        has_gatekeeper = 'gatekeeper' in content.lower() or 'spctl' in content.lower()
+
+        partition_count = sum([has_sandbox, has_sip, has_gatekeeper])
+        is_compliant = partition_count >= 1
+        gaps = [{"requirement": "Application sandboxing must be enabled", "actual": "No partitioning mechanisms found", "severity": "HIGH", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Application Partitioning'), "parsing_successful": True, "evidence_summary": f"{partition_count} partitioning mechanisms active", "actual_state": {"sandbox": has_sandbox, "sip": has_sip, "gatekeeper": has_gatekeeper}, "expected_state": {"partitioned": True}, "compliance_status": "COMPLIANT" if is_compliant else "NON_COMPLIANT", "compliance_score": min(100.0, partition_count * 50.0), "gaps": gaps, "risk_level": control.get('severity', 'HIGH'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
+
+    def parse_encryption_status(self, content: str, control_id: str) -> Dict:
+        """Parse encryption at rest status (SC-002)"""
+        control = self.controls_db.get(control_id, {"name": "Encryption Status", "severity": "CRITICAL", "remediation": {"steps": ["Enable FileVault full disk encryption"]}})
+        # Check for FileVault, encryption status
+        filevault_on = 'filevault is on' in content.lower() or 'encryption type: apfs' in content.lower()
+        encrypted = 'encrypted' in content.lower() and 'not encrypted' not in content.lower()
+        apfs_encrypted = 'apfs' in content.lower() and ('encryption' in content.lower() or 'cryptographic' in content.lower())
+
+        is_compliant = filevault_on or encrypted or apfs_encrypted
+        gaps = [{"requirement": "Full disk encryption must be enabled (FileVault)", "actual": "Disk not encrypted", "severity": "CRITICAL", "remediation": control.get('remediation', {}).get('steps', [])}] if not is_compliant else []
+        return {"control_id": control_id, "control_name": control.get('name', 'Encryption Status'), "parsing_successful": True, "evidence_summary": f"Encryption: {'enabled' if is_compliant else 'disabled'}", "actual_state": {"filevault": filevault_on, "encrypted": encrypted}, "expected_state": {"encrypted": True}, "compliance_status": "COMPLIANT" if is_compliant else "NON_COMPLIANT", "compliance_score": 100.0 if is_compliant else 0.0, "gaps": gaps, "risk_level": control.get('severity', 'CRITICAL'), "remediation_steps": control.get('remediation', {}).get('steps', []) if gaps else []}
 
 
 

@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .progress-bar { transition: width 0.5s ease-in-out; }
         .stage-dot { transition: all 0.3s ease; }
@@ -1703,37 +1704,303 @@
             }
         }
 
-        async function loadAudits() {
+        // Load dashboard stats from new UI integration API
+        async function loadDashboardStats() {
             try {
-                const response = await fetch(`${API_BASE}/api/v3/audits`);
+                const response = await fetch(`${API_BASE}/api/stats/overview`);
                 if (response.ok) {
-                    const data = await response.json();
-                    if (data.audits && data.audits.length > 0) {
-                        const tbody = document.getElementById('audits-table');
-                        tbody.innerHTML = data.audits.map(a => `
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 font-mono text-sm">${a.audit_id}</td>
-                                <td class="px-4 py-3 text-sm">${a.target?.host || 'localhost'}</td>
-                                <td class="px-4 py-3 text-sm">${a.framework}</td>
-                                <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded ${a.stage === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${a.stage}</span></td>
-                                <td class="px-4 py-3 font-semibold ${a.details?.overall_score >= 70 ? 'text-green-600' : 'text-red-600'}">${a.details?.overall_score || '--'}%</td>
-                                <td class="px-4 py-3 text-sm text-gray-500">${new Date(a.started_at).toLocaleDateString()}</td>
-                            </tr>
-                        `).join('');
+                    const stats = await response.json();
+                    // Update stat cards
+                    document.getElementById('stat-total').textContent = stats.total_audits || 0;
+                    document.getElementById('stat-compliant').textContent = stats.completed_audits || 0;
+                    document.getElementById('stat-noncompliant').textContent = stats.pending_reviews || 0;
 
-                        document.getElementById('stat-total').textContent = data.audits.length;
-                        document.getElementById('recent-audits').innerHTML = data.audits.slice(0, 5).map(a => `
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div>
-                                    <span class="font-mono text-sm">${a.audit_id}</span>
-                                    <span class="text-gray-500 text-sm ml-2">${a.target?.host || 'localhost'}</span>
-                                </div>
-                                <span class="font-semibold ${a.details?.overall_score >= 70 ? 'text-green-600' : 'text-red-600'}">${a.details?.overall_score || '--'}%</span>
-                            </div>
-                        `).join('');
+                    // Update compliance rate display if element exists
+                    const complianceEl = document.getElementById('stat-compliance-rate');
+                    if (complianceEl) {
+                        complianceEl.textContent = (stats.compliance_rate || 0).toFixed(1) + '%';
+                    }
+
+                    // Update risk level badge if element exists
+                    const riskEl = document.getElementById('stat-risk-level');
+                    if (riskEl) {
+                        const riskColors = {
+                            'LOW': 'bg-green-100 text-green-800',
+                            'MEDIUM': 'bg-yellow-100 text-yellow-800',
+                            'HIGH': 'bg-red-100 text-red-800'
+                        };
+                        riskEl.className = `px-3 py-1 text-sm rounded-full ${riskColors[stats.risk_level] || riskColors['MEDIUM']}`;
+                        riskEl.textContent = stats.risk_level || 'UNKNOWN';
                     }
                 }
+            } catch (e) { console.error('Error loading dashboard stats:', e); }
+        }
+
+        async function loadAudits() {
+            try {
+                // Try new API first, fallback to v3
+                let data = null;
+                try {
+                    const response = await fetch(`${API_BASE}/api/audits/recent?limit=20`);
+                    if (response.ok) {
+                        data = await response.json();
+                    }
+                } catch (e) {
+                    console.log('New API not available, using v3');
+                }
+
+                // Fallback to v3 API
+                if (!data) {
+                    const response = await fetch(`${API_BASE}/api/v3/audits`);
+                    if (response.ok) {
+                        data = await response.json();
+                    }
+                }
+
+                if (data && data.audits && data.audits.length > 0) {
+                    const tbody = document.getElementById('audits-table');
+                    tbody.innerHTML = data.audits.map(a => {
+                        const host = a.config?.target_host || a.target?.host || 'localhost';
+                        const framework = a.config?.framework || a.framework || 'Rwanda-NCSA';
+                        const stage = a.status || a.stage || 'pending';
+                        const score = a.results?.summary?.compliance_rate || a.details?.overall_score || null;
+                        const startedAt = a.started_at ? new Date(a.started_at).toLocaleDateString() : '--';
+
+                        return `
+                            <tr class="hover:bg-gray-50 cursor-pointer" onclick="viewAuditDetails('${a.audit_id}')">
+                                <td class="px-4 py-3 font-mono text-sm">${a.audit_id}</td>
+                                <td class="px-4 py-3 text-sm">${host}</td>
+                                <td class="px-4 py-3 text-sm">${framework}</td>
+                                <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded ${stage === 'completed' ? 'bg-green-100 text-green-800' : stage === 'running' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">${stage}</span></td>
+                                <td class="px-4 py-3 font-semibold ${score !== null && score >= 70 ? 'text-green-600' : 'text-red-600'}">${score !== null ? score.toFixed(1) + '%' : '--'}</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">${startedAt}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    document.getElementById('stat-total').textContent = data.total || data.audits.length;
+                    document.getElementById('recent-audits').innerHTML = data.audits.slice(0, 5).map(a => {
+                        const host = a.config?.target_host || a.target?.host || 'localhost';
+                        const score = a.results?.summary?.compliance_rate || a.details?.overall_score || null;
+                        const riskLevel = a.results?.summary?.risk_level || null;
+
+                        return `
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer" onclick="viewAuditDetails('${a.audit_id}')">
+                                <div>
+                                    <span class="font-mono text-sm">${a.audit_id}</span>
+                                    <span class="text-gray-500 text-sm ml-2">${host}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    ${riskLevel ? `<span class="px-2 py-0.5 text-xs rounded ${riskLevel === 'LOW' ? 'bg-green-100 text-green-700' : riskLevel === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}">${riskLevel}</span>` : ''}
+                                    <span class="font-semibold ${score !== null && score >= 70 ? 'text-green-600' : 'text-red-600'}">${score !== null ? score.toFixed(1) + '%' : '--'}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
             } catch (e) { console.error('Error loading audits:', e); }
+        }
+
+        // View audit details - navigate or show modal
+        async function viewAuditDetails(auditId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/audit/${auditId}/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'completed') {
+                        // Show results in enhanced modal
+                        showAuditResultsModal(auditId, data);
+                    } else if (data.status === 'running' || data.status === 'in_progress') {
+                        // Show progress modal
+                        showProgressModal(auditId);
+                    } else {
+                        alert('Audit status: ' + data.status);
+                    }
+                } else {
+                    // Fallback for v3 API audits
+                    alert('Audit details not available through new API. Status: ' + auditId);
+                }
+            } catch (e) {
+                console.error('Error loading audit details:', e);
+                alert('Could not load audit details');
+            }
+        }
+
+        // Show audit results in enhanced modal with charts
+        async function showAuditResultsModal(auditId, statusData) {
+            try {
+                const response = await fetch(`${API_BASE}/api/audit/${auditId}/results`);
+                if (!response.ok) throw new Error('Failed to fetch results');
+
+                const results = await response.json();
+                const summary = results.summary || {};
+                const controls = results.controls || [];
+
+                // Update modal header
+                document.getElementById('results-modal-subtitle').textContent = `Audit ID: ${auditId}`;
+
+                // Update header color based on compliance
+                const headerEl = document.getElementById('results-modal-header');
+                const complianceRate = summary.compliance_rate || 0;
+                if (complianceRate >= 80) {
+                    headerEl.className = 'bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6';
+                } else if (complianceRate >= 60) {
+                    headerEl.className = 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white p-6';
+                } else {
+                    headerEl.className = 'bg-gradient-to-r from-red-600 to-rose-600 text-white p-6';
+                }
+
+                // Update summary cards
+                document.getElementById('results-compliance-rate').textContent = `${complianceRate.toFixed(1)}%`;
+                document.getElementById('results-compliant').textContent = summary.compliant || 0;
+                document.getElementById('results-non-compliant').textContent = summary.non_compliant || 0;
+                document.getElementById('results-risk-level').textContent = summary.risk_level || 'N/A';
+                document.getElementById('results-completed-at').textContent =
+                    statusData?.completed_at ? new Date(statusData.completed_at).toLocaleString() : 'Just now';
+
+                // Render compliance pie chart
+                renderCompliancePieChart(summary.compliant || 0, summary.non_compliant || 0, summary.not_applicable || 0);
+
+                // Render control families bar chart
+                renderControlFamiliesChart(controls);
+
+                // Populate controls table
+                populateControlsTable(controls);
+
+                // Show modal
+                document.getElementById('audit-results-modal').classList.remove('hidden');
+
+            } catch (e) {
+                console.error('Error loading audit results:', e);
+                // Fallback to simple alert
+                alert(`Error loading detailed results for audit ${auditId}`);
+            }
+        }
+
+        // Render Compliance Pie Chart
+        function renderCompliancePieChart(compliant, nonCompliant, notApplicable) {
+            const ctx = document.getElementById('compliance-pie-chart').getContext('2d');
+
+            // Destroy existing chart if any
+            if (compliancePieChart) {
+                compliancePieChart.destroy();
+            }
+
+            compliancePieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Compliant', 'Non-Compliant', 'Not Applicable'],
+                    datasets: [{
+                        data: [compliant, nonCompliant, notApplicable || 0],
+                        backgroundColor: ['#22c55e', '#ef4444', '#9ca3af'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20, usePointStyle: true }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        // Render Control Families Bar Chart
+        function renderControlFamiliesChart(controls) {
+            const ctx = document.getElementById('control-families-chart').getContext('2d');
+
+            // Destroy existing chart
+            if (controlFamiliesChart) {
+                controlFamiliesChart.destroy();
+            }
+
+            // Aggregate by control family
+            const familyStats = {};
+            controls.forEach(control => {
+                const family = control.control_family || 'Unknown';
+                if (!familyStats[family]) {
+                    familyStats[family] = { compliant: 0, nonCompliant: 0 };
+                }
+                if (control.status === 'compliant' || control.compliant) {
+                    familyStats[family].compliant++;
+                } else {
+                    familyStats[family].nonCompliant++;
+                }
+            });
+
+            const families = Object.keys(familyStats).slice(0, 8); // Top 8 families
+            const compliantData = families.map(f => familyStats[f].compliant);
+            const nonCompliantData = families.map(f => familyStats[f].nonCompliant);
+
+            controlFamiliesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: families.map(f => f.length > 15 ? f.substring(0, 15) + '...' : f),
+                    datasets: [
+                        {
+                            label: 'Compliant',
+                            data: compliantData,
+                            backgroundColor: '#22c55e',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Non-Compliant',
+                            data: nonCompliantData,
+                            backgroundColor: '#ef4444',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } }
+                    }
+                }
+            });
+        }
+
+        // Populate controls table
+        function populateControlsTable(controls) {
+            const tbody = document.getElementById('results-controls-table');
+
+            if (!controls || controls.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">No control data available</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = controls.slice(0, 50).map(control => {
+                const isCompliant = control.status === 'compliant' || control.compliant;
+                const statusClass = isCompliant ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                const statusText = isCompliant ? 'Compliant' : 'Non-Compliant';
+                const confidence = control.confidence ? (control.confidence * 100).toFixed(0) + '%' : '--';
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 font-mono text-xs">${control.control_id || 'N/A'}</td>
+                        <td class="px-4 py-2 text-xs">${control.control_family || 'Unknown'}</td>
+                        <td class="px-4 py-2">
+                            <span class="px-2 py-0.5 text-xs rounded ${statusClass}">${statusText}</span>
+                        </td>
+                        <td class="px-4 py-2 text-xs text-gray-600">${confidence}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (controls.length > 50) {
+                tbody.innerHTML += `<tr><td colspan="4" class="px-4 py-2 text-center text-gray-500 text-xs">... and ${controls.length - 50} more controls</td></tr>`;
+            }
         }
 
         // Load reports from database
@@ -2209,11 +2476,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             restoreSidebarState();
             initWebSocket();
+            loadDashboardStats();  // Load stats from new API
             loadAudits();
             loadEngineStatus();
             loadDbStatus();
             loadSystemInfo();
             // Refresh status periodically
+            setInterval(loadDashboardStats, 15000);  // Refresh stats every 15s
             setInterval(loadEngineStatus, 10000);
             setInterval(loadDbStatus, 30000);
             setInterval(loadSystemInfo, 60000);
@@ -2285,5 +2554,335 @@
             </div>
         </div>
     </div>
+
+    <!-- Audit Results Modal -->
+    <div id="audit-results-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeAuditResultsModal()"></div>
+        <div class="modal-content relative mx-auto mt-10 max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
+            <div id="results-modal-header" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-clipboard-check text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 id="results-modal-title" class="text-xl font-bold">Audit Results</h2>
+                            <p id="results-modal-subtitle" class="text-green-100 text-sm">Audit ID: --</p>
+                        </div>
+                    </div>
+                    <button onclick="closeAuditResultsModal()" class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-blue-600 uppercase">Compliance Rate</p>
+                        <p id="results-compliance-rate" class="text-3xl font-bold text-blue-700">--%</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-green-600 uppercase">Compliant</p>
+                        <p id="results-compliant" class="text-3xl font-bold text-green-700">--</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-red-600 uppercase">Non-Compliant</p>
+                        <p id="results-non-compliant" class="text-3xl font-bold text-red-700">--</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-amber-600 uppercase">Risk Level</p>
+                        <p id="results-risk-level" class="text-3xl font-bold text-amber-700">--</p>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white border rounded-xl p-4">
+                        <h3 class="text-sm font-semibold text-gray-600 uppercase mb-4">Compliance Distribution</h3>
+                        <div class="h-64 flex items-center justify-center">
+                            <canvas id="compliance-pie-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white border rounded-xl p-4">
+                        <h3 class="text-sm font-semibold text-gray-600 uppercase mb-4">Control Families</h3>
+                        <div class="h-64">
+                            <canvas id="control-families-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Control Results Table -->
+                <div class="bg-white border rounded-xl p-4">
+                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-4">Control Assessment Details</h3>
+                    <div class="max-h-64 overflow-y-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Control ID</th>
+                                    <th class="px-4 py-2 text-left">Family</th>
+                                    <th class="px-4 py-2 text-left">Status</th>
+                                    <th class="px-4 py-2 text-left">Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-controls-table" class="divide-y">
+                                <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t px-6 py-4 bg-gray-50 flex justify-between items-center">
+                <div class="flex items-center gap-2 text-sm text-gray-600">
+                    <i class="fas fa-calendar"></i>
+                    <span id="results-completed-at">--</span>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="downloadAuditReport()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm flex items-center gap-2">
+                        <i class="fas fa-download"></i> Download Report
+                    </button>
+                    <button onclick="closeAuditResultsModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Progress Modal -->
+    <div id="audit-progress-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="modal-content relative mx-auto mt-20 max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-sync fa-spin text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold">Audit In Progress</h2>
+                            <p id="progress-modal-audit-id" class="text-blue-100 text-sm">Audit ID: --</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <!-- Progress Bar -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Overall Progress</span>
+                        <span id="progress-percentage" class="text-sm font-bold text-blue-600">0%</span>
+                    </div>
+                    <div class="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-blue-600 progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Stage Indicators -->
+                <div class="grid grid-cols-5 gap-2 mb-6">
+                    <div id="stage-collecting" class="text-center p-3 bg-gray-100 rounded-lg">
+                        <i class="fas fa-database text-gray-400 text-xl mb-1"></i>
+                        <p class="text-xs text-gray-500">Collecting</p>
+                    </div>
+                    <div id="stage-parsing" class="text-center p-3 bg-gray-100 rounded-lg">
+                        <i class="fas fa-cogs text-gray-400 text-xl mb-1"></i>
+                        <p class="text-xs text-gray-500">Parsing</p>
+                    </div>
+                    <div id="stage-analyzing" class="text-center p-3 bg-gray-100 rounded-lg">
+                        <i class="fas fa-brain text-gray-400 text-xl mb-1"></i>
+                        <p class="text-xs text-gray-500">Analyzing</p>
+                    </div>
+                    <div id="stage-scoring" class="text-center p-3 bg-gray-100 rounded-lg">
+                        <i class="fas fa-chart-line text-gray-400 text-xl mb-1"></i>
+                        <p class="text-xs text-gray-500">Scoring</p>
+                    </div>
+                    <div id="stage-reporting" class="text-center p-3 bg-gray-100 rounded-lg">
+                        <i class="fas fa-file-alt text-gray-400 text-xl mb-1"></i>
+                        <p class="text-xs text-gray-500">Reporting</p>
+                    </div>
+                </div>
+
+                <!-- Current Stage Info -->
+                <div class="bg-blue-50 rounded-xl p-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i id="current-stage-icon" class="fas fa-spinner fa-spin text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p id="current-stage-name" class="font-semibold text-blue-900">Initializing...</p>
+                            <p id="current-stage-message" class="text-sm text-blue-700">Starting audit process</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Log -->
+                <div class="bg-gray-900 rounded-xl p-4 max-h-40 overflow-y-auto">
+                    <div id="progress-log" class="font-mono text-xs text-gray-300 space-y-1">
+                        <p><span class="text-green-400">[INFO]</span> Audit initialized...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t px-6 py-4 bg-gray-50 flex justify-end">
+                <button onclick="cancelAudit()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm flex items-center gap-2">
+                    <i class="fas fa-stop"></i> Cancel Audit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart instances (for cleanup)
+        let compliancePieChart = null;
+        let controlFamiliesChart = null;
+        let currentProgressAuditId = null;
+        let progressPollingInterval = null;
+
+        // Close Audit Results Modal
+        function closeAuditResultsModal() {
+            document.getElementById('audit-results-modal').classList.add('hidden');
+            // Destroy charts to prevent memory leaks
+            if (compliancePieChart) { compliancePieChart.destroy(); compliancePieChart = null; }
+            if (controlFamiliesChart) { controlFamiliesChart.destroy(); controlFamiliesChart = null; }
+        }
+
+        // Close Progress Modal
+        function closeProgressModal() {
+            document.getElementById('audit-progress-modal').classList.add('hidden');
+            if (progressPollingInterval) {
+                clearInterval(progressPollingInterval);
+                progressPollingInterval = null;
+            }
+            currentProgressAuditId = null;
+        }
+
+        // Show Progress Modal
+        function showProgressModal(auditId) {
+            currentProgressAuditId = auditId;
+            document.getElementById('progress-modal-audit-id').textContent = `Audit ID: ${auditId}`;
+            document.getElementById('audit-progress-modal').classList.remove('hidden');
+
+            // Reset UI
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('progress-percentage').textContent = '0%';
+            resetStageIndicators();
+
+            // Start polling for progress
+            pollAuditProgress(auditId);
+            progressPollingInterval = setInterval(() => pollAuditProgress(auditId), 2000);
+        }
+
+        // Reset stage indicators
+        function resetStageIndicators() {
+            ['collecting', 'parsing', 'analyzing', 'scoring', 'reporting'].forEach(stage => {
+                const el = document.getElementById(`stage-${stage}`);
+                el.className = 'text-center p-3 bg-gray-100 rounded-lg';
+                el.querySelector('i').className = el.querySelector('i').className.replace(/text-\\w+-\\d+/, 'text-gray-400');
+            });
+        }
+
+        // Update stage indicator
+        function updateStageIndicator(currentStage) {
+            const stages = ['collecting', 'parsing', 'analyzing', 'scoring', 'reporting'];
+            const stageMap = {
+                'log_collection': 'collecting', 'collecting': 'collecting',
+                'parsing': 'parsing', 'evidence_parsing': 'parsing',
+                'analysis': 'analyzing', 'analyzing': 'analyzing', 'rule_analysis': 'analyzing', 'llm_analysis': 'analyzing',
+                'scoring': 'scoring', 'compliance_scoring': 'scoring',
+                'report_generation': 'reporting', 'reporting': 'reporting', 'completed': 'reporting'
+            };
+
+            const normalizedStage = stageMap[currentStage.toLowerCase()] || currentStage.toLowerCase();
+            const stageIndex = stages.indexOf(normalizedStage);
+
+            stages.forEach((stage, idx) => {
+                const el = document.getElementById(`stage-${stage}`);
+                if (idx < stageIndex) {
+                    el.className = 'text-center p-3 bg-green-100 rounded-lg';
+                    el.querySelector('i').className = el.querySelector('i').className.replace(/text-\\w+-\\d+/, 'text-green-600');
+                } else if (idx === stageIndex) {
+                    el.className = 'text-center p-3 bg-blue-100 rounded-lg';
+                    el.querySelector('i').className = el.querySelector('i').className.replace(/text-\\w+-\\d+/, 'text-blue-600');
+                } else {
+                    el.className = 'text-center p-3 bg-gray-100 rounded-lg';
+                    el.querySelector('i').className = el.querySelector('i').className.replace(/text-\\w+-\\d+/, 'text-gray-400');
+                }
+            });
+        }
+
+        // Poll audit progress
+        async function pollAuditProgress(auditId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/audit/${auditId}/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const progress = data.progress || 0;
+                    const stage = data.current_stage || 'initializing';
+                    const message = data.message || '';
+
+                    // Update progress bar
+                    document.getElementById('progress-bar').style.width = `${progress}%`;
+                    document.getElementById('progress-percentage').textContent = `${progress}%`;
+
+                    // Update current stage info
+                    document.getElementById('current-stage-name').textContent = stage.replace(/_/g, ' ').replace(/\\b\\w/g, l => l.toUpperCase());
+                    document.getElementById('current-stage-message').textContent = message;
+
+                    // Update stage indicators
+                    updateStageIndicator(stage);
+
+                    // Add to log
+                    const logEl = document.getElementById('progress-log');
+                    const logEntry = document.createElement('p');
+                    logEntry.innerHTML = `<span class="text-blue-400">[${new Date().toLocaleTimeString()}]</span> ${stage}: ${message}`;
+                    logEl.appendChild(logEntry);
+                    logEl.scrollTop = logEl.scrollHeight;
+
+                    // Check if completed
+                    if (data.status === 'completed') {
+                        clearInterval(progressPollingInterval);
+                        progressPollingInterval = null;
+                        setTimeout(() => {
+                            closeProgressModal();
+                            viewAuditDetails(auditId);
+                        }, 1000);
+                    } else if (data.status === 'failed') {
+                        clearInterval(progressPollingInterval);
+                        progressPollingInterval = null;
+                        alert('Audit failed: ' + (data.error || 'Unknown error'));
+                        closeProgressModal();
+                    }
+                }
+            } catch (e) {
+                console.error('Error polling progress:', e);
+            }
+        }
+
+        // Cancel audit
+        async function cancelAudit() {
+            if (!currentProgressAuditId) return;
+            if (!confirm('Are you sure you want to cancel this audit?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/audit/${currentProgressAuditId}/cancel`, { method: 'POST' });
+                if (response.ok) {
+                    closeProgressModal();
+                    alert('Audit cancelled');
+                }
+            } catch (e) {
+                console.error('Error cancelling audit:', e);
+            }
+        }
+
+        // Download audit report
+        async function downloadAuditReport() {
+            const auditId = document.getElementById('results-modal-subtitle').textContent.replace('Audit ID: ', '');
+            try {
+                window.open(`${API_BASE}/api/audit/${auditId}/report/download?format=pdf`, '_blank');
+            } catch (e) {
+                console.error('Error downloading report:', e);
+                alert('Failed to download report');
+            }
+        }
+    </script>
 </body>
 </html>

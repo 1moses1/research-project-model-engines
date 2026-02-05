@@ -9,9 +9,15 @@ document-based compliance evidence.
 Architecture:
 - Engine 1 (Log Collector) → outputs ComplianceEvidence (source_type="log")
 - Engine 2 (Document Processor) → outputs ComplianceEvidence (source_type="document")
-- Both feed into Engine 3 (XGBoost Classifier)
+- Both feed into Engine 3 (MCP+LLM Analyzer) for semantic compliance analysis
 - Engine 4 (Decision Engine) compares and weights both sources
 - Engine 5 (Report Generator) shows evidence from both sources
+
+Engine 3 Evolution:
+- Original: XGBoost classifier (rule-based ML)
+- Current: MCP+LLM Analyzer (hybrid: rules + LLM semantic analysis)
+- Uses Claude/GPT for context-aware compliance reasoning
+- Maps events to Rwanda NCSA controls with explainable reasoning
 
 Supports:
 - Single source audits (logs only OR documents only)
@@ -120,16 +126,24 @@ class ComplianceEvidence(BaseModel):
         }
 
     def to_classification_input(self) -> Dict[str, Any]:
-        """Convert to format expected by Engine 3 (XGBoost Classifier)"""
+        """Convert to format expected by Engine 3 (MCP+LLM Analyzer)"""
         return {
+            "log_message": self.evidence_text,
+            "timestamp": self.timestamp.isoformat(),
+            "source_ip": self.metadata.get("source_ip"),
+            "destination_ip": self.metadata.get("destination_ip"),
+            "port": self.metadata.get("port", 22),
+            "status_code": self.metadata.get("status_code", 200),
+            "hour_of_day": self.timestamp.hour if self.timestamp else None,
+            "is_business_hours": 9 <= self.timestamp.hour <= 17 if self.timestamp else None,
+            "user_id": self.metadata.get("user_id"),
+            "resource": self.metadata.get("resource"),
+            "action": self.metadata.get("action"),
+            # Legacy fields for backward compatibility
             "evidence_id": self.evidence_id,
             "audit_id": self.audit_id,
             "control_id": self.control_id,
-            "log_message": self.evidence_text,  # XGBoost expects 'log_message'
             "source_type": self.source_type.value,
-            "timestamp": self.timestamp.isoformat(),
-            "features": self.features,
-            "confidence": self.confidence
         }
 
     def compute_hash(self) -> str:
@@ -139,29 +153,80 @@ class ComplianceEvidence(BaseModel):
 
 
 # =============================================================================
+# Control Info Model (MCP+LLM Output)
+# =============================================================================
+
+class ControlInfo(BaseModel):
+    """
+    NCSA Control information from MCP+LLM Analyzer.
+    Represents a mapped control with compliance status and confidence.
+    """
+    control_id: Optional[str] = Field(None, description="NCSA control ID (e.g., RWNCSA-AC-37)")
+    control_name: Optional[str] = Field(None, description="Human-readable control name")
+    control_family: Optional[str] = Field(None, description="Control family (e.g., Access Control)")
+    compliance_status: Optional[str] = Field(None, description="compliant|non_compliant|partial|unknown")
+    confidence: Optional[float] = Field(None, ge=0.0, le=1.0, description="Confidence score")
+    relevance: Optional[float] = Field(None, ge=0.0, le=1.0, description="Relevance to the log")
+
+
+# =============================================================================
 # Classification Result Model
 # =============================================================================
 
 class ClassificationResult(BaseModel):
     """
-    Result from Engine 3 (XGBoost Classifier).
-    Contains the ML prediction and confidence.
+    Result from Engine 3 (MCP+LLM Analyzer).
+    Contains the semantic compliance analysis with explainable reasoning.
+
+    Evolution:
+    - v1.0: XGBoost classifier (rule-based ML features)
+    - v2.0: MCP+LLM Analyzer (hybrid semantic analysis with LLM reasoning)
     """
 
-    evidence_id: str
-    audit_id: str
-    control_id: str
-    source_type: EvidenceSourceType
+    evidence_id: Optional[str] = None
+    audit_id: Optional[str] = None
+    control_id: Optional[str] = None
+    source_type: Optional[EvidenceSourceType] = None
 
-    # Classification outcome
-    prediction: ComplianceStatus = Field(description="ML prediction")
+    # Core classification outcome (backward compatible)
+    prediction: ComplianceStatus = Field(description="Compliance prediction")
     confidence: float = Field(ge=0.0, le=1.0, description="Prediction confidence")
+    probabilities: Dict[str, float] = Field(
+        default_factory=lambda: {"compliant": 0.5, "non_compliant": 0.5},
+        description="Class probabilities"
+    )
+
+    # Enhanced MCP+LLM control mapping
+    primary_control: Optional[ControlInfo] = Field(
+        None, description="Primary NCSA control from LLM analysis"
+    )
+    secondary_controls: List[ControlInfo] = Field(
+        default_factory=list, description="Secondary related controls"
+    )
+
+    # LLM reasoning and explainability
+    reasoning: Optional[str] = Field(
+        None, description="LLM explanation of compliance determination"
+    )
+    evidence_indicators: List[str] = Field(
+        default_factory=list, description="Evidence from the log supporting the decision"
+    )
+    risk_indicators: List[str] = Field(
+        default_factory=list, description="Identified security risks"
+    )
+    recommended_actions: List[str] = Field(
+        default_factory=list, description="Remediation recommendations"
+    )
 
     # Model info
-    model_version: str = Field(default="xgboost-v1.0")
-    inference_time_ms: float = Field(default=0.0)
+    model_used: str = Field(default="mcp-llm-analyzer", description="Model/analyzer identifier")
+    latency_ms: float = Field(default=0.0, description="Analysis latency in milliseconds")
+    cached: bool = Field(default=False, description="Whether result was from cache")
+    timestamp: Optional[datetime] = Field(default=None, description="Analysis timestamp")
 
-    # Feature importance for this prediction
+    # Legacy fields for backward compatibility
+    model_version: str = Field(default="mcp-llm-v2.0")
+    inference_time_ms: float = Field(default=0.0)  # Alias for latency_ms
     top_features: List[Dict[str, float]] = Field(default_factory=list)
 
     # Original evidence reference
@@ -170,6 +235,30 @@ class ClassificationResult(BaseModel):
     class Config:
         json_encoders = {
             datetime: lambda v: v.isoformat()
+        }
+
+    def get_control_id(self) -> str:
+        """Get the primary control ID from either source"""
+        if self.primary_control and self.primary_control.control_id:
+            return self.primary_control.control_id
+        return self.control_id or "UNKNOWN"
+
+    def get_control_family(self) -> str:
+        """Get the control family from primary control"""
+        if self.primary_control and self.primary_control.control_family:
+            return self.primary_control.control_family
+        return ""
+
+    def to_legacy_format(self) -> Dict[str, Any]:
+        """Convert to legacy XGBoost-compatible format for backward compatibility"""
+        return {
+            "evidence_id": self.evidence_id,
+            "audit_id": self.audit_id,
+            "control_id": self.get_control_id(),
+            "prediction": self.prediction.value if isinstance(self.prediction, ComplianceStatus) else self.prediction,
+            "confidence": self.confidence,
+            "model_version": self.model_version,
+            "inference_time_ms": self.latency_ms,
         }
 
 
