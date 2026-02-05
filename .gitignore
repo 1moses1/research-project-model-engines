@@ -51,6 +51,7 @@ outputs/models/*.pkl
 *.safetensors
 
 # Logs
+logs/
 logs/*.log
 *.log
 tensorboard/
@@ -58,6 +59,8 @@ wandb/
 mlruns/
 
 # Data (large files - NEVER commit public datasets)
+data/
+datasets/
 data/raw/*.pdf
 data/public/
 data/public_datasets/
@@ -67,6 +70,25 @@ data/processed/*.parquet
 data/processed/*.csv
 data/synthetic/*.json
 data/synthetic/*.csv
+
+# Large result files
+results/
+experiments/
+test_outputs/
+outputs/
+
+# Old code (archived)
+engines_old/
+src/
+archive/
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Research papers (PDFs are too large)
+Research Paper/
+*.pdf
 
 # Credentials and Secrets (CRITICAL - NEVER commit)
 .model_signing_key

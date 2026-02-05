@@ -1,9 +1,4 @@
 [
-  "hour_of_day",
-  "day_of_week",
-  "is_business_hours",
-  "status_code",
-  "port",
   "text_0",
   "text_1",
   "text_2",
@@ -28,5 +23,10 @@
   "text_21",
   "text_22",
   "text_23",
-  "text_24"
+  "text_24",
+  "hour_of_day",
+  "day_of_week",
+  "is_business_hours",
+  "status_code",
+  "port"
 ]

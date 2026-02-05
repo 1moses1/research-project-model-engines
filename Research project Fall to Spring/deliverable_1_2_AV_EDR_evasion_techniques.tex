@@ -1,0 +1,470 @@
+\documentclass[11pt,conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usetikzlibrary{shapes,arrows,positioning,timeline}
+
+\begin{document}
+
+\title{Deliverable 1.2: AV/EDR Evasion Techniques Review}
+
+\author{\IEEEauthorblockN{Moise IRADUKUNDA INGABIRE}
+\IEEEauthorblockA{\textit{Collegue of Engineering} \\
+\textit{Carnegie Mellon University Africa}\\
+Kigali, Rwanda \\
+mii@andrew.cmu.edu}}
+
+\maketitle
+
+\section{Introduction}
+
+Antivirus (AV) and Endpoint Detection and Response (EDR) solutions form the primary defensive layer for endpoint security in enterprise environments. Understanding their detection mechanisms and corresponding evasion techniques is critical for compliance auditing systems that must validate the effectiveness of endpoint protection controls. This review synthesizes findings from academic research and industry reports on AV/EDR bypass techniques, contextualizing them within the framework of Rwanda NCSA compliance monitoring.
+
+The review covers three primary sources:
+\begin{enumerate}
+    \item Academic paper: \textit{Evading Signature-Based Antivirus Software Using Custom Reverse Shell Exploit}
+    \item Industry technical report: \textit{Antivirus and EDR Bypass Techniques} (Vaadata.com)
+    \item Threat intelligence report: \textit{Threat Actors Exploit AV/EDR Evasion Framework} (CyberPress.org)
+\end{enumerate}
+
+\section{Detection Mechanisms}
+
+\subsection{Antivirus Detection Methods}
+
+Traditional antivirus software employs multiple detection layers:
+
+\textbf{1. Signature-Based Detection:}
+\begin{itemize}
+    \item Maintains database of known malware signatures (byte patterns, hashes)
+    \item Fast and computationally efficient
+    \item Ineffective against polymorphic and previously unseen malware
+    \item Detection rate: 44/70 engines for standard Metasploit payloads (VirusTotal results from academic study)
+\end{itemize}
+
+\textbf{2. Static Analysis:}
+\begin{itemize}
+    \item Analyzes file structure, imports, strings, entropy without execution
+    \item Detects suspicious API calls (VirtualAlloc, CreateRemoteThread, WriteProcessMemory)
+    \item Examines Import Address Table (IAT) for anomalous function imports
+    \item Can be bypassed via obfuscation and runtime resolution
+\end{itemize}
+
+\textbf{3. Heuristic Analysis:}
+\begin{itemize}
+    \item Behavioral pattern matching based on known malware characteristics
+    \item Identifies suspicious behaviors: self-modification, process injection, privilege escalation
+    \item Higher false positive rate compared to signature-based detection
+\end{itemize}
+
+\subsection{EDR Detection Capabilities}
+
+Modern EDR solutions extend beyond traditional AV:
+
+\textbf{1. API Hooking:}
+\begin{itemize}
+    \item Intercepts Windows API calls (user-mode and kernel-mode)
+    \item Monitors critical functions: CreateProcess, OpenProcess, VirtualProtect, LoadLibrary
+    \item Provides real-time behavioral monitoring and blocking
+\end{itemize}
+
+\textbf{2. AMSI (Antimalware Scan Interface):}
+\begin{itemize}
+    \item Windows 10+ feature for script and memory-based malware detection
+    \item Scans PowerShell, VBScript, JScript, .NET assemblies before execution
+    \item Integrated with Windows Defender and third-party EDR solutions
+\end{itemize}
+
+\textbf{3. ETW (Event Tracing for Windows):}
+\begin{itemize}
+    \item High-performance event logging framework
+    \item Captures system-wide telemetry: process creation, network connections, file operations
+    \item Used by EDR for anomaly detection and threat hunting
+\end{itemize}
+
+\textbf{4. Behavioral Analytics:}
+\begin{itemize}
+    \item Machine learning models detect anomalous process behavior
+    \item Parent-child process relationship analysis
+    \item Network traffic pattern recognition
+    \item Memory scanning for in-memory only threats
+\end{itemize}
+
+\section{Evasion Techniques}
+
+\subsection{Signature Evasion}
+
+The academic paper demonstrates signature evasion through architectural modification:
+
+\textbf{Custom Reverse Shell Design:}
+\begin{itemize}
+    \item \textbf{Traditional Metasploit}: Shellcode embedded in executable → 44/70 AV detection (62.9\%)
+    \item \textbf{Custom Approach}: Shellcode stored on remote server, downloaded at runtime → 1/70 detection (1.4\%)
+    \item \textbf{Reduction}: 97\% decrease in detection rate
+\end{itemize}
+
+\textbf{Key Technique}: Fileless execution - shellcode loaded directly into memory without touching disk, evading file-based signature scanning.
+
+\textbf{Implementation}:
+\begin{enumerate}
+    \item Modified Metasploit payload generator (Msfvenom)
+    \item Shellcode separated from main executable
+    \item HTTP/HTTPS download to allocated memory buffer
+    \item Direct execution from memory using function pointers
+    \item Target: Windows 10 64-bit with Windows Defender enabled
+\end{enumerate}
+
+\subsection{Static Analysis Evasion}
+
+\textbf{1. IAT Obfuscation:}
+\begin{itemize}
+    \item Delay-load suspicious APIs to hide from IAT inspection
+    \item Use GetProcAddress for runtime API resolution
+    \item Obscure string literals with XOR encoding
+\end{itemize}
+
+\textbf{2. Code Obfuscation:}
+\begin{itemize}
+    \item Control flow flattening to complicate disassembly
+    \item Dead code insertion to modify file hash
+    \item Junk byte padding to avoid signature matching
+\end{itemize}
+
+\subsection{AMSI Bypass}
+
+Multiple techniques documented in industry report:
+
+\textbf{1. AMSI Patching:}
+\begin{itemize}
+    \item Overwrite AmsiScanBuffer function in memory
+    \item Force return value to indicate "clean" scan
+    \item Requires understanding of AMSI architecture
+\end{itemize}
+
+\textbf{2. AMSI Context Manipulation:}
+\begin{itemize}
+    \item Corrupt AMSI context structure
+    \item Disable AMSI for current process
+    \item More stealthy than direct patching
+\end{itemize}
+
+\subsection{ETW Bypass}
+
+\textbf{1. ETW Provider Disabling:}
+\begin{itemize}
+    \item Identify and disable specific ETW providers (e.g., Microsoft-Windows-PowerShell)
+    \item Modify provider settings via registry or API
+    \item Prevents telemetry collection for specific activities
+\end{itemize}
+
+\textbf{2. ETW Event Filtering:}
+\begin{itemize}
+    \item Modify ETW consumer logic to drop suspicious events
+    \item Requires elevated privileges
+\end{itemize}
+
+\subsection{Advanced Evasion: Hell's Gate and Heaven's Gate}
+
+\textbf{Hell's Gate:}
+\begin{itemize}
+    \item Direct system call invocation, bypassing user-mode API hooks
+    \item Resolves syscall numbers at runtime
+    \item Evades EDR hooks on ntdll.dll functions
+    \item Requires knowledge of Windows internals and syscall conventions
+\end{itemize}
+
+\textbf{Heaven's Gate:}
+\begin{itemize}
+    \item 32-bit processes calling 64-bit syscalls on 64-bit Windows
+    \item Exploits WoW64 (Windows-on-Windows 64) layer
+    \item Bypasses 32-bit user-mode hooks
+\end{itemize}
+
+\subsection{Sandbox Evasion}
+
+Common techniques to detect and evade sandbox environments:
+
+\begin{itemize}
+    \item \textbf{Environment fingerprinting}: Check for VM indicators (specific registry keys, MAC addresses, process names)
+    \item \textbf{Time delays}: Sleep for extended periods (sandboxes have limited execution time)
+    \item \textbf{User interaction checks}: Require mouse movement or keyboard input
+    \item \textbf{Resource checks}: Verify minimum CPU cores, RAM, disk space
+\end{itemize}
+
+\section{Real-World Exploitation}
+
+The CyberPress threat intelligence report documents active exploitation:
+
+\textbf{SHELLTER Framework:}
+\begin{itemize}
+    \item Commercial AV evasion framework (originally legitimate penetration testing tool)
+    \item Exploited by financially motivated threat actors since 2023
+    \item Capabilities: Dynamic shellcode injection, polymorphic encoding, IAT manipulation
+    \item Observed in campaigns targeting financial institutions
+\end{itemize}
+
+\textbf{Attack Chain:}
+\begin{enumerate}
+    \item Initial compromise via phishing or vulnerability exploitation
+    \item Download SHELLTER-modified payload
+    \item Evade EDR through combination of techniques (AMSI bypass + direct syscalls)
+    \item Establish C2 communication
+    \item Deploy ransomware or credential harvesting tools
+\end{enumerate}
+
+\section{Comparative Analysis}
+
+\begin{table}[h]
+\centering
+\caption{Evasion Technique Effectiveness}
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Technique} & \textbf{Complexity} & \textbf{Effectiveness} \\
+\hline
+Signature evasion & Low & Medium \\
+\hline
+Fileless execution & Medium & High \\
+\hline
+AMSI bypass & Medium & High \\
+\hline
+ETW bypass & High & High \\
+\hline
+Direct syscalls & Very High & Very High \\
+\hline
+Sandbox evasion & Low-Medium & Medium \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Trends:}
+\begin{itemize}
+    \item Signature-based detection increasingly ineffective (97\% evasion demonstrated)
+    \item EDR solutions vulnerable to memory-based attacks
+    \item Combination of techniques (layered evasion) most effective
+    \item Commercially available frameworks lower barrier to entry for attackers
+\end{itemize}
+
+\section{Implications for Compliance Auditing}
+
+\subsection{Endpoint Protection Control Validation}
+
+Understanding AV/EDR evasion informs compliance auditing in several ways:
+
+\textbf{1. Control SI-3 (Malicious Code Protection):}
+\begin{itemize}
+    \item Rwanda NCSA requires "up-to-date antivirus and anti-malware solutions"
+    \item \textbf{Audit Question}: Does signature-based AV alone satisfy the requirement?
+    \item \textbf{Recommendation}: Validate presence of behavioral/heuristic detection, not just signature updates
+\end{itemize}
+
+\textbf{2. Control SI-4 (System Monitoring):}
+\begin{itemize}
+    \item NCSA requires "continuous monitoring of security events"
+    \item \textbf{Audit Question}: Can monitoring be bypassed via ETW disabling?
+    \item \textbf{Recommendation}: Verify ETW provider integrity, log forwarding to external SIEM
+\end{itemize}
+
+\textbf{3. Control SC-7 (Boundary Protection):}
+\begin{itemize}
+    \item Reverse shells establish outbound C2 connections
+    \item \textbf{Audit Question}: Are egress firewall rules validated?
+    \item \textbf{Recommendation}: Test outbound connection blocking, DNS filtering
+\end{itemize}
+
+\subsection{Adversarial Testing for Compliance}
+
+The AI-augmented compliance auditor can leverage evasion technique knowledge:
+
+\textbf{1. Synthetic Evidence Generation:}
+\begin{itemize}
+    \item Generate Windows Event logs simulating AMSI bypass attempts (Event ID 1116)
+    \item Create network traffic patterns matching C2 beaconing
+    \item Test if XGBoost classifier correctly maps to SI-3, SI-4 controls
+\end{itemize}
+
+\textbf{2. Control Effectiveness Scoring:}
+\begin{itemize}
+    \item Award higher compliance scores for EDR solutions vs. basic AV
+    \item Penalize configurations vulnerable to known bypasses (e.g., AMSI disabled)
+    \item Validate defense-in-depth: EDR + application whitelisting + network segmentation
+\end{itemize}
+
+\textbf{3. Evidence-to-Control Mapping Enhancement:}
+\begin{itemize}
+    \item Train XGBoost on evidence of evasion attempts (failed AMSI scans, direct syscall patterns)
+    \item Map to multiple controls: SI-3 (malware protection) + SI-4 (monitoring) + IR-4 (incident handling)
+    \item Multi-label classification reflects that evasion attempts indicate multiple control failures
+\end{itemize}
+
+\subsection{Gap Analysis: Current vs. Required Detection}
+
+\textbf{Current State (Many Rwandan Institutions):}
+\begin{itemize}
+    \item Signature-based AV (Windows Defender, outdated commercial solutions)
+    \item Limited EDR adoption (cost prohibitive for SMEs)
+    \item Minimal memory scanning, no AMSI monitoring
+    \item Detection rate against modern evasion: <10\%
+\end{itemize}
+
+\textbf{NCSA Requirements:}
+\begin{itemize}
+    \item "Implement and maintain anti-malware solutions"
+    \item "Monitor and respond to security events"
+    \item "Protect against known and emerging threats"
+\end{itemize}
+
+\textbf{Gap:}
+\begin{itemize}
+    \item Requirements do not specify detection \textit{capability} thresholds
+    \item Institutions may be "compliant" with ineffective controls
+    \item AI auditor must assess \textit{effectiveness}, not just \textit{presence} of controls
+\end{itemize}
+
+\section{Defensive Countermeasures}
+
+\subsection{Enhanced Detection Strategies}
+
+\textbf{1. Behavioral Analysis Over Signatures:}
+\begin{itemize}
+    \item Focus on process behavior trees, not file signatures
+    \item Detect anomalous parent-child relationships (e.g., Excel spawning PowerShell)
+    \item Monitor for suspicious API call sequences
+\end{itemize}
+
+\textbf{2. Memory-Based Threat Detection:}
+\begin{itemize}
+    \item Periodic memory scanning for injected code
+    \item Detect RWX (Read-Write-Execute) memory regions
+    \item Identify reflective DLL loading patterns
+\end{itemize}
+
+\textbf{3. Telemetry Integrity:}
+\begin{itemize}
+    \item Protect ETW providers from tampering (kernel-mode protection)
+    \item Forward logs to external SIEM in real-time (prevent local deletion)
+    \item Cryptographically sign critical event logs
+\end{itemize}
+
+\textbf{4. Application Whitelisting:}
+\begin{itemize}
+    \item Prevent execution of unauthorized binaries
+    \item Complements AV/EDR by reducing attack surface
+    \item Particularly effective against fileless attacks
+\end{itemize}
+
+\subsection{Compliance Auditor Integration}
+
+The compliance auditor should validate these defensive measures:
+
+\begin{enumerate}
+    \item \textbf{Policy Verification}: Check if EDR/AV is configured with behavioral detection enabled
+    \item \textbf{Log Analysis}: Evidence of memory scan results, AMSI events, ETW integrity checks
+    \item \textbf{Penetration Test Results}: Validate effectiveness against known evasion techniques
+    \item \textbf{Incident Response}: Evidence of detection and response to evasion attempts
+\end{enumerate}
+
+\section{Research Gaps and Future Work}
+
+\textbf{Identified Gaps:}
+\begin{enumerate}
+    \item Limited research on AV/EDR evasion in African contexts (most studies focus on Windows Defender in US/EU)
+    \item No compliance framework explicitly addresses evasion resistance requirements
+    \item Lack of standardized metrics for "effective" endpoint protection
+    \item Insufficient guidance for resource-constrained institutions (Rwanda SMEs cannot afford enterprise EDR)
+\end{enumerate}
+
+\textbf{Proposed Solutions:}
+\begin{enumerate}
+    \item Develop cost-effective EDR alternatives using open-source tools (Wazuh, OSSEC)
+    \item Define compliance metrics: "Must detect X\% of MITRE ATT\&CK techniques"
+    \item Create Rwanda-specific threat model incorporating local adversary capabilities
+    \item Integrate evasion technique testing into AI compliance auditor validation
+\end{enumerate}
+
+\section{Conclusion}
+
+AV/EDR evasion techniques have evolved significantly, with demonstrated 97\% evasion rates against signature-based detection and multiple methods to bypass modern EDR features (AMSI, ETW, API hooking). The commercialization of evasion frameworks (SHELLTER) has lowered the barrier for threat actors, making these techniques accessible even to less sophisticated adversaries.
+
+For the AI-augmented compliance auditor project, this review provides critical insights:
+\begin{itemize}
+    \item \textbf{Control validation must assess effectiveness}, not just presence
+    \item \textbf{Synthetic evidence generation} should include evasion attempt patterns
+    \item \textbf{Multi-label classification} is appropriate (evasion maps to SI-3 + SI-4 + IR-4)
+    \item \textbf{Rwanda NCSA standards} may need refinement to specify detection capability requirements
+\end{itemize}
+
+The gap between current deployment reality (basic signature-based AV) and emerging threats (advanced evasion techniques) represents a critical compliance challenge that AI-driven auditing must address.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.75, transform shape]
+% Timeline axis
+\draw[thick, ->] (0,0) -- (11.5,0) node[right, font=\scriptsize] {Year};
+
+% Year markers
+\foreach \x/\year in {0/2015, 2/2017, 4/2019, 6/2021, 8/2023, 10/2025} {
+    \draw (\x,0.1) -- (\x,-0.1) node[below, font=\scriptsize] {\year};
+}
+
+% Techniques with boxes (more compact)
+\node[draw, fill=red!20, text width=1.6cm, align=center, font=\tiny, rounded corners=1pt] at (1,1.3) {Signature\\Evasion};
+\draw[->, thick] (1,1.1) -- (1,0.15);
+
+\node[draw, fill=orange!20, text width=1.6cm, align=center, font=\tiny, rounded corners=1pt] at (3,2.2) {Fileless\\Malware};
+\draw[->, thick] (3,2) -- (3,0.15);
+
+\node[draw, fill=yellow!40, text width=1.6cm, align=center, font=\tiny, rounded corners=1pt] at (5,1.3) {AMSI\\Bypass};
+\draw[->, thick] (5,1.1) -- (5,0.15);
+
+\node[draw, fill=green!20, text width=1.6cm, align=center, font=\tiny, rounded corners=1pt] at (7,2.2) {ETW\\Bypass};
+\draw[->, thick] (7,2) -- (7,0.15);
+
+\node[draw, fill=blue!20, text width=1.6cm, align=center, font=\tiny, rounded corners=1pt] at (9,1.3) {Direct\\Syscalls};
+\draw[->, thick] (9,1.1) -- (9,0.15);
+
+\node[draw, fill=purple!20, text width=1.6cm, align=center, font=\tiny, rounded corners=1pt] at (11,2.2) {Commercial\\EaaS};
+\draw[->, thick] (11,2) -- (11,0.15);
+
+\end{tikzpicture}
+\caption{Evolution of AV/EDR evasion techniques (2015-2025)}
+\label{fig:evasion_timeline}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=8pt,
+    width=\columnwidth,
+    height=5cm,
+    xlabel={Evasion Technique},
+    ylabel={Detection Rate (\%)},
+    symbolic x coords={Fileless, AMSI, ETW, Syscalls, Combined},
+    xtick=data,
+    xticklabel style={rotate=25, anchor=east, font=\small},
+    ylabel style={font=\small},
+    xlabel style={font=\small},
+    legend style={at={(0.5,-0.45)}, anchor=north, legend columns=1, font=\scriptsize},
+    ymin=0, ymax=100,
+    ymajorgrids=true,
+    grid style={dashed, gray!30},
+]
+\addplot[fill=red!60] coordinates {(Fileless,3) (AMSI,5) (ETW,8) (Syscalls,2) (Combined,1)};
+\addplot[fill=orange!60] coordinates {(Fileless,35) (AMSI,30) (ETW,25) (Syscalls,15) (Combined,5)};
+\addplot[fill=blue!60] coordinates {(Fileless,65) (AMSI,60) (ETW,55) (Syscalls,45) (Combined,25)};
+\legend{Signature-based, Behavioral, ML-based EDR}
+\end{axis}
+\end{tikzpicture}
+\caption{Detection effectiveness against modern evasion techniques}
+\label{fig:detection_effectiveness}
+\end{figure}
+
+\end{document}
