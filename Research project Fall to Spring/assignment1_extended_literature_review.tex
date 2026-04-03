@@ -1,0 +1,167 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{times}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{graphicx}
+\usepackage{caption}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\onehalfspacing
+
+\begin{document}
+
+\begin{center}
+\textbf{Submission: IRADUKUNDA}\\[0.5em]
+\textbf{Literature Review: From Keyword-Based to Semantic Compliance Auditing ---}\\
+\textbf{Repositioning the AI-Augmented Compliance Auditor Beyond Its Initial Scope}
+\end{center}
+
+\bigskip
+
+%==========================================================================
+\textbf{BACKGROUND AND LIMITATIONS OF THE INITIAL PAPER}
+
+The initial paper established an AI-augmented unified compliance auditor tailored to Rwanda's National Cyber Security Authority (NCSA) Minimum Cybersecurity Standards. Using a multi-label XGBoost classifier trained on a hybrid dataset of 200,000 logs (52\% NSL-KDD, 18\% LogHub, 30\% Rwanda-specific synthetic data), the system achieved 99.99\% F1-score on in-distribution data and 99.88\% F1-score on real SecRepo authentication logs after 5\% fine-tuning. The architecture was subsequently enhanced with Model Context Protocol (MCP) integration, enabling LLM-based semantic analysis that achieved 100\% zero-shot accuracy on the same real-world logs.
+
+Despite these strong results, three critical limitations constrain the initial paper's generalizability claims:
+
+\textbf{1. Narrow Log Type Coverage.} The cross-dataset evaluation was conducted exclusively on SecRepo authentication logs (SSH-based failed and successful login events). Whether the MCP+LLM semantic path maintains 100\% zero-shot accuracy across structurally different log formats---such as firewall traffic logs, Windows Security Event Logs, application-layer API logs, or cloud audit trails---remains unevaluated. Just as reverse shell specificity limited ShellForge's generalizability claims, SSH-authentication specificity limits this compliance auditor's semantic generalization claims.
+
+\textbf{2. Single Regulatory Framework.} The system maps evidence exclusively to Rwanda NCSA controls. The initial paper does not demonstrate whether the evidence-to-control mapping generalizes to overlapping but distinct African regulatory frameworks, such as Kenya's Computer Misuse \& Cybercrimes Act (2024), Nigeria's NITDA Cybersecurity Framework, or South Africa's POPIA/PAIA-aligned controls. This is a critical gap for the stated goal of a ``replicable blueprint for automated compliance auditing across African nations.''
+
+\textbf{3. Prompt Engineering Sensitivity Uncharacterized.} The LLM semantic path relies on carefully engineered prompts to distinguish compliant from non-compliant events. The initial paper reports 100\% accuracy but does not characterize how sensitive this result is to prompt variation, model versioning, or API provider changes. Recent work on LLM-assisted cyber threat intelligence~[1] demonstrates that spurious correlations, contradictory knowledge, and constrained generalization fundamentally limit LLM reliability in zero-shot security tasks---a vulnerability the initial paper does not formally address.
+
+\bigskip
+
+%==========================================================================
+\textbf{RECENT ADVANCES IN LLM-BASED SECURITY LOG ANALYSIS AND COMPLIANCE}
+
+A rapidly growing body of work has emerged in the last 6--12 months directly relevant to the limitations above, requiring a repositioning of the initial paper's contributions.
+
+\textbf{LLMs for Security Operations and Log Analysis.} Motlagh et al.~[2] provide a comprehensive survey of LLM applications for Security Operations Centers (SOCs), covering log parsing, alert triage, threat hunting, and incident response. They identify LLM semantic understanding as the key enabler for cross-format log generalization but note that hallucination and context window constraints remain critical barriers. Ferrag et al.~[3] evaluate multiple LLMs (GPT-4, LLaMA, Gemma, Qwen) for flow-based intrusion detection, finding that while LLMs outperform XGBoost on semantic tasks, XGBoost achieves a higher F1-score of 96.96\% using only 4\% CPU---validating the resource-efficiency argument of the initial paper for African contexts but highlighting that LLM superiority is not universal. Deka et al.~[4] demonstrate LLMs for scalable and explainable cybersecurity log analysis, confirming that LLMs can parse heterogeneous log formats with minimal fine-tuning---directly supporting the semantic generalization claim of the MCP+LLM extension, but revealing that accuracy degrades on domain-shifted log formats beyond the training distribution.
+
+\textbf{RAG-Augmented Compliance and Control Mapping.} Zhao et al.~[5] present CyberLLM-FINDS, an instruction-tuned LLM with Retrieval-Augmented Generation (RAG) and knowledge graph integration for MITRE ATT\&CK evaluation. This approach directly addresses what the initial paper cannot: dynamic retrieval of control definitions at inference time, reducing hallucination in control-to-evidence mapping. The RAG architecture allows the system to incorporate updated regulatory requirements without retraining---a capability absent in both the XGBoost and the initial MCP+LLM implementation.
+
+\textbf{Hybrid LLM-Rule Pipelines for Compliance.} Nair et al.~[6] propose a secure pipeline architecture integrating symbolic rule-based systems with transformer-based LLMs for real-time threat monitoring and compliance enforcement. Their hybrid design mirrors the architecture of the initial paper's Engine 3 (rule-based fast path + LLM semantic path) but introduces formal compliance enforcement layers---policy alignment verification and legal mandate checking---that the initial paper does not implement. This establishes a new baseline against which the NCSA auditor should be compared.
+
+\textbf{MCP Ecosystem and Compliance Gaps.} Wang et al.~[7] survey the MCP landscape and identify a critical compliance blind spot: the current MCP ecosystem lacks standardized audit logging and traceability, meaning that organizations using MCP-integrated AI systems face an unresolved audit gap---they cannot easily produce a complete chain of evidence from user query through AI decision to compliance action. De Mello et al.~[8] propose enterprise security frameworks for MCP deployments, noting that MCP's prioritization of interoperability over authentication creates governance challenges directly relevant to regulated environments such as those governed by Rwanda NCSA. These findings reveal that while the initial paper uses MCP as an integration mechanism, it does not address MCP's own compliance implications---a gap that is now receiving significant academic attention.
+
+\textbf{Resource-Efficient ML for African and Constrained Deployments.} Ahmad et al.~[9] demonstrate lightweight quantized XGBoost for botnet detection in resource-constrained IoT networks, showing that histogram-based quantization reduces model size and inference time without sacrificing accuracy. This extends the resource-efficiency argument of the initial paper beyond the Africa-specific context to IoT and edge computing, validating XGBoost's positioning as a deployment-first classifier. However, this work also shows that quantized LLMs (3B--7B parameter models) are now approaching XGBoost-level inference speeds on edge hardware---a development that challenges the initial paper's assumption that LLM analysis necessarily requires cloud API access.
+
+\bigskip
+
+The table below summarizes recent work, their log coverage, regulatory framework, and key limitations relevant to the initial paper's scope:
+
+\begin{table}[h]
+\centering
+\caption{Comparison of Recent LLM-Based Compliance and Log Analysis Work (2024--2025)}
+\label{tab:lit_comparison}
+\begin{tabular}{@{}p{3cm}p{2.5cm}p{2.5cm}p{3cm}p{3cm}@{}}
+\toprule
+\textbf{Study} & \textbf{Approach} & \textbf{Log Types} & \textbf{Framework} & \textbf{Key Limitation} \\
+\midrule
+Motlagh et al.~[2], 2025 & LLM Survey (SOC) & Multi-type & Generic & No regulatory mapping \\
+Ferrag et al.~[3], 2025 & LLM vs. XGBoost & Network flows & IDS/IPS & No compliance context \\
+Deka et al.~[4], 2024 & LLM log analysis & Auth, system & Generic & Domain shift degradation \\
+Zhao et al.~[5], 2025 & RAG + LLM & MITRE ATT\&CK & NIST/ATT\&CK & No African framework \\
+Nair et al.~[6], 2025 & LLM+Rules pipeline & Threat logs & Generic compliance & No multi-label mapping \\
+Wang et al.~[7], 2025 & MCP security survey & Agent traces & MCP governance & No compliance output \\
+De Mello et al.~[8], 2025 & MCP enterprise sec. & Agent traces & Enterprise & No Africa context \\
+Ahmad et al.~[9], 2025 & Quantized XGBoost & Network, IoT & IoT security & No compliance mapping \\
+\textbf{Initial Paper} & XGBoost + MCP+LLM & \textbf{Auth logs only} & \textbf{Rwanda NCSA} & \textbf{Single log type, single framework} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\bigskip
+
+%==========================================================================
+\textbf{SYNTHESIS AND UNRESOLVED QUESTIONS}
+
+Across recent literature, three consistent findings emerge that directly challenge the initial paper's contribution claims:
+
+\textbf{First}, semantic generalization with LLMs is log-type dependent. Recent work~[3,4] confirms that LLMs trained or prompted on one log format experience accuracy degradation when evaluated on structurally different formats---yet the initial paper evaluates only on SSH authentication logs, leaving the 100\% zero-shot accuracy claim unvalidated for other log types critical to NCSA compliance (e.g., firewall logs for SC-7, Windows Events for AC-2/IA-2).
+
+\textbf{Second}, the MCP protocol itself introduces new compliance challenges~[7,8] that the system claims to address. Using MCP to drive LLM-based compliance analysis without ensuring MCP's own audit traceability creates a governance paradox: the compliance auditor may be non-compliant with audit and accountability (AU) controls.
+
+\textbf{Third}, the boundary between XGBoost's resource advantage and LLM capability is narrowing. Quantized small LLMs (3B--8B parameters)~[9] now achieve sub-10ms inference on CPU-only devices---approaching XGBoost latency---while offering semantic generalization. This challenges the cost-accuracy tradeoff analysis of the initial paper and requires recharacterization.
+
+No existing work simultaneously addresses: (a) multi-log-type semantic compliance analysis, (b) cross-African regulatory framework generalization, (c) MCP audit traceability for compliance, and (d) resource-constrained deployment with quantized LLMs. These unresolved questions directly motivate the extension.
+
+\bigskip
+
+%==========================================================================
+\textbf{RESEARCH GAP AND NEW HYPOTHESES}
+
+\textbf{Research Gap}
+
+While the initial paper demonstrates that MCP-integrated LLM semantic analysis achieves 100\% zero-shot accuracy for authentication log compliance under the Rwanda NCSA framework, it remains undemonstrated whether:
+(a) this semantic generalization holds across diverse log types beyond authentication logs;
+(b) the evidence-to-control mapping transfers to overlapping African regulatory frameworks;
+(c) the MCP integration itself satisfies the audit traceability requirements it is intended to enforce;
+and (d) quantized on-premise LLMs can replace cloud API-based analysis in resource-constrained African institutions without accuracy loss.
+
+Existing work does not provide a unified framework that addresses all four dimensions simultaneously for African regulatory contexts.
+
+\textbf{New Hypotheses}
+
+\textbf{H1}: The MCP+LLM semantic analyzer achieves $\geq$85\% zero-shot accuracy across at least four structurally distinct log types (authentication, firewall, Windows Events, API/application logs) when evaluated against Rwanda NCSA control families.
+
+\textbf{H2}: The evidence-to-control mapping framework, trained on Rwanda NCSA controls, transfers with $\geq$75\% F1 to Kenya Computer Misuse \& Cybercrimes Act controls and Nigeria NITDA Cybersecurity Framework controls through cross-framework prompt adaptation without retraining.
+
+\textbf{H3}: Deploying quantized open-source LLMs (Llama-3.1-8B-Instruct, Mistral-7B) on-premise achieves $\geq$90\% of the cloud API accuracy (Claude Sonnet / GPT-4) while eliminating recurring API costs---validating a fully self-contained deployment model for African institutions.
+
+\textbf{H4}: Augmenting the MCP+LLM architecture with structured audit trace logging (chain-of-evidence from log ingestion through compliance decision) satisfies AU-2 and AU-9 NCSA audit accountability controls, resolving the governance paradox identified in recent MCP security literature~[7,8].
+
+\bigskip
+
+%==========================================================================
+\textbf{EXTENSION CONTRIBUTION}
+
+This extension repositions the compliance auditor from a Rwanda NCSA single-framework, single-log-type system to a cross-framework, multi-log-type compliance analysis platform. The extension evaluates semantic generalization across firewall, Windows Event, API, and authentication log formats; introduces cross-African regulatory framework mapping through prompt adaptation; validates quantized on-premise LLMs as cost-viable alternatives to cloud APIs; and adds MCP audit traceability as a first-class compliance feature. Together, these advances transform the initial contribution from a Rwanda-specific prototype into a validated blueprint for pan-African compliance automation under the Malabo Convention, directly addressing the gaps identified in the most recent LLM-based security compliance literature.
+
+\bigskip
+
+%==========================================================================
+\textbf{REFERENCES}
+
+\begin{enumerate}[leftmargin=*, label={[\arabic*]}]
+
+\item H. Guo et al., ``Uncovering Vulnerabilities of LLM-Assisted Cyber Threat Intelligence,'' \textit{arXiv:2509.23573}, Sep. 2025.
+
+\item N. H. Motlagh et al., ``Large Language Models for Security Operations Centers: A Comprehensive Survey,'' \textit{arXiv:2509.10858}, Sep. 2025.
+
+\item M. A. Ferrag et al., ``Evaluating Large Language Models Effectiveness for Flow-Based Intrusion Detection: A Comparative Study with ML and DL Baselines,'' \textit{Artificial Intelligence Review}, Springer, 2025. doi: 10.1007/s10462-025-11432-2.
+
+\item A. Deka et al., ``Leveraging Large Language Models for Scalable and Explainable Cybersecurity Log Analysis,'' \textit{Information}, MDPI, vol. 5, no. 3, 2024. doi: 10.3390/info5030055.
+
+\item Y. Zhao et al., ``CyberLLM-FINDS: Instruction-Tuned Fine-Tuning of Domain-Specific LLMs with Retrieval-Augmented Generation and Graph Integration for MITRE Evaluation,'' \textit{arXiv:2601.06779}, Jan. 2026.
+
+\item R. Nair et al., ``Secure Pipelines, Smarter AI: LLM-Powered Data Engineering for Threat Detection and Compliance,'' \textit{Preprints.org}, Apr. 2025. doi: 10.20944/preprints202504.1365.v1.
+
+\item C. Wang et al., ``Model Context Protocol (MCP): Landscape, Security Threats, and Future Research Directions,'' \textit{arXiv:2503.23278}, 2025.
+
+\item R. de Mello et al., ``Enterprise-Grade Security for the Model Context Protocol (MCP): Frameworks and Mitigation Strategies,'' \textit{arXiv:2504.08623}, 2025.
+
+\item N. Ahmad et al., ``Lightweight Quantized XGBoost for Botnet Detection in Resource-Constrained IoT Networks,'' \textit{IoT}, MDPI, vol. 6, no. 4, 2025. doi: 10.3390/iot6040070.
+
+\item Anthropic, ``Introducing the Model Context Protocol,'' \textit{Anthropic Blog}, Nov. 2024. [Online]. Available: https://www.anthropic.com/news/model-context-protocol
+
+\item S. Lund and B. Byun, ``Securing the Model Context Protocol (MCP): Risks, Controls, and Governance,'' \textit{arXiv:2511.20920}, 2025.
+
+\item Rwanda National Cyber Security Authority (NCSA), ``Minimum Cybersecurity Standards for Public Institutions and Essential Service Providers,'' 2023.
+
+\item T. Chen and C. Guestrin, ``XGBoost: A Scalable Tree Boosting System,'' in \textit{Proc. ACM SIGKDD}, 2016, pp. 785--794.
+
+\item P. Artioli et al., ``SIEVE: Generating a Cybersecurity Log Dataset Collection for SIEM Event Classification,'' \textit{Computer Networks}, vol. 266, 111330, 2025.
+
+\end{enumerate}
+
+\end{document}

@@ -5,7 +5,7 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{booktabs}
 \usepackage{listings}
 \usepackage{float}
@@ -94,7 +94,7 @@ This work makes four novel contributions:
 
 \subsection{System Overview and Paper Organization}
 
-We propose a seven-engine microservices architecture where logs flow through collection, analysis, decision-making, and reporting stages. Engine 1 (Log Collector) normalizes heterogeneous log sources; Engine 3 (MCP+LLM Analyzer) performs hybrid rule-based and semantic evidence-to-control mapping; Engine 4 (Decision Engine) applies rule-based compliance evaluation per control; and Engine 6 (Report Generator) produces actionable compliance reports. Figure~\ref{fig:pipeline} illustrates the complete data flow.
+We propose a seven-engine microservices architecture where logs flow through collection, analysis, decision-making, and reporting stages. Engine 1 (Log Collector) normalizes heterogeneous log sources; Engine 3 (MCP+LLM Analyzer \cite{mcp_anthropic}) performs hybrid rule-based and semantic evidence-to-control mapping; Engine 4 (Decision Engine) applies rule-based compliance evaluation per control; and Engine 6 (Report Generator) produces actionable compliance reports. Figure~\ref{fig:pipeline} illustrates the complete data flow.
 
 The remainder of this paper is organized as follows: Section II reviews related work on adversarial security and AI-assisted compliance. Section III presents our methodology including system architecture and dataset strategy. Section IV details implementation. Section V presents evaluation results. Section VI discusses findings, theoretical contributions, ethical considerations, and limitations. Section VII outlines future work, and Section VIII concludes.
 
@@ -211,9 +211,9 @@ Engine 7 & Authentication (JWT, RBAC) \\
 
 \textbf{Architectural Rationale}:
 \begin{itemize}
-    \item \textbf{Separation of Concerns}: Engine 3's hybrid analyzer (rule-based fast path + LLM semantic analysis) routes evidence; Decision Engine evaluates compliance. This leverages both pattern matching for speed and LLM reasoning for semantic understanding.
+    \item \textbf{Separation of Concerns}: Engine 3's hybrid analyzer (rule-based fast path + LLM semantic analysis) routes evidence; Decision Engine evaluates compliance. This leverages both pattern matching for speed and LLM reasoning for semantic understanding. MCP's tool-use abstraction enables clean separation between compliance logic and AI provider APIs \cite{mcp_enterprise}.
     \item \textbf{Independent Scaling}: High-volume log collection can scale independently from computationally intensive LLM analysis.
-    \item \textbf{Technology Heterogeneity}: Engines use optimal technologies (FastAPI, React, Claude/GPT APIs) without monolithic constraints.
+    \item \textbf{Technology Heterogeneity}: Engines use optimal technologies (FastAPI, React, Claude/GPT APIs) without monolithic constraints. MCP standardizes the interface, enabling provider-agnostic LLM integration \cite{mcp_spec}.
 \end{itemize}
 
 \subsubsection{Data Flow}
@@ -374,7 +374,7 @@ While XGBoost achieves excellent performance on in-distribution data, the 7.98\%
 
 \subsubsection{Model Context Protocol Integration}
 
-To overcome vocabulary dependency, we developed a hybrid architecture integrating Large Language Models (LLMs) via Model Context Protocol (MCP):
+To overcome vocabulary dependency, we developed a hybrid architecture integrating Large Language Models (LLMs) via Model Context Protocol (MCP) \cite{mcp_anthropic, mcp_spec}---an open standard introduced by Anthropic in November 2024 that standardizes how AI systems connect to external data sources and tools \cite{mcp_landscape}:
 
 \textbf{Architecture}: The MCP-enabled Engine 3 employs a dual-path analysis strategy:
 \begin{enumerate}
@@ -673,7 +673,7 @@ This approach addresses data scarcity in Rwanda---institutions can achieve high-
 %==============================================================================
 \section{Future Work}
 
-\textbf{Short-Term (3-6 months)}:
+\textbf{Short-Term}:
 \begin{enumerate}
     \item Deploy MCP+LLM hybrid architecture to production Kubernetes cluster
     \item Optimize LLM prompt engineering for edge cases and partial compliance scenarios
@@ -682,7 +682,7 @@ This approach addresses data scarcity in Rwanda---institutions can achieve high-
     \item Add confidence intervals and statistical tests to all reported metrics
 \end{enumerate}
 
-\textbf{Medium-Term (6-12 months)}:
+\textbf{Medium-Term}:
 \begin{enumerate}
     \item Complete remaining 26 NCSA controls requiring physical/manual assessment with guided checklists
     \item Cross-framework mapping: NCSA $\leftrightarrow$ ISO 27001 $\leftrightarrow$ NIST $\leftrightarrow$ CIS Controls
@@ -691,9 +691,9 @@ This approach addresses data scarcity in Rwanda---institutions can achieve high-
     \item Regional expansion: Kenya, Nigeria, South Africa regulatory frameworks
 \end{enumerate}
 
-\textbf{Long-Term (12+ months)}:
+\textbf{Long-Term}:
 \begin{enumerate}
-    \item Pan-African compliance platform supporting Malabo Convention with multi-framework LLM analysis
+    \item Pan-African compliance platform supporting the Malabo Convention with multi-framework LLM analysis
     \item Federated learning for cross-institution model improvement while preserving data privacy
     \item Continuous adversarial red-teaming integrated with compliance validation
     \item Real-time streaming log analysis with LLM-powered anomaly detection
@@ -819,6 +819,22 @@ T. Chen and C. Guestrin, ``XGBoost: A Scalable Tree Boosting System,'' in \texti
 
 \bibitem{ribeiro2016lime}
 M. T. Ribeiro, S. Singh, and C. Guestrin, ```Why Should I Trust You?': Explaining the Predictions of Any Classifier,'' in \textit{Proc. ACM SIGKDD}, 2016.
+
+% Model Context Protocol (MCP) references
+\bibitem{mcp_anthropic}
+Anthropic, ``Introducing the Model Context Protocol,'' \textit{Anthropic Blog}, Nov. 2024. [Online]. Available: https://www.anthropic.com/news/model-context-protocol
+
+\bibitem{mcp_spec}
+Model Context Protocol, ``Model Context Protocol Specification,'' 2025. [Online]. Available: https://modelcontextprotocol.io/specification/2025-11-25
+
+\bibitem{mcp_landscape}
+C. Wang et al., ``Model Context Protocol (MCP): Landscape, Security Threats, and Future Research Directions,'' arXiv:2503.23278, 2025.
+
+\bibitem{mcp_security}
+S. Lund and B. Byun, ``Securing the Model Context Protocol (MCP): Risks, Controls, and Governance,'' arXiv:2511.20920, 2025.
+
+\bibitem{mcp_enterprise}
+R. de Mello et al., ``Enterprise-Grade Security for the Model Context Protocol (MCP): Frameworks and Mitigation Strategies,'' arXiv:2504.08623, 2025.
 
 \end{thebibliography}
 

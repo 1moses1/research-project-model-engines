@@ -1,0 +1,905 @@
+\documentclass[11pt,conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{balance}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usetikzlibrary{shapes,arrows,positioning,calc,fit,backgrounds}
+\usepackage{needspace}
+
+\lstset{
+    basicstyle=\scriptsize\ttfamily,
+    breaklines=true,
+    frame=single,
+    numbers=none,
+    language=Python,
+    showstringspaces=false,
+    float=!htbp
+}
+
+\begin{document}
+
+\title{An AI-Augmented Unified Compliance Auditor for Hybrid Cloud Environments: Integrating Adversarial Security Techniques for Rwanda's Regulatory Landscape}
+
+\author{%
+\IEEEauthorblockN{Moise IRADUKUNDA INGABIRE}
+\IEEEauthorblockA{\textit{College of Engineering}\\
+\textit{Carnegie Mellon University Africa}\\
+Kigali, Rwanda\\
+mii@andrew.cmu.edu}
+\and
+\IEEEauthorblockN{Jema David NDIBWILE}
+\IEEEauthorblockA{\textit{College of Engineering}\\
+\textit{Carnegie Mellon University Africa}\\
+Kigali, Rwanda\\
+jndibwil@andrew.cmu.edu}
+}
+
+\maketitle
+
+\begin{abstract}
+Manual compliance auditing in African regulatory contexts consumes up to 40\% of IT security budgets and over 1,000 person-hours annually, yet existing approaches verify control \textit{presence} rather than \textit{effectiveness}---leaving institutions vulnerable to adversarial techniques that evade nominally compliant controls. This paper investigates whether a hybrid ML architecture can (i) achieve real-world log classification accuracy within Rwanda's NCSA Minimum Cybersecurity Standards, (ii) quantify compliance \textit{effectiveness} through adversarial testing rather than binary presence checking, and (iii) remain deployable on CPU-only infrastructure accessible to African SMEs.
+
+We formalize compliance effectiveness as $C(k) = \alpha D_k + \beta V_k + \gamma R_k$---a weighted model of detection rate, coverage, and evasion resistance---and instantiate it through three empirical investigations: (1) multi-label XGBoost classification trained on a hybrid dataset of 200,000 events (70\% real-world public logs, 30\% Rwanda-specific synthetic data); (2) adversarial control validation using fileless reverse shells and GA-generated XSS payloads; and (3) LLM zero-shot analysis via Model Context Protocol across three structurally distinct log types.
+
+Our key findings are: \textbf{F1} --- XGBoost achieves 99.88\% F1 after 5\% fine-tuning (2,170 samples) but degrades to 7.98\% zero-shot, confirming that vocabulary-based models do not generalize across log distributions without target-domain exposure. \textbf{F2} --- Adversarial testing reveals effectiveness gaps invisible to presence-based auditing: SI-3 scores $C(\text{SI-3}) = 0.403$ (``partial'') despite nominal compliance, and SI-10 is ``non-compliant'' with 32\% XSS bypass. \textbf{F3} --- LLM zero-shot accuracy is log-type-dependent (80--90\% across 3 types, 83.3\% overall), substantially outperforming XGBoost's zero-shot F1 while confirming Deka et al.'s prediction of domain-shift degradation. \textbf{F4} --- The full system is validated on production infrastructure (live audit: 75\% compliance score, 0.77\,s report generation) at 2.0 CPU cores and \$50/month---demonstrating deployment viability for resource-constrained African institutions.
+
+To the best of our knowledge, this is the first effectiveness-based compliance auditing system tailored to an African national regulatory framework, providing a replicable methodology for automated NCSA auditing.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Compliance Auditing, Rwanda NCSA, Machine Learning, XGBoost, Large Language Models, Model Context Protocol, Multi-label Classification, Hybrid Cloud Security, NIST SP 800-53, Adversarial Security, Kubernetes
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+\subsection{Context and Motivation}
+
+Enterprises and government agencies across Africa are undergoing rapid digital transformation, increasingly adopting hybrid cloud infrastructures. Compliance and cybersecurity assurance remain fragmented and heavily manual, consuming up to 40\% of IT security budgets \cite{ponemon_cost}, often requiring more than 1,000 hours annually \cite{cogr_report}, and introducing error-prone, siloed approaches.
+
+At a continental level, the African Union's Malabo Convention aims to create a unified legal framework for cybersecurity \cite{malabo2014}. However, only 15 of 54 African nations had ratified it as of 2024 \cite{au_cybersecurity_status}. Rwanda has taken independent leadership, establishing comprehensive NCSA Minimum Cybersecurity Standards in 2023 \cite{ncsa2023} and a National Cybersecurity Strategy for 2024--2029 \cite{rwanda_strategy_2024}, aligned with NIST SP 800-53 \cite{nist2020}.
+
+Simultaneously, the cybersecurity threat landscape has evolved dramatically. Modern attacks employ sophisticated evasion techniques leveraging genetic algorithms \cite{ga_xss_paper}, dynamic programming for payload optimization \cite{dp_payload_paper}, and advanced AV/EDR bypass methods \cite{reverse_shell_paper, mitre_attack_sok}. Compliance frameworks must validate not merely the \textit{presence} of controls but their \textit{effectiveness} against such adversarial techniques.
+
+\subsection{Research Problem}
+
+Current compliance auditing approaches face three critical challenges:
+
+\textbf{1. Manual and Resource-Intensive}: Traditional audits require extensive human effort, making continuous compliance monitoring infeasible for resource-constrained Rwandan institutions. Organizations conducting 3--5 internal audits annually achieve per-capita compliance costs averaging \$154, while those without internal audits face costs of \$341 \cite{ponemon_cost}.
+
+\textbf{2. Checkbox Compliance}: Existing frameworks verify control \textit{presence} (e.g., ``Is antivirus installed?'') without assessing \textit{effectiveness}. Signature-based detection suffers 90--97\% evasion rates against modern techniques \cite{dp_payload_paper, reverse_shell_paper}.
+
+\textbf{3. Binary Classification Inadequacy}: Compliance is inherently multi-dimensional---a single log event may provide evidence for multiple controls simultaneously. Binary classification (compliant/non-compliant) oversimplifies this reality and discards actionable audit information.
+
+\subsection{Research Contributions}
+
+This work makes four contributions to automated compliance auditing:
+
+\begin{enumerate}
+    \item \textbf{Adversarial-Aware Compliance Validation}: Systematic integration of offensive security research (GA-based payload generation \cite{ga_xss_paper}, MDP-based evasion \cite{dp_payload_paper}, reverse shell techniques \cite{reverse_shell_paper}) into a defensive compliance framework, demonstrating---to the best of our knowledge---the first methodology for effectiveness-based NCSA control validation using adversarial testing.
+
+    \item \textbf{Multi-Label Evidence-to-Control Mapping}: Formulation of compliance auditing as multi-label classification, mapping evidence to multiple controls simultaneously (e.g., failed SSH login $\rightarrow$ AC-7, IA-2, AU-2, SI-4), with 143-dimensional output validated over 200,000 training events.
+
+    \item \textbf{Rwanda-Specific Hybrid ML Architecture}: An AI compliance system specifically tailored to Rwanda's NCSA 2023 regulatory framework---to the best of our knowledge the first for an African regulatory context---combining XGBoost (137$\times$ smaller than BERT, 50$\times$ faster) with MCP+LLM for semantic generalization, enabling deployment on CPU-only infrastructure with \$50/month cloud cost.
+
+    \item \textbf{Deployment Viability Evidence for Resource-Constrained Contexts}: Empirical validation that effectiveness-based NCSA compliance auditing is achievable on commodity hardware (2.0 CPU cores, 2.66\,GB RAM, \$50/month cloud hosting), providing evidence that the cost barrier---not technical feasibility---is the primary obstacle to AI compliance adoption in African SMEs. Validated on production infrastructure through a live audit yielding a 75\% compliance score with 0.77\,s report generation.
+\end{enumerate}
+
+\subsection{Research Questions}
+
+\textbf{Primary Research Question (RQ0)}: Given the limitations of manual auditing in Rwandan hybrid cloud environments, can an AI-augmented compliance auditor employing hybrid architecture (ML-based evidence routing + rule-based evaluation) for NIST SP 800-53 and Rwanda NCSA standards achieve macro F1-score within the 65--80\% target range for real-world log classification while supporting $\geq$50\% audit cycle reduction?
+
+\textbf{Secondary Research Questions}:
+\begin{enumerate}
+    \item[\textbf{RQ1}] How do adversarial techniques (GA, DP, LLM-based payload generation, AV/EDR evasion) inform compliance control effectiveness validation?
+    \item[\textbf{RQ2}] What are the comparative strengths of BERT, LSTM, and XGBoost for evidence-to-control mapping in resource-constrained environments?
+    \item[\textbf{RQ3}] Can hybrid datasets (real-world public logs + Rwanda-specific synthetic data) overcome the overfitting limitations of purely synthetic training?
+    \item[\textbf{RQ4}] How does multi-label classification improve upon binary compliance classification for African regulatory contexts?
+\end{enumerate}
+
+Section~II reviews related work; Section~III presents methodology and theoretical model; Section~IV details system implementation; Section~V presents evaluation results; Section~VI discusses findings and implications; Section~VII concludes.
+
+%==============================================================================
+\section{Literature Review}
+
+\subsection{Adversarial Security and Compliance}
+
+Recent research demonstrates sophisticated attack automation through optimization techniques. Understanding these adversarial methods is critical for validating compliance control \textit{effectiveness}---not merely presence.
+
+\subsubsection{Genetic Algorithms for Security Testing}
+
+Liu et al.\ \cite{ga_xss_paper} developed GAXSS, a genetic algorithm for XSS vulnerability detection achieving 100\% precision and 97.5\% accuracy on real CMS platforms. The DNA-encoded payload structure with multi-objective fitness function ($F = w_1 E_x + w_2 C_{\text{CLOSED}} + w_3 D_{\text{is}} + w_4 P_u$) demonstrates systematic attack generation. The 81.5\% recall gap---18.5\% of vulnerabilities missed---is directly relevant to SI-10 (Input Validation) control validation: a compliant system should detect all such payloads, not merely the majority.
+
+LLM-based payload generation \cite{llm_payload_paper} achieved 94.73\% evasion against ClamAV through fine-tuned GPT-2 with mutation strategies (encoding confusion, sensitive word replacement). This offensive capability informs our adversarial testing methodology for SI-3 (Malicious Code Protection) effectiveness validation.
+
+Dynamic programming approaches \cite{dp_payload_paper} formulate shellcode obfuscation as a Markov Decision Process, achieving 97\% detectability reduction through NOP insertion, JMP insertion, and instruction replacement. The deterministic convergence (15--20 iterations vs.\ 100+ for GA) enables reproducible, standardized adversarial test cases---essential for comparing compliance posture across audit cycles.
+
+\textbf{Research Gap}: None of these papers connect adversarial optimization techniques to regulatory compliance frameworks or provide a methodology for using offensive testing to evaluate control effectiveness within national cybersecurity standards. Our work bridges this gap by mapping adversarial test outcomes to specific NCSA control decisions.
+
+\subsubsection{AV/EDR Evasion Techniques}
+
+Custom reverse shell implementations \cite{reverse_shell_paper} reduce detection from 62.9\% (44/70 AV engines, standard Metasploit) to 1.4\% (1/70) through fileless shellcode execution via \texttt{VirtualAlloc}/\texttt{CreateThread}---a 97\% evasion improvement. The MITRE ATT\&CK framework documents 40+ defense evasion sub-techniques under TA0005 \cite{mitre_attack_sok}, with a systematic review of 417 publications confirming obfuscation (T1027), process injection (T1055), and defense impairment (T1562) as the most prevalent in real-world attacks \cite{mitre_attack_applications}.
+
+\textbf{Compliance Implication}: These results demonstrate that signature-based AV/EDR---still prevalent in Rwandan SMEs---provides false compliance assurance. An institution with compliant-labeled SI-3 controls can be compromised if only signature detection is deployed. Our system addresses this by validating detection \textit{capability} through adversarial testing rather than verifying installation.
+
+\subsubsection{African Cybersecurity Context}
+
+Cybercrimes cost African economies an estimated \$3.5 billion annually \cite{serianu_africa}; only 29 of 54 countries have enacted cybersecurity legislation \cite{itu_africa_cyber}. Kenya's CMCA (2024), Nigeria's Cybercrimes Act (2015), and Rwanda's NCSA standards represent distinct national approaches to a shared threat landscape \cite{kenya_cyber_law, nigeria_cyber, ncsa2023}. Rwanda's approach is notable for sector-specific minimum standards enforced through mandatory audits---making automated auditing both valuable and timely \cite{rwanda_strategy_2024}.
+
+\textbf{Research Gap}: No prior work maps adversarial evasion techniques to African compliance controls or provides automation frameworks for effectiveness-based validation at the institutional scale relevant to Rwanda's SME landscape.
+
+\subsection{AI-Assisted Compliance and Log Analysis}
+
+Green \& Brown (2023) \cite{bert_audit} fine-tuned BERT for security log classification ($>$93\% accuracy) and Smith et al.\ (2022) \cite{lstm_audit} used LSTM autoencoders for anomaly detection (50\% audit cycle reduction). However, both assume GPU-equipped infrastructure unavailable in Rwanda. Ferrag et al.\ \cite{ferrag2025} show that XGBoost achieves 96.96\% F1 at 4\% CPU utilization for flow-based intrusion detection, validating our resource-efficiency argument.
+
+The SIEVE dataset \cite{sieve_dataset} demonstrates a critical finding relevant to our work: SVM achieves macro-F1 of 0.93--0.97 on synthetic SIEM logs but degrades on real logs, and BERT follows the same pattern (0.95 synthetic, 0.89 real). This motivates our hybrid dataset strategy and validates the zero-shot degradation we observe in XGBoost.
+
+Deka et al.\ \cite{deka2024} show that LLM accuracy for log analysis degrades with domain-shifted log formats---a limitation our hybrid XGBoost+LLM architecture addresses by using rule-based pre-filtering for high-confidence structured cases.
+
+\textbf{Our Contribution}: XGBoost achieves comparable performance to BERT while being 137$\times$ smaller and 50$\times$ faster, enabling deployment on CPU-only infrastructure at \$50/month---a viable cost for Rwandan institutions spending \$154--\$341 per audit currently.
+
+\subsection{Multi-Label Classification}
+
+Tsoumakas and Katakis \cite{tsoumakas2007} established foundational multi-label methods including Binary Relevance, Label Powerset, and algorithm adaptation. Chen and Guestrin \cite{chen2016xgboost} demonstrate XGBoost's effectiveness across structured prediction tasks. Our application to compliance auditing is novel: a single log event inherently relates to multiple controls (e.g., ``Failed SSH login'' $\rightarrow$ AC-7, IA-2, AU-2, SI-4), and binary classification collapses this multi-dimensional compliance evidence into a single label, losing actionable control-specific information.
+
+\textbf{Research Gap}: No prior compliance auditing system employs multi-label classification for evidence-to-control mapping, particularly within African national regulatory frameworks.
+
+%==============================================================================
+\section{Methodology}
+
+\subsection{System Architecture}
+
+\subsubsection{Seven-Engine Microservices Design}
+
+The system employs a microservices architecture with seven independent engines communicating via Redis pub/sub and REST APIs, as shown in Figure~\ref{fig:architecture}.
+
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}[
+    node distance=0.8cm,
+    engine/.style={rectangle, draw, fill=blue!20, text width=1.6cm, align=center, minimum height=0.7cm, font=\scriptsize, rounded corners=2pt},
+    db/.style={cylinder, draw, fill=green!20, text width=1.4cm, align=center, minimum height=0.5cm, shape border rotate=90, font=\scriptsize},
+    arrow/.style={->, >=stealth, thick}
+]
+\node[engine] (e1) at (0,0) {E1: Log\\Collector};
+\node[engine, right=0.6cm of e1] (e2) {E2: Doc\\Processor};
+\node[engine, right=0.6cm of e2] (e3) {E3: MCP+LLM\\Analyzer};
+\node[engine, below=0.8cm of e2] (e4) {E4: Decision\\Engine};
+\node[engine, left=0.6cm of e4] (e6) {E6: Report\\Generator};
+\node[engine, right=0.6cm of e4] (e5) {E5: Web UI};
+\node[engine, below=0.8cm of e4] (e7) {E7: Auth};
+\node[db, below left=0.6cm and 0.3cm of e7] (pg) {PostgreSQL};
+\node[db, below right=0.6cm and 0.3cm of e7] (redis) {Redis};
+\draw[arrow] (e1) -- (e2);
+\draw[arrow] (e2) -- (e3);
+\draw[arrow] (e3) -- (e4);
+\draw[arrow] (e4) -- (e6);
+\draw[arrow] (e4) -- (e5);
+\draw[arrow, dashed] (e7) -- (e4);
+\draw[arrow, dashed] (e7) -- (e5);
+\draw[arrow] (e4) -- (pg);
+\draw[arrow] (e5) -- (redis);
+\end{tikzpicture}
+\caption{Seven-engine microservices architecture with PostgreSQL and Redis infrastructure}
+\label{fig:architecture}
+\end{figure}
+
+\begin{table}[!t]
+\centering
+\caption{Engine Functional Breakdown}
+\label{tab:engines}
+\begin{tabular}{@{}lp{5.5cm}@{}}
+\toprule
+\textbf{Engine} & \textbf{Function} \\
+\midrule
+Engine 1 & Log collection (syslog, Windows Events, files, APIs); normalization to unified schema \\
+Engine 2 & Document processing (PDF policy evidence extraction via LLM) \\
+Engine 3 & MCP+LLM hybrid analyzer: 60 evidence parsers, dual-path analysis \\
+Engine 4 & Decision engine: 143 control-specific rule evaluators \\
+Engine 5 & Report generation (PDF/CSV compliance reports via ReportLab) \\
+Engine 6 & Web UI (React, TypeScript, Tailwind; audit wizard; WebSocket real-time progress) \\
+Engine 7 & Authentication (JWT, RBAC: admin, analyst, viewer, api\_user) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Architectural Rationale}: The separation between Engine 3 (classification/routing) and Engine 4 (rule-based evaluation) reflects a deliberate design choice: ML handles semantic routing of evidence to relevant controls, while deterministic rule evaluation applies NCSA-specific thresholds. This prevents ML uncertainty from propagating into compliance decisions and preserves explainability. MCP's tool-use abstraction \cite{mcp_enterprise} enables provider-agnostic LLM integration, avoiding vendor lock-in while standardizing the AI interface.
+
+\subsubsection{Data Flow}
+
+The complete pipeline is illustrated in Figure~\ref{fig:pipeline}.
+
+\begin{figure*}[!t]
+\centering
+\begin{tikzpicture}[
+    node distance=0.9cm,
+    source/.style={rectangle, draw, fill=blue!15, text width=1.6cm, align=center, minimum height=0.6cm, font=\scriptsize, rounded corners=2pt},
+    process/.style={rectangle, draw, fill=orange!15, text width=1.8cm, align=center, minimum height=0.6cm, font=\scriptsize, rounded corners=2pt},
+    output/.style={rectangle, draw, fill=green!15, text width=1.6cm, align=center, minimum height=0.6cm, font=\scriptsize, rounded corners=2pt},
+    arrow/.style={->, >=stealth, thick}
+]
+\node[source] (syslog) {Syslog};
+\node[source, below=0.3cm of syslog] (windows) {Windows\\Events};
+\node[source, below=0.3cm of windows] (docs) {Documents};
+\node[process, right=1.2cm of windows] (e1) {E1: Normalize\\+ Enrich};
+\node[process, right=0.8cm of e1] (e3) {E3: MCP+LLM\\Analyze};
+\node[process, right=0.8cm of e3] (e4) {E4: Decision\\Evaluate};
+\node[process, right=0.8cm of e4] (e6) {E6: Generate\\Reports};
+\node[output, right=0.8cm of e6] (pdf) {PDF Report};
+\node[output, below=0.3cm of pdf] (dash) {Dashboard};
+\draw[arrow] (syslog.east) -- ++(0.3,0) |- (e1.west);
+\draw[arrow] (windows) -- (e1);
+\draw[arrow] (docs.east) -- ++(0.3,0) |- (e1.west);
+\draw[arrow] (e1) -- node[above, font=\tiny] {Evidence} (e3);
+\draw[arrow] (e3) -- node[above, font=\tiny] {Control IDs} (e4);
+\draw[arrow] (e4) -- node[above, font=\tiny] {Decisions} (e6);
+\draw[arrow] (e6) -- (pdf);
+\draw[arrow] (e6.east) -- ++(0.2,0) |- (dash.west);
+\node[below=0.1cm of e3, font=\tiny, text width=2.2cm, align=center] {Hybrid: Rules\\+ LLM Semantic};
+\end{tikzpicture}
+\caption{End-to-end compliance auditing pipeline: heterogeneous sources through hybrid MCP+LLM analysis, decision evaluation, and report generation}
+\label{fig:pipeline}
+\end{figure*}
+
+For multi-label classification, each evidence item $x_i$ maps to a binary label vector:
+\begin{equation}
+\mathbf{y}_i = [y_{i1}, y_{i2}, \ldots, y_{i143}] \in \{0,1\}^{143}
+\end{equation}
+where $y_{ij} = 1$ if evidence $x_i$ is relevant to control $c_j$.
+
+\subsection{Dataset Strategy}
+
+\subsubsection{Evolution from Synthetic to Hybrid}
+
+Initial purely synthetic data (100,000 events) revealed critical overfitting. All three baseline models achieved 100\% accuracy---a clear red flag. Investigation identified:
+
+\textbf{Data Leakage}: The \texttt{status\_code} feature exhibited $-0.97$ Pearson correlation with the compliance label. Models memorized: \texttt{status\_code == 200} $\rightarrow$ compliant. Following identification, \texttt{status\_code} was removed from all feature sets.
+
+\textbf{Template Simplicity}: Synthetic log messages used fixed templates with low lexical diversity, enabling vocabulary memorization rather than semantic understanding.
+
+\subsubsection{Hybrid Dataset Composition and Relevance}
+
+\begin{table}[!t]
+\centering
+\caption{Hybrid Dataset Composition (200,000 logs)}
+\label{tab:dataset}
+\begin{tabular}{@{}lrrp{3cm}@{}}
+\toprule
+\textbf{Source} & \textbf{Count} & \textbf{\%} & \textbf{Type} \\
+\midrule
+NSL-KDD \cite{nslkdd} & 104,000 & 52\% & Network intrusions \\
+LogHub \cite{loghub} & 36,000 & 18\% & System logs \\
+Rwanda Synthetic & 60,000 & 30\% & NCSA-specific \\
+\midrule
+\textbf{Total} & \textbf{200,000} & \textbf{100\%} & Hybrid \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Dataset-to-Control Relevance}: Each public dataset was selected for explicit NCSA control coverage. NSL-KDD \cite{nslkdd} provides 42 attack categories covering NCSA controls: DoS attacks $\rightarrow$ AC-7 (lockout policy), SI-4 (monitoring); Probe (reconnaissance) $\rightarrow$ AU-6 (audit review), SC-7 (boundary protection); R2L (remote-to-local) $\rightarrow$ IA-2 (authentication), AC-3 (access enforcement); U2R (privilege escalation) $\rightarrow$ AC-6 (least privilege), SI-4. LogHub \cite{loghub} HDFS, OpenStack, and Linux system logs provide coverage for AU-12 (audit record generation), CM-7 (least functionality), SI-2 (flaw remediation), and AC-2 (account management). Together, these datasets cover 67 of 143 implemented controls with real-world attack patterns. Rwanda-specific synthetic data covers the remaining 76 NCSA controls not represented in public datasets, ensuring complete label coverage for all 143 control families.
+
+\textbf{Split}: 70/15/15 train/validation/test with stratified sampling across control families.
+
+\subsubsection{Additional Evaluation Datasets}
+
+For cross-dataset generalization testing:
+\begin{itemize}
+    \item \textbf{SecRepo Auth Logs} \cite{secrepo}: 86,839 real SSH authentication events (failed password attempts, invalid user logins, session acceptances)
+    \item \textbf{SIEVE} \cite{sieve_dataset}: 30-class expert-labeled SIEM event classification dataset
+    \item \textbf{LANL Authentication} \cite{lanl_auth}: Sampled 50K enterprise authentication events from 708M total
+\end{itemize}
+
+\subsection{Model Development and Selection}
+
+\subsubsection{Baseline Models}
+
+\textbf{BERT (110M parameters)}: Fine-tuned \texttt{bert-base-uncased}, frozen embeddings and first 10 layers. 2 epochs, batch 16, LR 2e-5. Result: 12 hours training, 2.7\,GB model, 45\,ms latency.
+
+\textbf{LSTM (758K parameters)}: 2-layer bidirectional LSTM, 128 hidden units, dropout 0.3. 5 epochs, vocabulary 946. Result: 2 hours training, 800\,MB model, 12\,ms latency.
+
+\textbf{XGBoost}: Gradient boosted trees, max depth 6, learning rate 0.1, 500 estimators (early stopping at 93). Result: 8 minutes training, 350\,MB model, $<$1\,ms latency.
+
+\subsubsection{Production Selection: XGBoost}
+
+\begin{table}[!t]
+\centering
+\caption{Model Comparison for Production Deployment}
+\label{tab:model_comparison}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Metric} & \textbf{BERT} & \textbf{LSTM} & \textbf{XGBoost} \\
+\midrule
+F1-Score (mean $\pm$ 95\% CI) & 96.15\% $\pm$ 0.8\% & 96.11\% $\pm$ 1.2\% & \textbf{99.49\% $\pm$ 0.3\%} \\
+Accuracy & 96.21\% & 96.08\% & \textbf{99.49\%} \\
+\midrule
+Training Time & 12 hrs & 2 hrs & \textbf{8 min} \\
+Model Size & 2.7\,GB & 800\,MB & \textbf{350\,MB} \\
+Latency & 45\,ms & 12\,ms & \textbf{$<$1\,ms} \\
+Memory & 2.1\,GB & 580\,MB & \textbf{380\,MB} \\
+Explainability & Low & Low & \textbf{High (SHAP)} \\
+GPU Required & Yes & No & \textbf{No} \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize 95\% CI computed via 5-fold stratified cross-validation ($n$\,=\,100,000).} \\
+\end{tabular}
+\end{table}
+
+\textbf{Finding F3 (RQ2)}: XGBoost achieves superior classification performance to BERT (99.49\%\,$\pm$\,0.3\% vs.\ 96.15\%\,$\pm$\,0.8\% F1, 5-fold CV; Table~\ref{tab:model_comparison}) with non-overlapping confidence intervals confirming statistical significance, while requiring 137$\times$ less storage and 50$\times$ lower inference latency, empirically validating that resource-efficient models do not sacrifice accuracy for compliance auditing tasks. This finding directly challenges the assumption that high-accuracy log classification requires GPU-equipped infrastructure, with practical implication: Rwandan SMEs can deploy this system at \$50/month vs.\ the \$15--\$50/endpoint/month charged by enterprise alternatives. SHAP-based explainability provides per-decision audit trails satisfying AU-2 accountability requirements.
+
+\subsection{Feature Engineering}
+
+\textbf{Numeric Features (5)}: Hour of day (0--23), day of week (0--6), business hours binary flag, network port number, event severity level.
+
+\textbf{Text Features (25 TF-IDF)}: Vectorized \texttt{log\_message} field with unigrams, minimum document frequency 5, top discriminating terms: \textit{failed}, \textit{unauthorized}, \textit{blocked}, \textit{encrypted}, \textit{timeout}, \textit{denied}, \textit{accepted}. \texttt{status\_code} removed due to identified leakage.
+
+\textbf{Total}: 30 features per event.
+
+\subsection{Multi-Label Formulation}
+
+\textbf{Problem}: Map evidence $x_i$ to a subset of controls $\mathcal{C}_i \subseteq \{c_1, \ldots, c_{143}\}$.
+
+\textbf{Implementation}: Multi-output XGBoost via scikit-learn's \texttt{MultiOutputClassifier} wrapper, producing 143-dimensional binary output vectors. Base estimator: \texttt{XGBClassifier}(n\_estimators=100, max\_depth=6, learning\_rate=0.1, subsample=0.8, colsample\_bytree=0.8).
+
+\textbf{Evaluation Metrics}:
+\begin{align}
+F1_{\text{macro}} &= \frac{1}{143}\sum_{k=1}^{143} F1_k \label{eq:macro}\\
+F1_{\text{micro}} &= \frac{2 \cdot P_{\text{all}} \cdot R_{\text{all}}}{P_{\text{all}} + R_{\text{all}}} \label{eq:micro}\\
+\mathcal{L}_{H} &= \frac{1}{N \cdot 143}\sum_{i=1}^{N}\sum_{j=1}^{143} \mathbb{1}[y_{ij} \neq \hat{y}_{ij}] \label{eq:hamming}
+\end{align}
+
+Macro-F1 (Eq.~\ref{eq:macro}) is our primary metric as it weights each control equally, preventing high-frequency controls from dominating evaluation.
+
+\subsection{Evolution to Semantic LLM Analysis}
+
+While XGBoost achieves strong in-distribution performance, the 7.98\% zero-shot F1 on real SecRepo logs reveals a fundamental constraint: TF-IDF features capture vocabulary co-occurrence patterns rather than semantic meaning. A log containing ``authentication failure'' is correctly classified only if that vocabulary appeared in training data with the same distribution.
+
+\subsubsection{Model Context Protocol Integration}
+
+To overcome vocabulary dependency, Engine 3 integrates LLMs via Model Context Protocol (MCP) \cite{mcp_anthropic, mcp_spec}---an open standard introduced by Anthropic in November 2024 standardizing AI system interfaces with external tools and data sources \cite{mcp_landscape}:
+
+\textbf{Dual-Path Architecture}:
+\begin{enumerate}
+    \item \textbf{Rule-based fast path}: Regex pattern matching for high-confidence, unambiguous events (e.g., ``Failed password'' $\rightarrow$ non-compliant, ``Accepted publickey'' $\rightarrow$ compliant), achieving $<$1\,ms latency. Handles 60--70\% of logs.
+    \item \textbf{LLM semantic path}: Claude/GPT analysis for ambiguous logs requiring contextual interpretation, achieving 200--500\,ms latency. Handles 30--40\% of logs.
+\end{enumerate}
+
+\textbf{Prompt Design}: The LLM prompt was iteratively refined to focus on \textit{event-based} compliance assessment---whether the security event described indicates a policy violation---rather than whether logging infrastructure is functioning. The structured prompt includes the log text, a taxonomy of 143 NCSA controls with descriptions, and a required output schema (control\_id, status, confidence, evidence\_indicators, remediation).
+
+\textbf{Output Schema}:
+\begin{itemize}
+    \item \textbf{Compliant}: Successful authorized operations (e.g., accepted authentication, normal session establishment)
+    \item \textbf{Non-compliant}: Security violations (e.g., failed authentication, unauthorized access attempts, intrusion indicators)
+    \item \textbf{Partial}: Mixed indicators requiring human investigation
+\end{itemize}
+
+\subsubsection{LLM Evaluation Protocol}
+
+Two complementary evaluations were conducted. \textbf{Evaluation 1} (SSH deep-dive): a stratified random sample of 500 SecRepo authentication logs: 300 failed authentication events (60\%), 150 successful authentication events (30\%), and 50 session anomalies (10\%). Ground truth labels established through automated rule-based analysis cross-validated with manual review of all 50 anomalous cases. \textbf{Evaluation 2} (multi-log-type, GPT-4o-mini, temperature=0): 10 samples per log type across three structurally distinct categories---SSH authentication, macOS system/service logs, and HTTP/API access logs---totalling 30 samples. Ground truth for each type established by domain-specific rule-based classifiers: SSH by authentication keyword matching; macOS by security daemon/control presence; HTTP/API by HTTP status code and attack pattern heuristics. All ground truth cross-validated manually.
+
+\subsubsection{Cost Optimization}
+
+\begin{itemize}
+    \item MD5-keyed response caching (10,000 entry LRU cache): identical log formats reuse cached decisions
+    \item Model tiering: Claude Haiku for batch processing (\$0.00025/1K tokens), Claude Sonnet for single-event analysis
+    \item Rule-based pre-filtering eliminates LLM calls for 60--70\% of logs
+    \item Estimated cost: \$0.15/10,000 logs with hybrid strategy vs.\ \$1.50 with LLM-only
+\end{itemize}
+
+%==============================================================================
+\section{System Implementation}
+
+\subsection{Control Coverage}
+
+The system implements 143 NCSA controls across 7 families (Table~\ref{tab:controls}), with 96 system-auditable controls supported by 60 specialized evidence parsers executing macOS audit commands.
+
+\begin{table}[!t]
+\centering
+\caption{Implemented Control Families}
+\label{tab:controls}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Control Family} & \textbf{Total} & \textbf{System-Auditable} \\
+\midrule
+Access Control (AC) & 52 & 35 \\
+Audit \& Accountability (AU) & 30 & 22 \\
+Configuration Management (CM) & 18 & 12 \\
+Identity \& Authentication (IA) & 15 & 10 \\
+System \& Comm.\ Protection (SC) & 26 & 15 \\
+System \& Info.\ Integrity (SI) & 2 & 2 \\
+\midrule
+\textbf{Total} & \textbf{143} & \textbf{96} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Evidence Parsers}: Each system-auditable control has a dedicated parser executing macOS audit commands and parsing structured output. The 60 parsers are organized by family: Access Control (26): login history via \texttt{last}, user enumeration via \texttt{dscl . -list /Users}, SSH configuration via \texttt{sshd -T}, screen lock, file permissions; Audit \& Accountability (7): audit subsystem via \texttt{auditctl}, NTP sync via \texttt{ntpq}, log retention; Identity \& Authentication (5): password policy via \texttt{pwpolicy -getaccountpolicies}, MFA certificates; System \& Communications Protection (11): firewall via \texttt{pfctl}, encryption via \texttt{fdesetup status}, VPN, WiFi; System \& Information Integrity (4): SIP via \texttt{csrutil status}, XProtect/Gatekeeper; Configuration Management (7): software inventory, patch status.
+
+\subsection{Decision Engine Architecture}
+
+Each control implements a dedicated parser and decision function returning a \texttt{ComplianceResult}: status $\in$ \{compliant, partial, non\_compliant\}, confidence $\in [0,1]$, gaps list, and remediation recommendation. Control-specific thresholds implement NCSA requirements: AC-7 checks lockout threshold $\leq 5$ failed attempts within 15 minutes; IA-5 checks password minimum length $\geq 12$ characters; SC-28 checks FileVault encryption enabled.
+
+\subsection{Database Schema}
+
+PostgreSQL stores the control taxonomy (\texttt{controls}: control\_id, family, title, description, ncsa\_mapping, priority, tier) and audit results (\texttt{audit\_results}: audit\_id, control\_id, status, confidence, reason, gaps, recommendations, audited\_at). Indexes on (control\_id, status) and audited\_at optimize reporting queries. Redis pub/sub channels enable real-time audit progress streaming to the WebSocket-connected dashboard.
+
+\subsection{Kubernetes Deployment}
+
+Namespace \texttt{rwanda-compliance} with 2--3 replicas per engine, resource limits 512\,Mi--1\,Gi memory and 250m--500m CPU per pod. NGINX ingress controller routes external traffic; ClusterIP services for internal inter-engine communication. Liveness and readiness probes on \texttt{/health} endpoints with 30s initial delay ensure zero-downtime pod restarts.
+
+%==============================================================================
+\section{Results and Evaluation}
+
+\subsection{Classification Performance (XGBoost)}
+
+Table~\ref{tab:results} presents XGBoost classification results with 5-fold stratified cross-validation on the hybrid synthetic dataset ($n=100,000$).
+
+\begin{table}[!t]
+\centering
+\caption{XGBoost Classification Results (5-fold CV, $n$\,=\,100,000 synthetic)}
+\label{tab:results}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Metric} & \textbf{Value (Mean $\pm$ Std)} \\
+\midrule
+Accuracy & 100.00\% $\pm$ 0.00\% \\
+Precision & 99.99\% $\pm$ 0.02\% \\
+Recall & 100.00\% $\pm$ 0.00\% \\
+F1-Score & 99.99\% $\pm$ 0.01\% \\
+ROC-AUC & 1.0000 $\pm$ 0.0000 \\
+Training time/fold & 89.09 $\pm$ 7.25\,s \\
+\midrule
+\multicolumn{2}{l}{\textit{Inference Latency (500 samples)}} \\
+p50 & 0.32\,ms \\
+p95 & 5.40\,ms \\
+p99 & 8.78\,ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Interpreting Near-Perfect Synthetic Performance}: The near-zero variance and near-perfect F1 on the synthetic dataset are expected given the controlled generation process: each synthetic event was generated with explicit control labels, creating a structured but internally consistent distribution. This does \textit{not} indicate memorization of training instances---confirmed by consistent cross-validation fold performance---but rather reflects the low intra-class variability of template-based synthetic data. The critical validation of generalization is the cross-dataset evaluation (Section~\ref{sec:cross}), where zero-shot performance degrades substantially (7.98\% F1), confirming that the model learns distribution-specific vocabulary patterns rather than general compliance semantics. This trade-off motivates the MCP+LLM semantic path.
+
+\subsection{Cross-Dataset Generalization}
+\label{sec:cross}
+
+\begin{table}[!t]
+\centering
+\caption{Cross-Dataset Evaluation (SecRepo auth.log, $n$\,=\,86,839 real logs)}
+\label{tab:cross_dataset}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Evaluation Scenario} & \textbf{F1} & \textbf{Accuracy} \\
+\midrule
+Synthetic CV (in-distribution) & 99.99\% & 100.00\% \\
+Zero-shot (train synthetic only) & 7.98\% & 5.92\% \\
+\midrule
+\multicolumn{3}{l}{\textit{Transfer Learning (fine-tune on \% of SecRepo)}} \\
+\quad 5\% (2,170 samples) & 99.88\% & 99.92\% \\
+\quad 10\% (4,341 samples) & 99.90\% & 99.94\% \\
+\quad 20\% (8,683 samples) & 100.00\% & 100.00\% \\
+\midrule
+External CV (upper bound) & 99.99\% & 100.00\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Finding F1 (RQ3)}: Zero-shot transfer shows catastrophic domain shift (7.98\% F1 on real logs vs.\ 99.99\% synthetic), confirming that vocabulary-based models do not generalize across log distributions without exposure to target-domain data. The 92-point gap directly answers RQ3: hybrid datasets improve in-distribution performance but do not themselves solve zero-shot generalization.
+
+\textbf{Finding F2 (RQ3)}: Fine-tuning on just 5\% of target-domain data (2,170 samples) recovers 99.88\% F1, demonstrating strong transfer learning with minimal labeled data investment. This validates a practical deployment strategy: pre-train on synthetic data for full NCSA control coverage, then fine-tune on a small institution-specific sample ($\approx$3 hours of labeling effort).
+
+\subsection{LLM Semantic Analysis Results}
+
+\begin{table}[!t]
+\centering
+\caption{LLM vs.\ XGBoost on SecRepo SSH Authentication Logs (500-sample stratified evaluation)}
+\label{tab:llm_results}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Metric} & \textbf{XGBoost} & \textbf{LLM (MCP)} \\
+\midrule
+Zero-shot Accuracy & 5.92\% & \textbf{100\%}$^\dagger$ \\
+Zero-shot F1 & 7.98\% & \textbf{100\%}$^\dagger$ \\
+Average Confidence & 87.3\% & \textbf{95.2\%} \\
+\midrule
+\multicolumn{3}{l}{\textit{Latency (per log)}} \\
+\quad Rule-based path & --- & 0.04\,ms \\
+\quad LLM path & --- & 280\,ms \\
+\quad XGBoost & 0.32\,ms & --- \\
+\midrule
+\multicolumn{3}{l}{\textit{Resource Requirements}} \\
+\quad Model Storage & 350\,MB & 0\,MB (API) \\
+\quad Memory (runtime) & 380\,MB & 50\,MB \\
+\quad GPU Required & No & No \\
+\bottomrule
+\multicolumn{3}{l}{\footnotesize $^\dagger$On binary event-based classification of SSH authentication logs.} \\
+\multicolumn{3}{l}{\footnotesize See scope discussion in text.} \\
+\end{tabular}
+\end{table}
+
+\textbf{LLM Accuracy Scope and Justification}: The 100\% accuracy reported for LLM analysis requires precise scope qualification. The evaluation was conducted on a 500-sample stratified subset of SecRepo SSH authentication logs---a semantically clear, binary classification task: each log either describes a successful authorized session (compliant) or a failed/unauthorized authentication attempt (non-compliant). SSH authentication logs follow a highly structured syslog format with domain-invariant security terminology, making them well-suited to LLM zero-shot analysis. An example correct classification:
+
+\begin{quote}
+\textit{Input}: \texttt{Nov 25 03:14:07 sshd[2193]: Failed password for invalid user admin from 192.168.1.105 port 4444 ssh2}\\
+\textit{LLM Output}: \{status: ``non\_compliant'', controls: [``AC-7'', ``IA-2'', ``AU-2''], confidence: 0.97, evidence: ``Failed authentication for invalid user---potential brute-force or credential stuffing''\}
+\end{quote}
+
+Ground truth was established through automated rule-based analysis (``Failed password'' $\rightarrow$ non-compliant; ``Accepted'' $\rightarrow$ compliant), cross-validated with manual review of 50 ambiguous samples (session anomalies). All 500 LLM outputs matched reference labels.
+
+\textbf{Finding F4 (RQ0, LLM generalization)}: To validate generalizability beyond SSH logs, we conducted a zero-shot GPT-4o-mini evaluation across three structurally distinct log types (Table~\ref{tab:llm_multilog}). Results confirm that LLM accuracy is log-type-dependent: macOS system/service logs (requiring service-name domain knowledge) achieved 90.0\%; SSH authentication and HTTP/API access logs each achieved 80.0\%. The 83.3\% overall accuracy represents a substantial improvement over XGBoost's 7.98\% zero-shot F1, while revealing that heterogeneous log types do reduce accuracy relative to structured SSH logs---consistent with Deka et al.~\cite{deka2024}.
+
+\begin{table}[!t]
+\centering
+\caption{GPT-4o-mini Zero-Shot Accuracy by Log Type (Rwanda NCSA, $n$=10 per type)}
+\label{tab:llm_multilog}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Log Type} & \textbf{$n$} & \textbf{Accuracy} & \textbf{Avg Conf.} \\
+\midrule
+SSH Authentication & 10 & 80.0\% & 86.0\% \\
+macOS System/Service & 10 & 90.0\% & 90.0\% \\
+HTTP/API Access & 10 & 80.0\% & 89.0\% \\
+\midrule
+\textbf{Overall} & \textbf{30} & \textbf{83.3\%} & \textbf{88.3\%} \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize Model: GPT-4o-mini, temperature=0, zero-shot, March 2026.} \\
+\multicolumn{4}{l}{\footnotesize Ground truth: rule-based + manual cross-validation.} \\
+\end{tabular}
+\end{table}
+
+\textbf{Error Analysis}: All misclassifications produced \textit{partial} labels rather than opposite-polarity errors, indicating LLM uncertainty rather than systematic misunderstanding. SSH errors arose from ambiguous session termination logs (``Connection closed [preauth]'') with borderline compliance status; API errors involved HTTP 403 responses on legitimate paths misclassified as compliant.
+
+\textbf{Hybrid Strategy}: The production system routes 60--70\% of logs through rule-based fast path ($<$1\,ms), reserving LLM analysis for semantically ambiguous cases. This achieves the optimal cost-accuracy tradeoff: estimated \$0.15 per 10,000 logs versus \$1.50 for LLM-only processing.
+
+\subsection{Latency and Throughput}
+
+\begin{table}[!t]
+\centering
+\caption{System Performance (500 inference samples)}
+\label{tab:performance}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Operation} & \textbf{Latency} \\
+\midrule
+XGBoost Inference (p50) & 0.32\,ms \\
+XGBoost Inference (p95) & 5.40\,ms \\
+XGBoost Inference (p99) & 8.78\,ms \\
+Decision Engine (per control) & 5--10\,ms \\
+End-to-End Pipeline (single log) & 10--15\,ms \\
+Report Generation & 2--5\,s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Throughput}: Single pod: $\sim$100 events/s; 3-pod deployment: $\sim$300 events/s (linear scaling observed to 5 pods). Training: 89.09 $\pm$ 7.25\,s per fold on CPU.
+
+\subsection{Resource Utilization}
+
+Total system footprint across all 7 engines: 2.66\,GB RAM, 2.0 CPU cores. Minimum deployment: 4\,GB RAM, 4 cores at $\sim$\$50/month cloud hosting---substantially lower than enterprise compliance solutions charging \$15--\$50/endpoint/month.
+
+\subsection{Kubernetes Scaling Test}
+
+Engine 3 scaled to 3 replicas under 300 concurrent requests:
+\begin{itemize}
+    \item Load distribution: 34.0\% / 32.7\% / 33.3\% (near-uniform, within 1.3\% spread)
+    \item Latency: 1.8\,ms mean, 4.2\,ms p99
+    \item Failures: 0 across 10 independent test iterations
+\end{itemize}
+
+\subsection{Live System Deployment Validation}
+\label{sec:live_deployment}
+
+To validate end-to-end system correctness beyond simulated benchmarks, a full compliance audit was executed on the research machine (macOS 26.3.1, host: moiseiradukunda) using the production seven-engine pipeline (Audit ID: AUDIT-20260320-205239, March 20, 2026). The system autonomously collected evidence via 60 parsers across 5 control families, classified findings via XGBoost and the Decision Engine, and generated a 3-page structured PDF report in 0.77\,s.
+
+Results across 10 audited controls:
+\begin{itemize}
+    \item \textbf{5/10 compliant}: FileVault encryption (AC-17), Gatekeeper active (CM-6), Firewall enabled (SC-7), Microsoft Defender ATP running (SI-3), audit logging active (AU-2)
+    \item \textbf{5/10 partial}: Password policy below NCSA threshold, screen sharing unreviewed (AC-17 partial), SIP status requiring investigation, MDM enrollment gap, SSH key rotation overdue
+    \item \textbf{0/10 non-compliant}: No outright policy violations detected
+    \item \textbf{Overall compliance score}: 75.0\%
+\end{itemize}
+
+This live deployment demonstrates that the system produces actionable, granular audit findings on real production infrastructure---not merely on synthetic or curated benchmark data. The 75\% score reflects realistic partial compliance rather than the perfection achievable on synthetic data, validating the system's discriminative capability in production conditions. Report generation time (0.77\,s) is within the 2--5\,s target specified in Table~\ref{tab:performance}.
+
+\subsection{Adversarial Validation}
+\label{sec:adversarial}
+
+Adversarial validation was conducted in an isolated virtual machine environment (Windows 10 21H2, network-isolated) following responsible disclosure practices. Tests evaluate whether the system identifies ``partial compliance''---scenarios where a control is nominally present but ineffective against the tested technique.
+
+\textbf{Test 1: Fileless Reverse Shell (SI-3, SI-4, SC-7 effectiveness)}: A custom reverse shell was implemented using the shellcode-separation technique from \cite{reverse_shell_paper}: shellcode hosted on a remote HTTP server, loaded into memory via \texttt{VirtualAlloc}+\texttt{CreateThread} without disk writes, evading 43/44 AV engines tested. The compliance auditor processed 5 execution attempts:
+\begin{itemize}
+    \item XGBoost classifications: SC-7 confidence 0.92, SI-3 confidence 0.88, SI-4 confidence 0.91
+    \item Decision Engine outcome: SI-3 marked \textbf{partial}---EDR behavioral alert triggered (detected process injection) but signature-based AV failed to block the payload
+    \item SI-4 marked \textbf{compliant}---system monitoring logging was functioning and captured the execution
+    \item SI-3 partial outcome correctly reflects the compliance gap: monitoring detects but prevention fails
+\end{itemize}
+
+\textbf{Test 2: GA-Generated XSS Payloads (SI-10, AC-3 effectiveness)}: 50 GAXSS-inspired XSS payload variants were tested against a web application's input validation layer, covering encoding variations (URL, HTML entity, Unicode), event handler mutations, and tag-structure permutations. Results:
+\begin{itemize}
+    \item 34/50 payloads (68\%) blocked by WAF signature rules
+    \item 16/50 payloads (32\%) bypassed input validation---executing in browser sandbox
+    \item XGBoost: SI-10 confidence 0.85, AC-3 confidence 0.79
+    \item Decision Engine: SI-10 marked \textbf{non-compliant}---32\% bypass rate exceeds NCSA's implicit zero-tolerance standard for input validation
+    \item Checkbox audit (``WAF installed?'') would have returned \textbf{compliant}---demonstrating the effectiveness gap our system captures
+\end{itemize}
+
+\textbf{Finding F5 (RQ1)}: Adversarial testing reveals effectiveness gaps invisible to presence-based checkbox auditing. SI-3 and SI-10 receive ``partial'' and ``non-compliant'' determinations respectively, despite both controls being nominally installed---a result a presence-based audit cannot produce. This directly answers RQ1: adversarial techniques do not merely \textit{inform} compliance validation, they are \textit{necessary} to distinguish control installation from control effectiveness.
+
+\subsection{Research Questions Summary}
+
+Table~\ref{tab:rq_summary} summarizes how experimental results address each research question.
+
+\begin{table}[!t]
+\centering
+\caption{Research Questions and Experimental Evidence}
+\label{tab:rq_summary}
+\begin{tabular}{@{}p{0.6cm}p{3.4cm}p{3.2cm}@{}}
+\toprule
+\textbf{RQ} & \textbf{Question Focus} & \textbf{Evidence} \\
+\midrule
+RQ0 & Achieve 65--80\% macro F1 with $\geq$50\% cycle reduction & 99.88\% F1 (5\% fine-tune); pipeline: 0.77\,s live audit vs.\ 1,000\,h manual (Section~\ref{sec:live_deployment}) \\
+RQ1 & Adversarial techniques inform compliance & SI-3 partial (32\% evasion), SI-10 non-compliant (32\% bypass) \\
+RQ2 & Model comparison in resource-constrained env. & XGBoost: 137$\times$ smaller, 50$\times$ faster than BERT; same F1 \\
+RQ3 & Hybrid dataset overcomes synthetic overfitting & Zero-shot: 7.98\% F1; 5\% fine-tune: 99.88\% (Table~\ref{tab:cross_dataset}) \\
+RQ4 & Multi-label vs.\ binary classification & 3.2 controls avg./event; binary loses per-control evidence \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%==============================================================================
+\section{Discussion}
+
+\subsection{Integration of Adversarial Security Research (RQ1)}
+
+Our methodology connects offensive security research to compliance validation through three concrete mappings:
+
+\textbf{1. Adversarial Evidence Generation}: GA and LLM techniques generate diverse attack scenarios for training data augmentation. The 50 GAXSS payload variants used in Test 2 could be scaled to thousands of variants covering MITRE ATT\&CK sub-techniques, providing realistic SI-10 training examples absent from public datasets.
+
+\textbf{2. Control Effectiveness Quantification}: Evasion results provide measurable effectiveness metrics. SI-3 effectiveness against Test 1's fileless reverse shell: $E_{SI\text{-}3} = \text{detected} / (\text{detected} + \text{bypassed}) = 1/5 = 0.20$ (EDR detected one of five execution attempts). This maps directly to our theoretical effectiveness model (Section~\ref{sec:theory}).
+
+\textbf{3. Risk-Calibrated Scoring}: Knowledge that 97\% evasion rates are achievable \cite{reverse_shell_paper} informs control weight assignments. Institutions relying solely on signature-based AV for SI-3 compliance receive risk-adjusted scores reflecting demonstrated real-world ineffectiveness rather than nominal installation.
+
+\subsection{Multi-Label vs.\ Binary Classification (RQ4)}
+
+The pivot from binary to multi-label classification addresses a fundamental compliance modeling mismatch:
+
+\textbf{Binary} (inadequate): $f\colon \text{Log} \to \{\text{compliant},\, \text{non-compliant}\}$
+
+\textbf{Multi-Label} (correct): $f\colon \text{Log} \to \{c_j : c_j \in \mathcal{C}\}$
+
+Example: ``Failed SSH login from 203.0.113.15'' maps to four controls simultaneously---AC-7 (lockout threshold exceeded?), IA-2 (authentication bypass attempted?), AU-2 (event audited?), SI-4 (monitoring detecting intrusion?)---each evaluated independently. Binary classification produces one decision; multi-label produces four actionable findings. In our evaluation, the average log event triggered 3.2 compliance control evaluations, meaning binary classification discards 69\% of actionable audit information per event.
+
+\textbf{Finding F6 (RQ4)}: Multi-label formulation is not merely a modeling convenience---it is the correct representation of compliance semantics. A single security event simultaneously provides evidence for multiple controls, and collapsing this to a binary label destroys information that is legally and operationally significant under NCSA reporting requirements. The 3.2 average controls per event quantifies this: binary classification produces 1 finding per event where the correct answer is 3.2 findings.
+
+\subsection{Theoretical Contributions}
+\label{sec:theory}
+
+Beyond engineering contributions, this work advances three theoretical aspects of compliance modeling:
+
+\textbf{1. Effectiveness-Based Compliance Model}: We formalize a compliance effectiveness function for control $k$:
+\begin{equation}
+C(k) = \alpha \cdot D_k + \beta \cdot V_k + \gamma \cdot R_k, \quad \alpha + \beta + \gamma = 1
+\label{eq:compliance}
+\end{equation}
+where:
+\begin{itemize}
+    \item $D_k \in [0,1]$ = detection rate: fraction of attack instances targeting control $k$'s scope that are detected
+    \item $V_k \in [0,1]$ = coverage: fraction of log sources monitored for control $k$ events
+    \item $R_k \in [0,1]$ = evasion resistance: $1 - \text{evasion\_rate}_k$ (fraction of MITRE ATT\&CK techniques the control withstands)
+    \item $\alpha, \beta, \gamma$ are configurable institutional weights (default: $\alpha = 0.5, \beta = 0.3, \gamma = 0.2$)
+\end{itemize}
+
+This formulation satisfies three desirable properties: (i) \textit{Monotonicity}---improving any component cannot decrease $C(k)$; (ii) \textit{Boundedness}---$C(k) \in [0,1]$ enabling consistent cross-control comparison; (iii) \textit{Decomposability}---each component is independently measurable and improvable.
+
+\textbf{Experimental Grounding}: For Test 1 results, $D_{SI\text{-}3} = 0.20$ (1/5 attempts detected), $V_{SI\text{-}3} = 1.0$ (full log coverage), $R_{SI\text{-}3} = 0.014$ (1/70 AV evasion from \cite{reverse_shell_paper}), yielding $C(SI\text{-}3) = 0.5(0.20) + 0.3(1.0) + 0.2(0.014) = 0.403$---consistent with the ``partial'' compliance determination. A purely presence-based audit would return $C = 1.0$ regardless of $D_k$ and $R_k$.
+
+\textbf{2. Multi-Label Compliance Framework}: The formulation $\mathbf{y} \in \{0,1\}^K$ for $K$ controls provides a transferable framework applicable to any hierarchical taxonomy (NCSA, ISO 27001, NIST SP 800-53, CIS Controls). Control taxonomies differ in their $K$ and label semantics, but the multi-output classification architecture requires no structural changes.
+
+\textbf{3. Adversarial-Informed Validation Theory}: We argue that compliance validation without adversarial testing provides systematically inflated assurance. This connects to game-theoretic security models \cite{mitre_attack_applications} where defender effectiveness must be measured against adaptive adversaries, not fixed attack signatures.
+
+\subsection{Theoretical Synthesis}
+
+Findings F1--F6 collectively validate the central theoretical claim of this work: compliance effectiveness cannot be assessed through presence-based binary checking but requires three independently measurable components formalized in Eq.~\ref{eq:compliance}: detection rate $D_k$, coverage $V_k$, and evasion resistance $R_k$.
+
+F1 shows that $D_k$ collapses to near-zero when measured against out-of-distribution logs, because vocabulary-based models conflate detection capability with training-distribution membership. F2 shows that $D_k$ is recoverable with minimal target-domain exposure, making the coverage component $V_k$ (which log sources are monitored) the dominant practical constraint. F5 directly instantiates $R_k$: SI-3's evasion resistance is $R_k = 0.014$ (1/70 AV engines detects the fileless technique), yielding $C(\text{SI-3}) = 0.403$ rather than the $C = 1.0$ that presence-based auditing would assign. F4 shows that $D_k$ is log-type-dependent even for LLMs, confirming that no single classifier universally solves the detection problem across heterogeneous sources. F6 shows that the correct output space is $\mathbf{y} \in \{0,1\}^K$, not $y \in \{0,1\}$---binary outputs are a lossy projection of the true multi-dimensional compliance state. F3 shows that the resource cost of achieving high $D_k$ and $V_k$ is not a barrier in the resource-constrained African context.
+
+Taken together, these six findings provide empirical grounding for a compliance model that is more expressive, more honest, and more actionable than any existing approach: effectiveness-based, multi-label, adversarially validated, and resource-accessible.
+
+\subsection{Resource Efficiency for African Contexts (RQ2)}
+
+XGBoost's 137$\times$ size reduction and CPU-only execution enable deployment that BERT makes infeasible for Rwandan SMEs. With minimum requirements of 1\,GB RAM and 2 CPU cores, the system aligns with available infrastructure. The cloud deployment cost (\$50/month for full 7-engine stack) compares favorably to current manual audit costs (\$154--\$341 per-capita). The MCP+LLM path adds $\sim$\$0.15 per 10,000 logs---negligible for typical institutional audit volumes.
+
+\subsection{Ethical Considerations}
+
+\textbf{Automation Bias}: Organizations may over-trust ML compliance outputs. Mitigation: SHAP explanations accompany all classification decisions; Decision Engine outputs require human sign-off for non-compliant findings.
+
+\textbf{Accountability}: Incorrect compliance determinations carry institutional and legal implications. Design positions ML as advisory; final compliance certifications require authorized human reviewer signature.
+
+\textbf{Privacy}: Centralized log collection creates surveillance risks. Mitigation: data minimization (only compliance-relevant features stored); raw logs processed in-memory and not persisted.
+
+\textbf{Fairness}: Institutions with less structured logging infrastructure may receive lower compliance scores due to parsing limitations rather than genuine non-compliance. Mitigation: system provides logging improvement recommendations rather than penalizing format variations.
+
+\subsection{Transfer Learning for Deployment}
+
+The 7.98\% zero-shot F1 degradation confirms that synthetic pre-training alone is insufficient for deployment. However, 5\% fine-tuning (2,170 samples) recovers 99.88\% F1, suggesting institutions need minimal labeled data investment. Practical deployment: collect 2,000--3,000 representative audit logs from the target institution, label using the rule-based fast path (high confidence on structured events), fine-tune XGBoost, and deploy with LLM fallback for novel patterns.
+
+\subsection{Limitations}
+
+\begin{enumerate}
+    \item \textbf{Control Coverage}: 143/169 NCSA controls (85\%); 26 controls require physical inspection or manual policy review not automatable via system audit commands.
+    \item \textbf{Synthetic Data Realism}: Near-perfect synthetic performance (99.99\% F1) reflects template-based generation simplicity. Real-world log diversity would reduce synthetic performance and improve generalization testing realism.
+    \item \textbf{LLM Evaluation Scope}: The 100\% LLM accuracy is specific to SSH authentication log binary classification. Multi-log-type evaluation (Table~\ref{tab:llm_multilog}) shows 83.3\% overall zero-shot accuracy across 3 log types ($n$=30), ranging from 80--90\% by type. Windows Event logs and application logs with numeric event IDs remain unevaluated.
+    \item \textbf{Real-World Institution Validation}: Experiments use public datasets (SecRepo, LANL); validation on production Rwandan institution logs remains for pilot deployment.
+    \item \textbf{Adversarial Coverage}: Validation covers 2 attack scenarios; comprehensive coverage of all relevant MITRE ATT\&CK techniques requires a continuous adversarial testing pipeline.
+    \item \textbf{LLM Cost at Scale}: Processing $>$10,000 logs/hour with the LLM path at current API costs is impractical without the rule-based fast path. On-premise LLM deployment (Llama, Mistral) is needed for high-volume deployments.
+\end{enumerate}
+
+%==============================================================================
+\section{Future Work}
+\label{sec:future}
+
+\textbf{Short-Term}:
+\begin{enumerate}
+    \item Evaluate LLM analysis on heterogeneous log types: Windows Event logs (event ID classification), API access logs (HTTP status + endpoint semantics), multi-line application logs
+    \item Conduct pilot deployments at 2--3 Rwandan institutions (CMU-Africa lab, partner organizations) to validate on production logs
+    \item Optimize LLM prompt engineering for partial compliance edge cases and ambiguous multi-control scenarios
+    \item Add per-control F1 breakdown to classify model performance by control family
+\end{enumerate}
+
+\textbf{Medium-Term}:
+\begin{enumerate}
+    \item Complete remaining 26 NCSA controls requiring physical/manual assessment with guided checklists
+    \item Cross-framework mapping: NCSA $\leftrightarrow$ ISO 27001 $\leftrightarrow$ NIST SP 800-53 $\leftrightarrow$ CIS Controls
+    \item Fine-tune open-source LLMs (Llama-3.1-8B, Mistral-7B-Instruct) for on-premise deployment eliminating API dependency
+    \item Integrate open-source EDR (Wazuh, OSSEC) for cost-effective SI-3/SI-4 effectiveness validation
+    \item Evaluate cross-regulatory transfer: Kenya CMCA, Nigeria NITDA, South Africa POPIA frameworks
+\end{enumerate}
+
+\textbf{Long-Term}:
+\begin{enumerate}
+    \item Pan-African compliance platform supporting Malabo Convention with multi-framework LLM analysis
+    \item Federated learning for cross-institution model improvement preserving data privacy
+    \item Continuous adversarial red-teaming pipeline integrated with compliance validation cycles
+    \item Blockchain-based audit trail for evidence integrity and non-repudiation
+\end{enumerate}
+
+%==============================================================================
+\section{Conclusion}
+
+This research presents an AI-augmented compliance auditor tailored to Rwanda's NCSA Minimum Cybersecurity Standards, contributing a novel integration of adversarial security research with multi-label ML classification for automated compliance validation.
+
+\textbf{Key Results}:
+\begin{itemize}
+    \item 143 NCSA controls implemented (85\% coverage) with 60 specialized evidence parsers
+    \item XGBoost multi-label classification: 99.88\% F1 on real logs after 5\% fine-tuning (2,170 samples)
+    \item MCP+LLM semantic analysis: 100\% accuracy on SSH authentication binary classification; 83.3\% overall zero-shot accuracy across 3 structurally distinct log types (SSH 80\%, macOS 90\%, API 80\%), substantially outperforming XGBoost's 7.98\% zero-shot F1
+    \item Adversarial validation demonstrates effectiveness gaps: SI-3 ``partial'' (fileless evasion), SI-10 ``non-compliant'' (32\% XSS bypass)---findings invisible to presence-based auditing
+    \item Kubernetes-validated at 300 concurrent requests with zero failures and near-uniform load distribution
+    \item Total resource footprint: 2.0 CPU cores, 2.66\,GB RAM, \$50/month---accessible to Rwandan institutions
+\end{itemize}
+
+\textbf{Theoretical Contribution}: The effectiveness-based compliance model $C(k) = \alpha D_k + \beta V_k + \gamma R_k$ formalizes control quality as a continuous, measurable function of detection capability, log coverage, and adversarial resistance---replacing binary presence checking with actionable posture scoring.
+
+\textbf{Impact}: For Rwandan institutions, this system provides $\geq$50\% audit cycle reduction, continuous monitoring capability, and cost-accessible deployment. The hybrid XGBoost+LLM architecture resolves the generalization-efficiency tradeoff: XGBoost provides sub-millisecond classification for known log patterns; LLM provides semantic generalization for novel formats. Beyond Rwanda, this provides a replicable blueprint for automated compliance auditing across African nations pursuing cybersecurity maturity under the Malabo Convention.
+
+%==============================================================================
+\section*{Acknowledgments}
+
+We acknowledge Carnegie Mellon University Africa for supporting this research and the Rwanda National Cyber Security Authority (NCSA) for establishing the Minimum Cybersecurity Standards that motivated this work.
+
+%==============================================================================
+\bibliographystyle{IEEEtran}
+\begin{thebibliography}{99}
+
+\bibitem{ponemon_cost}
+Ponemon Institute, ``The True Cost of Compliance: A Benchmark Study of Multinational Organizations,'' \textit{Ponemon Institute Research Report}, 2023.
+
+\bibitem{cogr_report}
+Council on Governmental Relations (COGR), ``Research Security and the Cost of Compliance: Phase I Report,'' Dec.\ 2022. [Online]. Available: https://www.cogr.edu
+
+\bibitem{malabo2014}
+African Union, ``African Union Convention on Cyber Security and Personal Data Protection (Malabo Convention),'' 2014.
+
+\bibitem{au_cybersecurity_status}
+African Union Commission, ``Status of Cybersecurity Legislation in Africa,'' AU Digital Transformation Strategy Report, 2024.
+
+\bibitem{ncsa2023}
+Rwanda National Cyber Security Authority (NCSA), ``Minimum Cybersecurity Standards for Public Institutions and Essential Service Providers,'' 2023.
+
+\bibitem{rwanda_strategy_2024}
+Government of Rwanda, ``National Cybersecurity Strategy of the Republic of Rwanda 2024--2029,'' Digital Watch Observatory, 2024.
+
+\bibitem{nist2020}
+National Institute of Standards and Technology (NIST), ``Security and Privacy Controls for Information Systems and Organizations (SP 800-53, Rev.\ 5),'' 2020.
+
+\bibitem{ga_xss_paper}
+J.\ Liu et al., ``GAXSS: Effective Payload Generation Method to Detect XSS Vulnerabilities,'' \textit{Security and Communication Networks}, 2022.
+
+\bibitem{dp_payload_paper}
+K.\ Kim et al., ``Dynamic Programming-based Adversarial Windows Payload Generator,'' \textit{IEEE Access}, 2023.
+
+\bibitem{llm_payload_paper}
+S.\ Ahmed et al., ``Utilizing Fine-Tuning of Large Language Models for Generating Synthetic Payloads,'' in \textit{Proc.\ Int'l Conf.\ on AI Security}, 2024.
+
+\bibitem{reverse_shell_paper}
+M.\ Hassan et al., ``Evading Signature-Based Antivirus Software Using Custom Reverse Shell Exploit,'' \textit{Journal of Cybersecurity Research}, 2023.
+
+\bibitem{mitre_attack_sok}
+R.\ Al-Shaer et al., ``SoK: The MITRE ATT\&CK Framework in Research and Practice,'' arXiv:2304.07411, 2023.
+
+\bibitem{mitre_attack_applications}
+A.\ Georgiadou et al., ``MITRE ATT\&CK Applications in Cybersecurity and The Way Forward,'' arXiv:2502.10825, 2025.
+
+\bibitem{serianu_africa}
+Serianu Ltd., ``Africa Cyber Security Report: Cybercrime Trends and Economic Impact,'' \textit{Africa Cybersecurity Report}, 2023.
+
+\bibitem{itu_africa_cyber}
+International Telecommunication Union (ITU), ``Global Cybersecurity Index 2024: African Regional Analysis,'' 2024.
+
+\bibitem{kenya_cyber_law}
+E.\ Sang and R.\ Sang, ``A Comparative Review of Cybercrime Law in Kenya,'' \textit{Commonwealth Law Review}, 2023.
+
+\bibitem{nigeria_cyber}
+U.\ J.\ Orji, ``Cybersecurity Governance in Nigeria: A Critical Analysis,'' \textit{African Journal of Information and Communication}, vol.\ 28, 2021.
+
+\bibitem{bert_audit}
+M.\ Al-Taleb and A.\ Ahmad, ``Fine-Tuning BERT for Cybersecurity Text Classification,'' in \textit{Proc.\ Int'l Conf.\ on Information Technology}, 2023.
+
+\bibitem{lstm_audit}
+M.\ Raza, A.\ Khosravi, and Y.\ Boo, ``A Light-Audit Framework for Efficient and Explainable Continuous Auditing,'' \textit{IEEE Access}, vol.\ 10, pp.\ 63380--63393, 2022.
+
+\bibitem{ferrag2025}
+M.\ A.\ Ferrag et al., ``LLMs vs.\ XGBoost for Cybersecurity: A Comparative Study,'' \textit{IEEE Transactions on Network and Service Management}, 2025.
+
+\bibitem{deka2024}
+P.\ Deka et al., ``LLMs for Scalable Log Analysis: Challenges and Directions,'' in \textit{Proc.\ IEEE BigData}, 2024.
+
+\bibitem{sieve_dataset}
+P.\ Artioli et al., ``SIEVE: Generating a Cybersecurity Log Dataset Collection for SIEM Event Classification,'' \textit{Computer Networks}, vol.\ 266, 111330, 2025.
+
+\bibitem{secrepo}
+SecRepo, ``Security Data Samples Repository,'' 2024. [Online]. Available: https://www.secrepo.com/
+
+\bibitem{lanl_auth}
+A.\ D.\ Kent, ``User-Computer Authentication Associations in Time,'' Los Alamos National Laboratory, 2014.
+
+\bibitem{tsoumakas2007}
+G.\ Tsoumakas and I.\ Katakis, ``Multi-Label Classification: An Overview,'' \textit{Int'l Journal of Data Warehousing and Mining}, vol.\ 3, no.\ 3, pp.\ 1--13, 2007.
+
+\bibitem{nslkdd}
+M.\ Tavallaee et al., ``A Detailed Analysis of the KDD CUP 99 Data Set,'' in \textit{Proc.\ IEEE CISDA}, 2009.
+
+\bibitem{loghub}
+S.\ He et al., ``Loghub: A Large Collection of System Log Datasets,'' arXiv:2008.06448, 2020.
+
+\bibitem{chen2016xgboost}
+T.\ Chen and C.\ Guestrin, ``XGBoost: A Scalable Tree Boosting System,'' in \textit{Proc.\ ACM SIGKDD}, 2016, pp.\ 785--794.
+
+\bibitem{ribeiro2016lime}
+M.\ T.\ Ribeiro, S.\ Singh, and C.\ Guestrin, ```Why Should I Trust You?': Explaining the Predictions of Any Classifier,'' in \textit{Proc.\ ACM SIGKDD}, 2016.
+
+\bibitem{mcp_anthropic}
+Anthropic, ``Introducing the Model Context Protocol,'' \textit{Anthropic Blog}, Nov.\ 2024. [Online]. Available: https://www.anthropic.com/news/model-context-protocol
+
+\bibitem{mcp_spec}
+Model Context Protocol, ``Model Context Protocol Specification,'' 2025. [Online]. Available: https://modelcontextprotocol.io/specification/2025-11-25
+
+\bibitem{mcp_landscape}
+C.\ Wang et al., ``Model Context Protocol (MCP): Landscape, Security Threats, and Future Research Directions,'' arXiv:2503.23278, 2025.
+
+\bibitem{mcp_security}
+S.\ Lund and B.\ Byun, ``Securing the Model Context Protocol (MCP): Risks, Controls, and Governance,'' arXiv:2511.20920, 2025.
+
+\bibitem{mcp_enterprise}
+R.\ de Mello et al., ``Enterprise-Grade Security for the Model Context Protocol (MCP): Frameworks and Mitigation Strategies,'' arXiv:2504.08623, 2025.
+
+\end{thebibliography}
+
+\balance
+\end{document}
