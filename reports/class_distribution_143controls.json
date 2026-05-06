@@ -1,0 +1,1023 @@
+{
+  "audit_date": "2026-05-06T01:23:56.609623",
+  "total_unique_controls_in_data": 169,
+  "system_auditable_controls_in_data": 169,
+  "system_auditable_controls_in_taxonomy": 169,
+  "controls_missing_from_data": [],
+  "per_control": {
+    "RWNCSA-AC-17": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-18": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-19": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-20": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-21": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-22": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-23": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-24": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-25": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-26": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-27": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-28": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-29": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-30": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-31": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-32": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-33": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-34": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-35": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-36": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-37": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-38": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-39": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-40": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-41": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AC-42": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AT-43": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AT-44": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AT-45": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AT-46": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AT-47": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AT-48": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AT-49": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-50": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-51": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-52": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-53": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-54": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-55": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-56": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-57": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-58": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-59": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-60": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-61": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-62": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-63": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-64": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-65": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-66": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-67": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-68": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-69": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-70": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-71": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-72": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-73": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-74": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-AU-75": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-76": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-77": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-78": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-79": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-80": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-81": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-82": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-83": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-84": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-85": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-86": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-87": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-88": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-CM-89": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-100": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-101": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-102": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-90": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-91": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-92": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-93": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-94": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-95": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-96": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-97": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-98": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IA-99": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IR-103": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IR-104": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IR-105": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IR-106": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IR-107": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-IR-108": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MA-109": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MA-110": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MA-111": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MA-112": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MA-113": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MA-114": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MA-115": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MP-116": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MP-117": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MP-118": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MP-119": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MP-120": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MP-121": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MP-122": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MP-123": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-MP-124": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-136": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-137": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-138": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-139": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-140": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-141": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-142": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-143": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-144": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-PE-145": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-RA-146": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-RA-147": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-RA-148": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-153": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-154": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-155": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-156": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-157": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-158": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-159": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-160": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-161": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-162": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-163": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-164": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-165": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-166": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-167": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-168": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SC-169": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-1": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-10": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-11": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-12": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-13": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-14": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-15": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-16": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-2": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-3": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-4": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-5": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-6": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-7": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-8": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-SP-9": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-125": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-126": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-127": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-128": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-129": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-130": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-131": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-132": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-133": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-134": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-135": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-149": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-150": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-151": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 592,
+      "is_system_auditable": true
+    },
+    "RWNCSA-XX-152": {
+      "compliant": 0,
+      "non_compliant": 0,
+      "total": 591,
+      "is_system_auditable": true
+    }
+  }
+}

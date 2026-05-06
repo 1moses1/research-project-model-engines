@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-05-06T01:31:35.596371",
+  "labels": [
+    "compliant (0)",
+    "non_compliant (1)"
+  ],
+  "confusion_matrix": [
+    [
+      7405,
+      1483
+    ],
+    [
+      446,
+      5666
+    ]
+  ],
+  "interpretation": "Rows=actual, Cols=predicted. [0][0]=TN, [0][1]=FP, [1][0]=FN, [1][1]=TP"
+}

@@ -1,0 +1,73 @@
+{
+  "audit_date": "2026-05-06T01:23:56.609623",
+  "taxonomy_total_controls": 196,
+  "taxonomy_system_auditable_controls": 169,
+  "status_code_pearson_correlation": {
+    "pearson_r": -0.6056,
+    "n": 70000
+  },
+  "critical_finding": "40%+ of synthetic log_message fields contain explicit compliance verdicts (e.g., 'Compliance verification for RWNCSA-AT-47 - status: compliant'). This explains the 100% F1 score \u2014 the model memorized these strings, not security semantics. All data must be regenerated before retraining.",
+  "splits": [
+    {
+      "split": "train",
+      "total_rows": 70000,
+      "leaky_rows": 0,
+      "leakage_rate_pct": 0.0,
+      "rows_with_multiple_leaks": 0,
+      "leakage_by_type": {},
+      "class_distribution": {
+        "compliant": 42146,
+        "non_compliant": 27854,
+        "other": 0
+      },
+      "imbalance_ratio": 1.513,
+      "unique_controls_in_split": 169,
+      "status_code_label_agreement": {
+        "agree": 51148,
+        "disagree": 11147,
+        "unknown": 7705
+      }
+    },
+    {
+      "split": "val",
+      "total_rows": 15000,
+      "leaky_rows": 0,
+      "leakage_rate_pct": 0.0,
+      "rows_with_multiple_leaks": 0,
+      "leakage_by_type": {},
+      "class_distribution": {
+        "compliant": 8961,
+        "non_compliant": 6039,
+        "other": 0
+      },
+      "imbalance_ratio": 1.484,
+      "unique_controls_in_split": 169,
+      "status_code_label_agreement": {
+        "agree": 10939,
+        "disagree": 2481,
+        "unknown": 1580
+      }
+    },
+    {
+      "split": "test",
+      "total_rows": 15000,
+      "leaky_rows": 0,
+      "leakage_rate_pct": 0.0,
+      "rows_with_multiple_leaks": 0,
+      "leakage_by_type": {},
+      "class_distribution": {
+        "compliant": 8888,
+        "non_compliant": 6112,
+        "other": 0
+      },
+      "imbalance_ratio": 1.454,
+      "unique_controls_in_split": 169,
+      "status_code_label_agreement": {
+        "agree": 10961,
+        "disagree": 2464,
+        "unknown": 1575
+      }
+    }
+  ],
+  "recommended_action": "Run scripts/generate_synthetic_data_v2.py to regenerate all splits with realistic log messages free of embedded compliance verdicts."
+}

@@ -1,0 +1,37 @@
+======================================================================
+PHASE 0 DATA INTEGRITY AUDIT — SUMMARY
+======================================================================
+
+Split: TRAIN
+  Total rows      : 70,000
+  Leaky rows      : 0  (0.0%)
+  Leakage types   : {}
+  Compliant       : 42,146
+  Non-compliant   : 27,854
+  Imbalance ratio : 1.51:1
+  Unique controls : 169
+
+Split: VAL
+  Total rows      : 15,000
+  Leaky rows      : 0  (0.0%)
+  Leakage types   : {}
+  Compliant       : 8,961
+  Non-compliant   : 6,039
+  Imbalance ratio : 1.48:1
+  Unique controls : 169
+
+Split: TEST
+  Total rows      : 15,000
+  Leaky rows      : 0  (0.0%)
+  Leakage types   : {}
+  Compliant       : 8,888
+  Non-compliant   : 6,112
+  Imbalance ratio : 1.45:1
+  Unique controls : 169
+
+Status-code Pearson r (train): -0.6056
+
+VERDICT: Dataset must be fully regenerated before any model training.
+  See: /Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/reports/data_leakage_audit.json
+  See: /Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/reports/class_distribution_143controls.json
+======================================================================

@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-05-06T01:31:35.595422",
+  "model": "XGBoost v2 (leakage-free)",
+  "n_folds": 5,
+  "mean_f1": 0.852,
+  "std_f1": 0.0025,
+  "fold_scores": [
+    0.8498,
+    0.8493,
+    0.8543,
+    0.8556,
+    0.8512
+  ],
+  "wilson_ci_95": [
+    0.8491,
+    0.8549
+  ],
+  "test_accuracy": 0.8714,
+  "test_f1": 0.8545
+}
