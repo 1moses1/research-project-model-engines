@@ -1,0 +1,1704 @@
+{
+  "generated_at": "2026-05-06T23:10:46.670517",
+  "model_xgboost": "XGBoost v2 (models/xgboost_v2/)",
+  "model_llm": "gpt-4o-mini",
+  "routing_rule": "TF-IDF active features > 0 \u2192 XGBoost; = 0 \u2192 GPT-4o-mini",
+  "n_total": 180,
+  "n_ssh": 100,
+  "n_windows": 60,
+  "n_http": 20,
+  "n_routed_xgboost": 107,
+  "n_routed_llm": 73,
+  "overall": {
+    "xgboost_alone": {
+      "n": 180,
+      "tp": 59,
+      "tn": 50,
+      "fp": 60,
+      "fn": 11,
+      "accuracy_pct": 60.6,
+      "precision_pct": 49.6,
+      "recall_pct": 84.3,
+      "f1_pct": 62.4,
+      "fpr_pct": 54.5,
+      "f1_ci_95": [
+        74.0,
+        91.0
+      ],
+      "acc_ci_95": [
+        53.3,
+        67.4
+      ]
+    },
+    "llm_alone": {
+      "n": 180,
+      "tp": 64,
+      "tn": 103,
+      "fp": 7,
+      "fn": 6,
+      "accuracy_pct": 92.8,
+      "precision_pct": 90.1,
+      "recall_pct": 91.4,
+      "f1_pct": 90.8,
+      "fpr_pct": 6.4,
+      "f1_ci_95": [
+        82.5,
+        96.0
+      ],
+      "acc_ci_95": [
+        88.0,
+        95.7
+      ]
+    },
+    "hybrid_combined": {
+      "n": 180,
+      "tp": 57,
+      "tn": 103,
+      "fp": 7,
+      "fn": 13,
+      "accuracy_pct": 88.9,
+      "precision_pct": 89.1,
+      "recall_pct": 81.4,
+      "f1_pct": 85.1,
+      "fpr_pct": 6.4,
+      "f1_ci_95": [
+        70.8,
+        88.8
+      ],
+      "acc_ci_95": [
+        83.5,
+        92.7
+      ]
+    }
+  },
+  "by_log_type": {
+    "xgboost_alone": {
+      "ssh": {
+        "n": 100,
+        "tp": 39,
+        "tn": 50,
+        "fp": 0,
+        "fn": 11,
+        "accuracy_pct": 89.0,
+        "precision_pct": 100.0,
+        "recall_pct": 78.0,
+        "f1_pct": 87.6,
+        "fpr_pct": 0.0,
+        "f1_ci_95": [
+          64.8,
+          87.2
+        ],
+        "acc_ci_95": [
+          81.4,
+          93.7
+        ]
+      },
+      "windows": {
+        "n": 60,
+        "tp": 10,
+        "tn": 0,
+        "fp": 50,
+        "fn": 0,
+        "accuracy_pct": 16.7,
+        "precision_pct": 16.7,
+        "recall_pct": 100.0,
+        "f1_pct": 28.6,
+        "fpr_pct": 100.0,
+        "f1_ci_95": [
+          72.2,
+          100
+        ],
+        "acc_ci_95": [
+          9.3,
+          28.0
+        ]
+      },
+      "http": {
+        "n": 20,
+        "tp": 10,
+        "tn": 0,
+        "fp": 10,
+        "fn": 0,
+        "accuracy_pct": 50.0,
+        "precision_pct": 50.0,
+        "recall_pct": 100.0,
+        "f1_pct": 66.7,
+        "fpr_pct": 100.0,
+        "f1_ci_95": [
+          72.2,
+          100
+        ],
+        "acc_ci_95": [
+          29.9,
+          70.1
+        ]
+      }
+    },
+    "llm_alone": {
+      "ssh": {
+        "n": 100,
+        "tp": 46,
+        "tn": 50,
+        "fp": 0,
+        "fn": 4,
+        "accuracy_pct": 96.0,
+        "precision_pct": 100.0,
+        "recall_pct": 92.0,
+        "f1_pct": 95.8,
+        "fpr_pct": 0.0,
+        "f1_ci_95": [
+          81.2,
+          96.8
+        ],
+        "acc_ci_95": [
+          90.2,
+          98.4
+        ]
+      },
+      "windows": {
+        "n": 60,
+        "tp": 10,
+        "tn": 43,
+        "fp": 7,
+        "fn": 0,
+        "accuracy_pct": 88.3,
+        "precision_pct": 58.8,
+        "recall_pct": 100.0,
+        "f1_pct": 74.1,
+        "fpr_pct": 14.0,
+        "f1_ci_95": [
+          72.2,
+          100
+        ],
+        "acc_ci_95": [
+          77.8,
+          94.2
+        ]
+      },
+      "http": {
+        "n": 20,
+        "tp": 8,
+        "tn": 10,
+        "fp": 0,
+        "fn": 2,
+        "accuracy_pct": 90.0,
+        "precision_pct": 100.0,
+        "recall_pct": 80.0,
+        "f1_pct": 88.9,
+        "fpr_pct": 0.0,
+        "f1_ci_95": [
+          49.0,
+          94.3
+        ],
+        "acc_ci_95": [
+          69.9,
+          97.2
+        ]
+      }
+    },
+    "hybrid_combined": {
+      "ssh": {
+        "n": 100,
+        "tp": 39,
+        "tn": 50,
+        "fp": 0,
+        "fn": 11,
+        "accuracy_pct": 89.0,
+        "precision_pct": 100.0,
+        "recall_pct": 78.0,
+        "f1_pct": 87.6,
+        "fpr_pct": 0.0,
+        "f1_ci_95": [
+          64.8,
+          87.2
+        ],
+        "acc_ci_95": [
+          81.4,
+          93.7
+        ]
+      },
+      "windows": {
+        "n": 60,
+        "tp": 10,
+        "tn": 43,
+        "fp": 7,
+        "fn": 0,
+        "accuracy_pct": 88.3,
+        "precision_pct": 58.8,
+        "recall_pct": 100.0,
+        "f1_pct": 74.1,
+        "fpr_pct": 14.0,
+        "f1_ci_95": [
+          72.2,
+          100
+        ],
+        "acc_ci_95": [
+          77.8,
+          94.2
+        ]
+      },
+      "http": {
+        "n": 20,
+        "tp": 8,
+        "tn": 10,
+        "fp": 0,
+        "fn": 2,
+        "accuracy_pct": 90.0,
+        "precision_pct": 100.0,
+        "recall_pct": 80.0,
+        "f1_pct": 88.9,
+        "fpr_pct": 0.0,
+        "f1_ci_95": [
+          49.0,
+          94.3
+        ],
+        "acc_ci_95": [
+          69.9,
+          97.2
+        ]
+      }
+    }
+  },
+  "per_sample": [
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "http",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "non_compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "windows",
+      "true_label": "compliant",
+      "xgb_pred": "non_compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "gpt-4o-mini"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "non_compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "non_compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    },
+    {
+      "log_type": "ssh",
+      "true_label": "compliant",
+      "xgb_pred": "compliant",
+      "llm_pred": "compliant",
+      "hybrid_pred": "compliant",
+      "hybrid_route": "xgboost"
+    }
+  ]
+}

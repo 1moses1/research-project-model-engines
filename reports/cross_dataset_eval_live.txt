@@ -1,0 +1,48 @@
+======================================================================
+  PHASE 4 — Cross-Dataset Generalization Evaluation
+  Addressing: R1-C6, R2-C1, R2-C3, R2-C4
+======================================================================
+
+[1/4] Loading XGBoost v2 model...
+  Model loaded. Families: 14
+  Synthetic test-set F1 (Phase 1): 85.45%
+
+[2/4] Loading real-world datasets...
+  SSH dataset:     n=100
+  Windows dataset: n=60
+  HTTP dataset:    n=20
+
+[3/4] Evaluating per dataset...
+
+  SSH Authentication (in-vocabulary)
+    n=100  Acc=89.0%  F1=87.6%  FPR=0.0%  TF-IDF_active=3.8  in_vocab=YES
+  Windows Security Events (out-of-vocabulary)
+    n=60  Acc=16.7%  F1=28.6%  FPR=100.0%  TF-IDF_active=0.0  in_vocab=NO
+  HTTP/API Access (out-of-vocabulary)
+    n=20  Acc=50.0%  F1=66.7%  FPR=100.0%  TF-IDF_active=0.0  in_vocab=NO
+
+======================================================================
+  GENERALIZATION GAP SUMMARY
+======================================================================
+  Synthetic test-set F1: 85.45%
+
+  Dataset                                          F1%    Gap%   InVocab  TF-IDF active
+  --------------------------------------------- ------ ------- --------- --------------
+  SSH Authentication (in-vocabulary)             87.6%   -2.1%       YES            3.8
+  Windows Security Events (out-of-vocabulary)    28.6%  +56.9%        NO            0.0
+  HTTP/API Access (out-of-vocabulary)            66.7%  +18.8%        NO            0.0
+
+  Avg F1 (in-vocabulary log types):  87.6%
+  Avg F1 (out-of-vocabulary types):  47.7%
+  Synthetic-to-real generalization gap (in-vocab): -2.1%
+  Synthetic-to-real generalization gap (OOV):      37.8%
+======================================================================
+
+  [OK] Report saved: /Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/reports/cross_dataset_eval.json
+Traceback (most recent call last):
+  File "/Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/scripts/cross_dataset_eval_v1.py", line 681, in <module>
+    main()
+  File "/Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/scripts/cross_dataset_eval_v1.py", line 672, in main
+    "synthetic_test_f1_pct": g["synthetic_test_f1_pct"],
+                             ~^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'synthetic_test_f1_pct'

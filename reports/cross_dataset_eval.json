@@ -1,0 +1,114 @@
+{
+  "generated_at": "2026-05-06T16:39:08.020248",
+  "model": "XGBoost v2 (leakage-free, models/xgboost_v2/)",
+  "evaluation_purpose": "Cross-dataset generalization evaluation. Addresses R1-C6, R2-C1, R2-C3, R2-C4. Measures synthetic\u2192real generalization gap, explicitly separating in-vocabulary (SSH/PAM) from out-of-vocabulary (Windows/HTTP) log types.",
+  "synthetic_test_f1_pct": 85.45,
+  "datasets": [
+    {
+      "dataset": "SSH Authentication (in-vocabulary)",
+      "description": "SSH Accepted publickey (compliant) vs. real brute-force attack traffic (non-compliant). Non-compliant: linux_auth.log AWS EC2 honeypot, 86K lines. Compliant: Elastic ML Security Analytics AWS EC2 auth.log + LogPai Linux_2k.log.",
+      "source": "linux_auth.log (honeypot) + Elastic/AWS-EC2-auth.log + LogPai/Linux_2k.log",
+      "in_vocabulary": true,
+      "n_samples": 100,
+      "n_compliant": 50,
+      "n_non_compliant": 50,
+      "true_positives": 39,
+      "true_negatives": 50,
+      "false_positives": 0,
+      "false_negatives": 11,
+      "accuracy_pct": 89.0,
+      "precision_pct": 100.0,
+      "recall_pct": 78.0,
+      "f1_pct": 87.6,
+      "fpr_pct": 0.0,
+      "accuracy_ci_95": [
+        81.4,
+        93.8
+      ],
+      "avg_tfidf_active_features": 3.8
+    },
+    {
+      "dataset": "Windows Security Events (out-of-vocabulary)",
+      "description": "Mordor APT3 PurpleSharp AD Playbook I. Compliant: EventID 4624/5156/4634/4776. Non-compliant: EventID 4625/4648/4771/5145. LLM-style enrichment applied (WINDOWS_EVENT_DESCRIPTIONS table). XGBoost trained on Linux-format logs only; Windows format is OOV.",
+      "source": "Mordor APT3 PurpleSharp AD Playbook I (Apache 2.0 / OTRF)",
+      "in_vocabulary": false,
+      "n_samples": 60,
+      "n_compliant": 50,
+      "n_non_compliant": 10,
+      "true_positives": 10,
+      "true_negatives": 0,
+      "false_positives": 50,
+      "false_negatives": 0,
+      "accuracy_pct": 16.7,
+      "precision_pct": 16.7,
+      "recall_pct": 100.0,
+      "f1_pct": 28.6,
+      "fpr_pct": 100.0,
+      "accuracy_ci_95": [
+        9.3,
+        28.0
+      ],
+      "avg_tfidf_active_features": 0.0
+    },
+    {
+      "dataset": "HTTP/API Access (out-of-vocabulary)",
+      "description": "Elastic Apache access log. Compliant: HTTP 200 OK. Non-compliant: HTTP 4xx/5xx attack patterns. XGBoost has no HTTP-specific tokens in its 50-term TF-IDF vocabulary.",
+      "source": "Elastic Examples Apache access log (Apache 2.0)",
+      "in_vocabulary": false,
+      "n_samples": 20,
+      "n_compliant": 10,
+      "n_non_compliant": 10,
+      "true_positives": 10,
+      "true_negatives": 0,
+      "false_positives": 10,
+      "false_negatives": 0,
+      "accuracy_pct": 50.0,
+      "precision_pct": 50.0,
+      "recall_pct": 100.0,
+      "f1_pct": 66.7,
+      "fpr_pct": 100.0,
+      "accuracy_ci_95": [
+        29.9,
+        70.1
+      ],
+      "avg_tfidf_active_features": 0.0
+    }
+  ],
+  "generalization_gaps": [
+    {
+      "dataset": "SSH Authentication (in-vocabulary)",
+      "synthetic_f1_pct": 85.45,
+      "real_world_f1_pct": 87.6,
+      "gap_pct": -2.1,
+      "in_vocabulary": true
+    },
+    {
+      "dataset": "Windows Security Events (out-of-vocabulary)",
+      "synthetic_f1_pct": 85.45,
+      "real_world_f1_pct": 28.6,
+      "gap_pct": 56.9,
+      "in_vocabulary": false
+    },
+    {
+      "dataset": "HTTP/API Access (out-of-vocabulary)",
+      "synthetic_f1_pct": 85.45,
+      "real_world_f1_pct": 66.7,
+      "gap_pct": 18.8,
+      "in_vocabulary": false
+    }
+  ],
+  "architectural_finding": "The XGBoost TF-IDF vocabulary (50 terms, built from synthetic Linux syslog training data) achieves near-zero generalization gap for SSH/PAM log types (in-vocabulary), confirming the model generalizes to real-world SSH attacks. Windows Security Event and HTTP/API formats are out-of-vocabulary, producing near-random classification (F1 \u2248 chance). This motivates the hybrid architecture: XGBoost handles SSH/syslog; GPT-4o-mini handles HTTP (95.5%) and Windows (97.5%). The per-type gap quantifies the operational domain boundary of each component.",
+  "data_provenance": {
+    "linux_auth_log": "AWS EC2 honeypot, 86K lines of real attack traffic (public domain)",
+    "elastic_auth_log": "Elastic ML Security Analytics examples, real AWS EC2 Ubuntu server (Apache 2.0)",
+    "logpai_linux_2k": "LogPai/loghub Linux_2k.log, real production Red Hat/Fedora server (MIT)",
+    "mordor_apt3": "Mordor APT3 PurpleSharp AD Playbook I, real AD simulation environment (Apache 2.0 / OTRF)",
+    "elastic_apache_log": "Elastic Examples Apache access log, real web server traffic (Apache 2.0)"
+  },
+  "real_world_sample_counts": {
+    "total": 180,
+    "ssh": 100,
+    "windows": 60,
+    "http": 20
+  }
+}

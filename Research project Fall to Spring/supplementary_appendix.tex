@@ -1,0 +1,536 @@
+%% Supplementary Appendix — futureinternet-4270373
+%% "AI-Augmented Compliance Auditing for Cloud Systems: A Hybrid ML–LLM Approach"
+%% Authors: Moise Iradukunda Ingabire, Jema David Ndibwile
+%% Journal: Future Internet (MDPI) | Major Revision — May 2026
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{ragged2e}
+\usepackage{float}
+\usepackage{adjustbox}
+\usepackage{makecell}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+\title{\textbf{Supplementary Appendix}\\
+\large AI-Augmented Compliance Auditing for Cloud Systems:\\
+A Hybrid ML--LLM Approach\\[4pt]
+\normalsize futureinternet-4270373}
+\author{Moise Iradukunda Ingabire \and Jema David Ndibwile\\
+Carnegie Mellon University Africa}
+\date{May 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Full Per-Family XGBoost F1 Results}
+\label{sec:per-family-f1}
+
+Table~\ref{tab:per-family-f1} presents the complete per-family binary F1 scores for XGBoost~v2
+on the held-out test set ($n_{\text{test}} = 15{,}000$ rows across all families).
+All Wilson 95\% CIs are computed on per-family test samples.
+The model was trained without data leakage (see Section~3 of the main manuscript);
+the previous 99.99\% F1 was traced to an 86.3\% leakage rate in synthetic data
+(compliance labels embedded as plain text in \texttt{log\_message}).
+
+\begin{table}[H]
+\centering
+\caption{XGBoost v2 Per-Family Binary F1 Scores (Test Set). Wilson 95\% CI shown.}
+\label{tab:per-family-f1}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Control Family} & \textbf{$n$} & \textbf{F1} & \textbf{Acc.} & \textbf{CI Lo} & \textbf{CI Hi} \\
+\midrule
+Access Control              & 2333 & 0.848 & 0.857 & 0.833 & 0.862 \\
+Audit and Accountability    & 2328 & 0.836 & 0.855 & 0.820 & 0.851 \\
+Awareness and Training      &  597 & 0.872 & 0.878 & 0.843 & 0.897 \\
+Configuration Management    & 1222 & 0.802 & 0.809 & 0.778 & 0.823 \\
+Identity Mgmt. and Auth.    & 1177 & 1.000 & 1.000 & 0.997 & 1.000 \\
+Incident Response           &  568 & 0.786 & 0.813 & 0.751 & 0.818 \\
+Maintenance                 &  642 & 0.922 & 0.941 & 0.898 & 0.940 \\
+Media Protection            &  781 & 1.000 & 1.000 & 0.995 & 1.000 \\
+Personnel Security          & 1003 & 0.895 & 0.906 & 0.875 & 0.913 \\
+Physical and Env.\ Prot.    &  868 & 0.617 & 0.781 & 0.584 & 0.649 \\
+Risk Assessment             &  261 & 0.757 & 0.747 & 0.702 & 0.805 \\
+Security Assessment         &  339 & 0.887 & 0.906 & 0.849 & 0.917 \\
+Security Policy \& Proc.    & 1433 & 0.880 & 0.897 & 0.862 & 0.896 \\
+System \& Comm.\ Prot.      & 1448 & 0.805 & 0.808 & 0.784 & 0.825 \\
+\midrule
+\textbf{Macro Average}      & —    & \textbf{0.851} & \textbf{0.872} & — & — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Notes:}
+\begin{itemize}
+  \item Identity Management \& Authentication and Media Protection reach F1=1.000 because
+    their synthetic training templates are highly distinctive (PAM/pam\_unix log formats and
+    removable-media mount/unmount events have unique lexical signatures).
+  \item Physical and Environmental Protection (F1=0.617) is the weakest family. Events in
+    this family (badge scans, HVAC sensor thresholds) use numeric-heavy log formats with
+    few distinctive tokens, and TF-IDF features provide limited discriminative signal.
+  \item The macro F1 of 0.851 (test) versus 0.852 (5-fold CV mean) confirms minimal
+    train/test distribution shift under the leakage-free training regime.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Full MITRE ATT\&CK Adversarial Validation Table}
+\label{sec:mitre-table}
+
+Table~\ref{tab:mitre-full} reproduces the complete adversarial validation results from Phase~3
+with additional column notes. All detection rates are computed on $n=50$ attack samples per
+scenario (except T1078 with $n=49$). The 0.0\% FPR baseline is computed on $n=75$
+compliant SSH+PAM logs using the same XGBoost v2 model.
+
+\begin{table}[H]
+\centering
+\caption{Full MITRE ATT\&CK Adversarial Validation Results (Phase 3). Wilson 95\% CI shown.}
+\label{tab:mitre-full}
+\setlength{\tabcolsep}{4pt}
+\adjustbox{max width=\linewidth}{%
+\footnotesize
+\begin{tabular}{>{\RaggedRight\arraybackslash}p{1.5cm}
+                >{\RaggedRight\arraybackslash}p{3.8cm}
+                p{1.0cm} p{1.0cm}
+                r r r
+                >{\RaggedRight\arraybackslash}p{1.3cm}
+                >{\RaggedRight\arraybackslash}p{1.3cm}
+                >{\RaggedRight\arraybackslash}p{1.3cm}}
+\toprule
+\textbf{MITRE} & \textbf{Scenario} & \textbf{NCSA} & \textbf{NIST} & \textbf{$n$} & \textbf{TP} & \textbf{FN} & \textbf{Det.\%} & \textbf{CI Lo} & \textbf{CI Hi} \\
+\midrule
+T1059.001 & PowerShell Fileless Shell   & SC-7   & SI-3  & 50 & 43 &  7 & 86.0\%  & 73.8\% & 93.0\% \\
+T1190     & XSS/SQLi WAF Bypass         & SC-28  & SI-10 & 50 & 50 &  0 & 100.0\% & 92.9\% & 100.0\% \\
+T1110     & SSH Brute Force             & IA-1   & AC-7  & 50 & 50 &  0 & 100.0\% & 92.9\% & 100.0\% \\
+T1078     & Lateral Movement Valid Acc. & AC-2   & AC-17 & 49 & 49 &  0 & 100.0\% & 92.7\% & 100.0\% \\
+T1562.001 & Impair Defenses: Dis.\ Tools & AU-9  & SI-7  & 50 & 39 & 11 & 78.0\%  & 64.8\% & 87.2\% \\
+\midrule
+\multicolumn{4}{l}{\textbf{Macro Detection Rate}} & — & — & — & \textbf{92.8\%} & — & — \\
+\multicolumn{4}{l}{Compliant Baseline FPR (SSH+PAM, $n=75$)} & — & — & — & \textbf{0.0\%} & — & — \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\noindent\textbf{Data sources:}
+T1059.001 and T1190 used synthetic adversarial logs generated with the attack simulation
+module. T1110 and T1078 used real Mordor APT3 Windows event data
+(\texttt{purplesharp\_ad\_playbook\_I\_2020-10-22042947.json}) plus real
+\texttt{linux\_auth.log} SSH honeypot data (AWS EC2, 86{,}000 lines).
+T1562.001 used synthetic service-disruption logs.
+
+\noindent\textbf{Evasion analysis:}
+T1059.001 (14.0\% evasion) and T1562.001 (22.0\% evasion) are the two scenarios with
+non-zero evasion rates. Both involve service-oriented logs where the TF-IDF vocabulary
+contains overlapping tokens with compliant service events (\texttt{systemd}, \texttt{process
+exited}), creating ambiguity at the feature level.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Dataset Provenance Table}
+\label{sec:dataset-provenance}
+
+Table~\ref{tab:dataset-provenance} documents the full provenance of all datasets used in
+evaluation, addressing reproducibility concerns raised by Reviewer~2 (Comment~R and Comment~5).
+
+{\setlength{\tabcolsep}{4pt}%
+\footnotesize
+\begin{longtable}{>{\RaggedRight\arraybackslash}p{2.8cm}
+                  >{\RaggedRight\arraybackslash}p{2.5cm}
+                  >{\RaggedRight\arraybackslash}p{2.0cm}
+                  >{\RaggedRight\arraybackslash}p{3.5cm}
+                  >{\RaggedRight\arraybackslash}p{3.0cm}}
+\caption{Dataset Provenance for All Evaluation Phases.}\label{tab:dataset-provenance}\\
+\toprule
+\textbf{Dataset} & \textbf{Source} & \textbf{$n$ Samples} & \textbf{Format/Content} & \textbf{Use in Paper} \\
+\midrule
+\endfirsthead
+\multicolumn{5}{l}{\small\textit{Table \ref{tab:dataset-provenance} continued}}\\
+\toprule
+\textbf{Dataset} & \textbf{Source} & \textbf{$n$ Samples} & \textbf{Format/Content} & \textbf{Use in Paper} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{5}{r}{\small\textit{Continued on next page}}\\
+\endfoot
+\bottomrule
+\endlastfoot
+Synthetic training data v2 (leakage-free) &
+  Internal generator \path{generate_synthetic_data_v2.py} &
+  150{,}000 train / 15{,}000 val / 15{,}000 test &
+  Structured log events, 169 RWNCSA controls, 14 families; no embedded compliance verdicts &
+  XGBoost v2 training and evaluation (Phases 1, 4) \\
+\addlinespace
+linux\_auth.log &
+  AWS EC2 honeypot (in-house deployment) &
+  86{,}000 lines (real SSH traffic) &
+  Pure attack traffic: \texttt{Failed password} / \texttt{Invalid user}; 0 \texttt{Accepted} entries &
+  Phase 2 LLM eval (SSH, 50\% real); Phase 3 adversarial T1110; Phase 4 SSH generalization \\
+\addlinespace
+Mordor APT3 Windows Events &
+  OTRF Mordor datasets (purplesharp\_ad\_playbook\_I) &
+  37~MB NDJSON; compliant EventIDs 4624/5156/4634/4776/4688; non-compliant 4625/4648/4771/5145 &
+  NDJSON Windows Security Event log &
+  Phase 2 LLM eval (Windows, 100\% real); Phase 3 adversarial T1078; Phase 4 Windows generalization \\
+\addlinespace
+SecRepo Squid Proxy Log &
+  \url{https://www.secrepo.com/squid/access.log.gz} &
+  250 real proxy log lines &
+  Internal IPs 10.105.x.x; named users (badeyek, adeolaegbedokun, nazsoau, babayomi); 150 TCP\_HIT/200, 44 TCP\_DENIED/407 &
+  Phase 2 LLM eval HTTP update (85.7\% accuracy, real data); Phase 4 hybrid eval HTTP \\
+\addlinespace
+Elastic Apache Access Logs &
+  Elastic ECS sample data (public) &
+  20 HTTP/API log lines &
+  Apache Combined Log Format; public IP range &
+  Phase 4 cross-dataset generalization (HTTP OOV evaluation) \\
+\addlinespace
+Synthetic LLM eval samples (macOS) &
+  Internal generator, macOS syslog format &
+  200 per type (n=200 eval) &
+  macOS \texttt{/var/log/system.log} format templates; no real macOS logs available &
+  Phase 2 LLM eval macOS (100\% synthetic; acknowledged limitation) \\
+\addlinespace
+Synthetic LLM eval samples (HTTP, legacy) &
+  Internal generator, Apache CLF format &
+  200 per type (n=200 eval) &
+  \texttt{GET /api/v1/...} template patterns; replaced by real Squid data for HTTP accuracy update &
+  Phase 2 original HTTP eval (95.5\% — inflated due to template cleanliness; updated to 85.7\%) \\
+\end{longtable}}% end \setlength{\tabcolsep} group
+
+\noindent\textbf{Annotation methodology:}
+Ground-truth labels for the synthetic training data were assigned programmatically by
+\texttt{generate\_synthetic\_data\_v2.py}: compliance status is set by a deterministic rule
+engine based on log fields (user, action, resource, status code, anomaly\_label) without
+embedding the label string in the \texttt{log\_message} field. For real SSH logs,
+ground truth was determined structurally: \texttt{Accepted password} / \texttt{session opened}
+entries are compliant; \texttt{Failed password} / \texttt{Invalid user} entries are
+non-compliant. For Windows real data (Mordor APT3), EventIDs were manually mapped
+to compliant (authentication success: 4624, 5156, 4634) vs.\ non-compliant
+(authentication failure or lateral movement: 4625, 4648, 4771). No independent human
+annotation was performed; ground truth is structurally derived.
+
+\textbf{Class balance:} All evaluation sets are balanced (50\% compliant / 50\% non-compliant)
+except where noted (Windows Phase 4: 50 compliant / 10 non-compliant from Mordor APT3).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{TF-IDF Vocabulary (50 Terms)}
+\label{sec:tfidf-vocab}
+
+The XGBoost v2 model uses a custom \texttt{SimpleTfidf} vectorizer (pure Python, no scipy
+dependency) trained on the synthetic training corpus (\texttt{compliance\_events\_train.csv}).
+The 50-term vocabulary is reproduced below. This vocabulary explains the out-of-vocabulary
+(OOV) failure modes documented in Section~4.3 of the main manuscript: all 50 terms are
+SSH/syslog tokens; Windows EventID and HTTP access-log tokens are entirely absent.
+
+\begin{table}[ht]
+\centering
+\caption{Complete TF-IDF Vocabulary (50 Terms). All terms are SSH/PAM/syslog tokens.}
+\label{tab:tfidf-vocab}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{>{\RaggedRight\arraybackslash}p{2.7cm}
+                >{\RaggedRight\arraybackslash}p{2.7cm}
+                >{\RaggedRight\arraybackslash}p{2.7cm}
+                >{\RaggedRight\arraybackslash}p{2.7cm}
+                >{\RaggedRight\arraybackslash}p{2.7cm}}
+\toprule
+\textbf{Rank 1--10} & \textbf{Rank 11--20} & \textbf{Rank 21--30} & \textbf{Rank 31--40} & \textbf{Rank 41--50} \\
+\midrule
+for            & app-node-3           & sudo:              & kernel:             & ssh2:              \\
+dec            & monitor-srv          & tty=pts/0          & out=                & for user           \\
+oct            & fw-edge-01           & cmd                & len=60              & opened             \\
+jan            & srv-auth-01          & kernel: [ufw       & access-ctrl:        & by (uid=0)         \\
+nov            & vpn-gw-01            & in=eth0            & main                & port ssh2:         \\
+sep            & ids-sensor-02        & [ufw               & code=killed,        & accepted           \\
+feb            & srv-web-02           & in=eth0 out=       & process exited,     & —                  \\
+systemd[1]:    & db-primary           & uid=0              & status=9/kill       & —                  \\
+from           & backup-host          & port               & process             & —                  \\
+res=success'   & user=root            & by                 & main process        & —                  \\
+\midrule
+\multicolumn{5}{@{}p{13.5cm}@{}}{\textbf{Bigrams present}: \texttt{in=eth0 out=}, \texttt{kernel: [ufw}, \texttt{main process},
+\texttt{code=killed, status=9/kill}, \texttt{process exited,}} \\
+\multicolumn{5}{@{}p{13.5cm}@{}}{\textbf{Coverage}: SSH authentication logs: YES ($\bar{x}=3.8$ active features).
+Windows Security Events: NO (0 active). HTTP/API: NO (0 active).} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Vectorizer configuration:}
+\begin{itemize}
+  \item \texttt{max\_features = 50}, \texttt{ngram\_range = (1, 2)}, \texttt{min\_df = 2},
+    \texttt{sublinear\_tf = True}
+  \item Custom \texttt{SimpleTfidf} class (no scipy): implements standard IDF weighting
+    with log-smoothing; serialized via \texttt{pickle} as
+    \texttt{models/xgboost\_v2/tfidf\_vectorizer.pkl}
+  \item The \texttt{SimpleTfidf} class definition must be present in any script that
+    unpickles this file (pickle requires the class to be importable at deserialization time).
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Full Model Configuration and Hyperparameters}
+\label{sec:hyperparams}
+
+\subsection{XGBoost v2 Hyperparameters}
+
+\begin{table}[ht]
+\centering
+\caption{XGBoost v2 Full Hyperparameter Configuration.}
+\label{tab:xgb-hyperparams}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\texttt{n\_estimators}      & 200 \\
+\texttt{max\_depth}         & 6 \\
+\texttt{learning\_rate}     & 0.1 \\
+\texttt{subsample}          & 0.8 \\
+\texttt{colsample\_bytree}  & 0.8 \\
+\texttt{random\_state}      & 42 \\
+\texttt{use\_label\_encoder} & False \\
+\texttt{eval\_metric}       & logloss \\
+Wrapper                     & \texttt{MultiOutputClassifier} (sklearn) \\
+Features                    & 50 TF-IDF + 4 numeric + 14 one-hot family = 68 total \\
+Training set size           & 150{,}000 rows, 169 RWNCSA controls, 14 families \\
+Validation set size         & 15{,}000 rows \\
+Test set size               & 15{,}000 rows \\
+Random seed (data split)    & 42 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{GPT-4o-mini LLM Configuration}
+
+\begin{table}[ht]
+\centering
+\caption{GPT-4o-mini Evaluation Configuration.}
+\label{tab:llm-config}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Model ID            & \texttt{gpt-4o-mini} (OpenAI API) \\
+\texttt{temperature} & 0 (deterministic) \\
+\texttt{max\_tokens} & 200 \\
+\texttt{top\_p}      & 1.0 (default) \\
+System prompt       & See below \\
+Evaluation date     & May 2026 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{System prompt (used for all log types):}
+\begin{verbatim}
+You are a cybersecurity compliance auditor. Analyze this log entry
+and determine if it represents COMPLIANT or NON_COMPLIANT behavior
+based on cybersecurity best practices and access control policies.
+
+Respond with exactly one word: COMPLIANT or NON_COMPLIANT
+\end{verbatim}
+
+\noindent Windows Security Event logs were enriched before submission to the LLM using the
+\texttt{WINDOWS\_EVENT\_DESCRIPTIONS} dictionary, which maps EventIDs to human-readable
+descriptions (e.g., EventID~4625 → \textit{``failed logon attempt''}). This enrichment step
+is critical: without it, accuracy drops from 97.5\% to~3.0\% because GPT-4o-mini cannot
+interpret raw EventID integers.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Cross-Dataset Generalization: Detailed Results}
+\label{sec:generalization-detail}
+
+Table~\ref{tab:generalization-detail} extends the cross-dataset results in Section~4.3 of the
+main manuscript with additional metrics (precision, recall, FPR, TF-IDF feature activation).
+
+\begin{table}[H]
+\centering
+\caption{Cross-Dataset Generalization — Full Metrics. OOV = out-of-vocabulary (zero TF-IDF activation).}
+\label{tab:generalization-detail}
+\setlength{\tabcolsep}{4pt}
+\adjustbox{max width=\linewidth}{%
+\footnotesize
+\begin{tabular}{>{\RaggedRight\arraybackslash}p{4.0cm}lrrrrrrrrr}
+\toprule
+\textbf{Dataset} & \textbf{Vocab} & \textbf{$n$} & \textbf{Acc\%} & \textbf{Prec\%} & \textbf{Rec\%} & \textbf{F1\%} & \textbf{FPR\%} & \textbf{TF-IDF} & \textbf{Gap} \\
+\midrule
+SSH Authentication (real) & In  & 100 & 89.0 & 100.0 & 78.0  & 87.6 &   0.0 & 3.8 & $-2.1$ \\
+Windows Security (Mordor)  & OOV &  60 & 16.7 &  16.7 & 100.0 & 28.6 & 100.0 & 0.0 & $+56.9$ \\
+HTTP/API (Elastic Apache)  & OOV &  20 & 50.0 &  50.0 & 100.0 & 66.7 & 100.0 & 0.0 & $+18.8$ \\
+\midrule
+\multicolumn{2}{l}{In-vocab average}  & 100 & 89.0 & — & — & 87.6 & — & — & $-2.1$ \\
+\multicolumn{2}{l}{OOV average}       &  80 & 33.4 & — & — & 47.7 & — & — & $+37.8$ \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\noindent\textbf{OOV failure mechanism:} When no TF-IDF features are active (all-zero input
+vector), XGBoost's leaf-weight bias defaults to predicting \textit{non-compliant} for all
+inputs regardless of other features. Precision=50.0\% and Recall=100.0\% for both OOV
+datasets confirms this: the model flags everything as non-compliant, catching all true
+positives but generating 100\% FPR. The hybrid routing rule (Section~4.4 of the main
+manuscript) resolves this by delegating OOV inputs to GPT-4o-mini.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Hybrid System: Confusion Matrices}
+\label{sec:confusion-matrices}
+
+Tables~\ref{tab:cm-overall}--\ref{tab:cm-http} present the confusion matrices for the hybrid
+system combined evaluation (n=180 real logs: 100 SSH, 60 Windows, 20 HTTP).
+
+\begin{table}[H]
+\centering
+\caption{Hybrid System — Overall Confusion Matrix ($n=180$).}
+\label{tab:cm-overall}
+\begin{tabular}{lrr}
+\toprule
+& \textbf{Pred.\ Compliant} & \textbf{Pred.\ Non-Compliant} \\
+\midrule
+\textbf{True Compliant}     & 103 (TN) &   7 (FP) \\
+\textbf{True Non-Compliant} &  13 (FN) &  57 (TP) \\
+\bottomrule
+\end{tabular}\\[2pt]
+\small Accuracy=88.9\%, Precision=89.1\%, Recall=81.4\%, F1=85.1\%, FPR=6.4\%
+\end{table}
+
+\noindent
+\begin{minipage}[t]{0.47\linewidth}
+\centering
+\captionof{table}{Hybrid System — SSH Confusion Matrix ($n=100$; routed to XGBoost).}
+\label{tab:cm-ssh}
+\begin{tabular}{lrr}
+\toprule
+& \textbf{Pred.\ C} & \textbf{Pred.\ NC} \\
+\midrule
+\textbf{True C}  & 50 (TN) &  0 (FP) \\
+\textbf{True NC} & 11 (FN) & 39 (TP) \\
+\bottomrule
+\end{tabular}\\[2pt]
+\small Acc=89.0\%, F1=87.6\%, FPR=0.0\%
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.47\linewidth}
+\centering
+\captionof{table}{Hybrid System — Windows Confusion Matrix ($n=60$; routed to GPT-4o-mini).}
+\label{tab:cm-windows}
+\begin{tabular}{lrr}
+\toprule
+& \textbf{Pred.\ C} & \textbf{Pred.\ NC} \\
+\midrule
+\textbf{True C}  & 43 (TN) &  7 (FP) \\
+\textbf{True NC} &  0 (FN) & 10 (TP) \\
+\bottomrule
+\end{tabular}\\[2pt]
+\small Acc=88.3\%, F1=74.1\%, FPR=14.0\%
+\end{minipage}
+
+\vspace{6pt}
+\begin{table}[H]
+\centering
+\caption{Hybrid System — HTTP Confusion Matrix ($n=20$; routed to GPT-4o-mini).}
+\label{tab:cm-http}
+\begin{tabular}{lrr}
+\toprule
+& \textbf{Pred.\ Compliant} & \textbf{Pred.\ Non-Compliant} \\
+\midrule
+\textbf{True Compliant}     & 10 (TN) &  0 (FP) \\
+\textbf{True Non-Compliant} &  2 (FN) &  8 (TP) \\
+\bottomrule
+\end{tabular}\\[2pt]
+\small Accuracy=90.0\%, Precision=100.0\%, Recall=80.0\%, F1=88.9\%, FPR=0.0\%
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Terminology Clarification}
+\label{sec:terminology}
+
+Reviewer~1 (Comment~3) noted that the terms ``compliance auditor'', ``classifier'',
+``decision engine'', and ``routing engine'' are blended in the main manuscript.
+Table~\ref{tab:terminology} provides the authoritative definitions of each system
+component as implemented.
+
+\begin{table}[H]
+\centering
+\caption{System Component Terminology.}
+\label{tab:terminology}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{>{\RaggedRight\arraybackslash}p{2.8cm}
+                >{\RaggedRight\arraybackslash}p{5.0cm}
+                >{\RaggedRight\arraybackslash}p{5.5cm}}
+\toprule
+\textbf{Term} & \textbf{Definition} & \textbf{Implementation} \\
+\midrule
+Compliance Classifier &
+  Binary classifier that assigns a compliant / non-compliant label to each log event &
+  XGBoost v2 with 68 features; outputs binary label per RWNCSA control family \\
+\addlinespace
+Evidence Router &
+  Rule-based component that decides which classifier to invoke for a given log event &
+  TF-IDF vocabulary-coverage gate: if active features $> 0$ → XGBoost; else → GPT-4o-mini \\
+\addlinespace
+LLM Semantic Analyzer &
+  Large language model invoked for out-of-vocabulary log types &
+  GPT-4o-mini with zero-shot prompt; handles Windows Security Events and HTTP/API logs \\
+\addlinespace
+Audit Engine &
+  Orchestration layer that collects per-event classifications, maps to RWNCSA controls, and computes posture scores &
+  Backend service; calls compliance classifier or LLM semantic analyzer via evidence router; stores results in PostgreSQL \\
+\addlinespace
+Decision Engine &
+  Deprecated term in v1 manuscript; equivalent to ``Evidence Router'' in current terminology &
+  — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Code Repository Structure}
+\label{sec:repo-structure}
+
+The following scripts and artifacts are available in the project repository to support
+full reproducibility (addresses R2-C5):
+
+\begin{verbatim}
+scripts/
+  generate_synthetic_data_v2.py   -- Leakage-free data generator
+  train_xgboost_v2.py             -- XGBoost v2 trainer
+  expanded_llm_eval_v2.py         -- LLM evaluation (n=200/type)
+  adversarial_validation_v2.py    -- 5 MITRE ATT&CK scenarios
+  cross_dataset_eval_v1.py        -- Cross-dataset generalization
+  hybrid_system_eval.py           -- Hybrid XGBoost+LLM evaluation
+
+models/xgboost_v2/
+  xgboost_v2.pkl                  -- Trained XGBoost v2 model
+  tfidf_vectorizer.pkl            -- SimpleTfidf (50-term vocabulary)
+  family_encoder.pkl              -- 14-family label encoder
+
+datasets/real_world/
+  linux_auth.log                  -- AWS EC2 SSH honeypot logs
+  windows_events/...              -- Mordor APT3 Windows events
+  enterprise_http_access.log      -- SecRepo Squid proxy logs (250 lines)
+
+reports/
+  xgboost_cv_summary.json         -- CV F1=85.20% ± 0.25%, test F1=85.45%
+  xgboost_per_family_f1.csv       -- Per-family F1 breakdown
+  llm_eval_n200_summary.csv       -- LLM Phase 2 final results
+  adversarial_validation_v2.json  -- Phase 3 MITRE results
+  cross_dataset_eval.json         -- Phase 4 generalization gap
+  hybrid_system_eval.json         -- Hybrid system full results
+\end{verbatim}
+
+\noindent All scripts require Python~3.9+, \texttt{xgboost>=1.7}, \texttt{scikit-learn>=1.2},
+\texttt{numpy}, \texttt{pandas}, and \texttt{openai>=1.0} for LLM evaluation.
+Reproduce the full evaluation pipeline by running scripts in the order listed above.
+
+\end{document}

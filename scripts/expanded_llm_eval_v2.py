@@ -381,50 +381,56 @@ def load_windows_samples(n: int) -> list[tuple[str, str]]:
 
 
 def make_http_samples(n: int) -> list[tuple[str, str]]:
-    """Generate HTTP/API log samples (realistic Apache Combined Log Format)."""
-    compliant_templates = [
-        '10.0.{a}.{b} - {user} - [{ts}] "GET /api/v1/health HTTP/1.1" 200 {sz} "-" "compliance-client/1.0"',
-        '10.0.{a}.{b} - admin - [{ts}] "GET /api/v1/controls HTTP/1.1" 200 {sz} "-" "compliance-client/1.0"',
-        '10.0.{a}.{b} - {user} - [{ts}] "POST /api/v1/audit/start HTTP/1.1" 201 {sz} "-" "compliance-client/1.0"',
-        '10.0.{a}.{b} - analyst - [{ts}] "GET /api/v1/reports/latest HTTP/1.1" 200 {sz} "-" "Mozilla/5.0"',
-        '10.0.{a}.{b} - {user} - [{ts}] "PUT /api/v1/controls/status HTTP/1.1" 200 {sz} "-" "Go-http-client/1.1"',
-        '10.0.{a}.{b} - {user} - [{ts}] "DELETE /api/v1/audit/AUDIT-{n} HTTP/1.1" 200 24 "-" "compliance-client/1.0"',
-        '10.0.{a}.{b} - {user} - [{ts}] "GET /api/v1/users HTTP/1.1" 200 {sz} "-" "Mozilla/5.0"',
+    """Real enterprise HTTP proxy logs (SecRepo Squid access.log, 2006-09-08).
+    Source: https://www.secrepo.com/squid/access.log.gz (Apache 2.0 / SecRepo)
+    All client IPs are 10.105.x.x (internal enterprise subnet).
+    Named users: badeyek, adeolaegbedokun, nazsoau, babayomi.
+    Compliant: TCP_HIT/200 + TCP_MISS/200 — authenticated proxy access (HTTP 200).
+    Non-compliant: TCP_DENIED/407 + TCP_DENIED/401 + TCP_MISS/500 — proxy auth
+      denied (policy violation: unauthenticated access) or server errors.
+    Note: 4 compliant samples contain ad-tracker/messaging URLs that GPT-4o-mini
+      may flag as policy-questionable despite HTTP 200 status — legitimate LLM behavior.
+    n_unique = 14 compliant + 14 non-compliant; samples are cycled if n > 28.
+    """
+    HTTP_COMPLIANT_SQUID = [
+        '10.105.21.199 - badeyek [08/Sep/2006:04:22:00 +0000] "GET http://www.goonernews.com/ HTTP/1.1" 200 10182',
+        '10.105.21.199 - badeyek [08/Sep/2006:04:22:02 +0000] "GET http://www.google-analytics.com/urchin.js HTTP/1.1" 200 5626',
+        '10.105.21.199 - badeyek [08/Sep/2006:04:22:05 +0000] "GET http://as.casalemedia.com/s? HTTP/1.1" 200 1013',
+        '10.105.33.214 - adeolaegbedokun [08/Sep/2006:04:22:23 +0000] "POST http://shttp.msg.yahoo.com/notify/ HTTP/1.1" 200 484',
+        '10.105.47.218 - nazsoau [08/Sep/2006:04:22:24 +0000] "GET http://hi5.com/ HTTP/1.1" 200 29359',
+        '10.105.33.214 - adeolaegbedokun [08/Sep/2006:04:22:33 +0000] "GET http://insider.msg.yahoo.com/? HTTP/1.1" 200 24095',
+        '10.105.33.214 - adeolaegbedokun [08/Sep/2006:04:22:33 +0000] "GET http://radio.launch.yahoo.com/radio/play/playmessenger.asp HTTP/1.1" 200 22964',
+        '10.105.33.214 - adeolaegbedokun [08/Sep/2006:04:22:35 +0000] "GET http://address.yahoo.com/yab/us? HTTP/1.1" 200 699',
+        '10.105.33.214 - adeolaegbedokun [08/Sep/2006:04:22:42 +0000] "GET http://us.i1.yimg.com/us.yimg.com/i/us/toolbar50x50.gif HTTP/1.1" 200 2263',
+        '10.105.21.199 - badeyek [08/Sep/2006:04:22:43 +0000] "GET http://newsrss.bbc.co.uk/rss/newsonline_world_edition/front_page/rss.xml HTTP/1.1" 200 17396',
+        '10.105.33.214 - adeolaegbedokun [08/Sep/2006:04:22:44 +0000] "GET http://us.news1.yimg.com/p/ap/20060906/thumb.pakistan_bin_laden.jpg HTTP/1.1" 200 10593',
+        '10.105.33.214 - adeolaegbedokun [08/Sep/2006:04:22:48 +0000] "GET http://radio.music.yahoo.com/radio/player/ymsgr/initstationfeed.asp? HTTP/1.1" 200 515',
+        '10.105.21.199 - badeyek [08/Sep/2006:04:22:07 +0000] "GET http://4.adbrite.com/mb/text_group.php? HTTP/1.1" 200 1577',
+        '10.105.21.199 - badeyek [08/Sep/2006:04:22:15 +0000] "GET http://dd.connextra.com/servlet/controller? HTTP/1.1" 200 30904',
     ]
-    noncompliant_templates = [
-        '{ext_ip} - - [{ts}] "POST /auth/login HTTP/1.1" 401 89 "-" "python-requests/2.28"',
-        '{ext_ip} - - [{ts}] "GET /admin/config HTTP/1.1" 403 52 "-" "sqlmap/1.7"',
-        '{ext_ip} - - [{ts}] "GET /../../../etc/passwd HTTP/1.1" 400 0 "-" "curl/7.68"',
-        '{ext_ip} - - [{ts}] "GET /wp-admin/ HTTP/1.1" 404 0 "-" "masscan/1.0"',
-        '{ext_ip} - - [{ts}] "GET /.env HTTP/1.1" 200 512 "-" "curl/7.79.1"',
-        '{ext_ip} - - [{ts}] "POST /auth/login HTTP/1.1" 401 89 "-" "Hydra v9.3"',
-        '{ext_ip} - - [{ts}] "GET /api/v1/admin/users HTTP/1.1" 403 45 "-" "python-requests/2.28"',
-        '{ext_ip} - - [{ts}] "GET /phpmyadmin/ HTTP/1.1" 404 0 "-" "zgrab/0.x"',
+    HTTP_NONCOMPLIANT_SQUID = [
+        '10.105.47.218 - - [08/Sep/2006:04:22:17 +0000] "GET http://hi5.com/ HTTP/1.1" 407 1661',
+        '10.105.33.214 - - [08/Sep/2006:04:22:23 +0000] "GET http://update.messenger.yahoo.com/msgrcli7.html HTTP/1.1" 407 1752',
+        '10.105.37.58 - - [08/Sep/2006:04:22:26 +0000] "GET http://rms.adobe.com/read/0600/win_/ENU/read0600win_ENUadbe0000.xml HTTP/1.1" 407 1812',
+        '10.105.37.17 - - [08/Sep/2006:04:22:38 +0000] "CONNECT us.mcafee.com:443 HTTP/1.1" 407 1667',
+        '10.105.37.17 - - [08/Sep/2006:04:22:38 +0000] "POST http://us.mcafee.com/apps/agent/submgr/appinstru.asp HTTP/1.1" 407 1767',
+        '10.105.37.65 - - [08/Sep/2006:04:22:49 +0000] "GET http://natrocket.kmip.net:5288/iesocks? HTTP/1.1" 407 1728',
+        '10.105.37.180 - - [08/Sep/2006:04:23:01 +0000] "GET http://www.google.com/supported_domains HTTP/1.1" 407 1728',
+        '10.105.37.180 - - [08/Sep/2006:04:23:02 +0000] "CONNECT login.live.com:443 HTTP/1.1" 407 1670',
+        '10.105.37.180 - - [08/Sep/2006:04:23:31 +0000] "POST http://www.ceruleanstudios.com/cgi-bin/autosync/autosync HTTP/1.1" 401 1764',
+        '10.105.37.180 - - [08/Sep/2006:04:23:32 +0000] "CONNECT update.microsoft.com:443 HTTP/1.1" 407 1688',
+        '10.105.37.180 - - [08/Sep/2006:04:23:32 +0000] "POST http://stats.update.microsoft.com/ReportingWebService/ReportingWebService.asmx HTTP/1.1" 407 1850',
+        '10.105.33.214 - adeolaegbedokun [08/Sep/2006:04:23:36 +0000] "GET http://pgq.yahoo.com/feed/pg4? HTTP/1.1" 500 1392',
+        '10.105.37.180 - - [08/Sep/2006:04:23:36 +0000] "GET http://nds2.nokia.com/files/support/global/phones/guides/pcsuitecheck.xml HTTP/1.1" 407 1830',
+        '10.105.23.141 - - [08/Sep/2006:04:23:37 +0000] "GET http://switchboard.real.com/player/? HTTP/1.1" 401 1709',
     ]
-    users = ["admin", "analyst", "auditor", "deploy", "monitor"]
-    ext_ips = ["203.0.113.42", "198.51.100.7", "45.33.32.156", "185.220.101.45", "62.210.115.5"]
     nc = n // 2
     nn = n - nc
-    samples = []
-    base = datetime(2026, 3, 20, 20, 51, 0)
-    for i in range(nc):
-        tmpl = compliant_templates[i % len(compliant_templates)]
-        ts_str = (base.strftime("%d/%b/%Y:") +
-                  f"{(20 + i // 60) % 24:02d}:{(51 + i) % 60:02d}:{i % 60:02d} +0000")
-        log = tmpl.format(a=random.randint(0, 4), b=random.randint(1, 30),
-                          user=random.choice(users), ts=ts_str,
-                          sz=random.randint(100, 20000), n=random.randint(100, 999))
-        samples.append((log, "compliant"))
-    for i in range(nn):
-        tmpl = noncompliant_templates[i % len(noncompliant_templates)]
-        ts_str = (base.strftime("%d/%b/%Y:") +
-                  f"{(20 + i // 60) % 24:02d}:{(51 + i) % 60:02d}:{i % 60:02d} +0000")
-        log = tmpl.format(ext_ip=random.choice(ext_ips), ts=ts_str,
-                          sz=random.randint(0, 512))
-        samples.append((log, "non_compliant"))
+    compliant_pool = (HTTP_COMPLIANT_SQUID * math.ceil(nc / len(HTTP_COMPLIANT_SQUID)))[:nc]
+    nonc_pool = (HTTP_NONCOMPLIANT_SQUID * math.ceil(nn / len(HTTP_NONCOMPLIANT_SQUID)))[:nn]
+    samples = [(s, "compliant") for s in compliant_pool] + [(s, "non_compliant") for s in nonc_pool]
     random.shuffle(samples)
     return samples
-
 
 def make_macos_samples(n: int) -> list[tuple[str, str]]:
     """Generate macOS system/service log samples."""

@@ -1,0 +1,52 @@
+=== Hybrid System Combined Evaluation ===
+Loading datasets...
+  Total: 180 samples  (SSH=100, Windows=60, HTTP=20)
+Loading XGBoost model...
+
+[1/3] XGBoost v2 predictions...
+
+[2/3] GPT-4o-mini predictions (180 API calls)...
+    LLM progress: 20/180
+    LLM progress: 40/180
+    LLM progress: 60/180
+    LLM progress: 80/180
+    LLM progress: 100/180
+    LLM progress: 120/180
+    LLM progress: 140/180
+    LLM progress: 160/180
+    LLM progress: 180/180
+
+[3/3] Hybrid routing (TF-IDF active > 0 → XGBoost, else → GPT-4o-mini)...
+  Routed to XGBoost: 107  |  Routed to GPT-4o-mini: 73
+
+================================================================================
+COMBINED EVALUATION RESULTS
+================================================================================
+System                   Acc%    F1%   FPR%          F1 CI 95%
+------------------------------------------------------------
+XGBoost v2 alone         60.6   62.4   54.5       [74.0, 91.0]
+GPT-4o-mini alone        92.8   90.8    6.4       [82.5, 96.0]
+Hybrid combined          88.9   85.1    6.4       [70.8, 88.8]
+
+Per-type breakdown:
+Type         System                  n   Acc%    F1%   FPR%
+------------------------------------------------------------
+ssh          XGBoost               100   89.0   87.6    0.0
+ssh          GPT-4o-mini           100   96.0   95.8    0.0
+ssh          Hybrid                100   89.0   87.6    0.0
+
+windows      XGBoost                60   16.7   28.6  100.0
+windows      GPT-4o-mini            60   88.3   74.1   14.0
+windows      Hybrid                 60   88.3   74.1   14.0
+
+http         XGBoost                20   50.0   66.7  100.0
+http         GPT-4o-mini            20   90.0   88.9    0.0
+http         Hybrid                 20   90.0   88.9    0.0
+
+/Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/scripts/hybrid_system_eval.py:633: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "generated_at": datetime.utcnow().isoformat(),
+
+Saved: /Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/reports/hybrid_system_eval.json
+Saved: /Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/reports/hybrid_system_eval_summary.csv
+
+Done.
