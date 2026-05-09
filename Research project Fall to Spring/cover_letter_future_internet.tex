@@ -17,7 +17,7 @@ MSIT (Applied AI \& Cybersecurity)\\
 Carnegie Mellon University Africa\\
 KG 590 St, Kigali, Rwanda\\
 \href{mailto:mii@andrew.cmu.edu}{mii@andrew.cmu.edu}\\
-April 2, 2026
+May 9, 2026
 
 \vspace{0.4cm}
 
@@ -34,33 +34,79 @@ St. Alban-Anlage 66, 4052 Basel, Switzerland
 \vspace{0.3cm}
 
 % ── Body ──────────────────────────────────────────────────────────────────────
-We are pleased to submit our manuscript, \textbf{``AI-Augmented Compliance Auditing for
-Cloud Systems: A Hybrid ML--LLM Approach,''} for consideration in \textit{Future Internet}.
+We are pleased to submit the \textbf{major revision} of our manuscript,
+\textbf{``AI-Augmented Compliance Auditing for Cloud Systems: A Hybrid ML--LLM Approach''}
+(Manuscript ID: futureinternet-4270373), in response to the decision letter dated
+25 April 2026.
 
-This work starts from a question that practitioners across Africa increasingly face: what
-happens when a security control passes a compliance audit, yet fails in practice against a
-real attack? We found the answer uncomfortable. Using Rwanda's national cybersecurity
-framework as a case study, we built and evaluated a system that tests not whether controls
-exist, but whether they work.
+We thank all three reviewers for their thorough and constructive feedback. Their combined
+comments have substantially strengthened the empirical foundation of the paper, and we
+believe the revised manuscript is meaningfully improved across every dimension they raised.
 
-The central finding is a tension that we believe will resonate with your readership: a
-classifier achieving near-perfect accuracy on structured logs collapses entirely when it
-encounters a log type it has never seen before. Resolving this tension led us through a
-three-phase architectural journey, culminating in a hybrid system where machine learning and
-large language models each do what the other cannot. The result is an auditor that runs on
-commodity hardware at \$50/month and catches compliance failures that a checkbox audit
-would certify as passing.
+\textbf{The most consequential change in this revision} is the full identification and
+correction of a critical data leakage issue. A systematic audit of the original training
+corpus found that \textbf{86.3\%} of synthetic training rows contained embedded compliance
+labels in the \texttt{log\_message} field, causing the classifier to memorize label strings
+rather than learn security semantics. This produced the previously reported 99.99\% F1
+score, which we explicitly retract in the revised manuscript. The synthetic data generator
+was rewritten from scratch, and the corrected \textbf{XGBoost v2 achieves 85.45\% macro-F1}
+(Wilson 95\% CI: [84.9\%, 86.0\%]; 5-fold CV F1: 85.20\% $\pm$ 0.25\%) on a
+verified leakage-free corpus of 150{,}000 training rows---an honest estimate that falls
+squarely within the paper's target range and is consistent with the feature complexity.
 
-We believe this work speaks directly to \textit{Future Internet}'s focus on AI-driven
-security and regulatory compliance in connected environments. It contributes both a rigorous
-empirical evaluation and a deployable open-source system designed for institutions that
-cannot afford enterprise solutions.
+Beyond this central correction, the revision addresses all reviewer comments through the
+following substantive changes:
 
-The manuscript is original, has not been submitted elsewhere, and is not under review at
-any other journal. All datasets used are publicly available. The work complies fully with
-MDPI's ethical guidelines, and the Article Processing Charge is understood and accepted.
+\begin{itemize}
+  \item \textbf{Statistical rigor}: Wilson 95\% confidence intervals are now reported for
+        every result in every table. The phrase ``up to 100\% accuracy'' has been removed
+        throughout; all 100\% detection rates are accompanied by Wilson CIs.
 
-We thank the editors and reviewers for their time and consideration.
+  \item \textbf{LLM evaluation expanded}: Sample size increased from $n$=50 to $n$=200 per
+        log type ($n$=628 total; HTTP is limited to $n$=28 real SecRepo Squid proxy
+        logs---the only available real enterprise HTTP log source). GPT-4o-mini macro
+        accuracy: \textbf{92.3\%} across four log types (37.5\% real enterprise data).
+        Llama-3.2-3B was removed as it was underpowered for zero-shot compliance tasks.
+
+  \item \textbf{Adversarial validation expanded}: From 2 to \textbf{5 MITRE ATT\&CK v14
+        scenarios} (T1059.001, T1190, T1110, T1078, T1562.001), with macro detection rate
+        \textbf{92.8\%} and 0.0\% false-positive rate on real SSH/PAM compliant logs
+        ($n$=75). Each scenario is mapped to its corresponding RWNCSA control and NIST
+        SP~800-53 reference.
+
+  \item \textbf{Standardized joint evaluation}: A new Hybrid System Combined Evaluation
+        (Section~4.4) assesses all three system configurations---XGBoost alone,
+        GPT-4o-mini alone, Hybrid---on the \textit{identical} 180 real-world logs using
+        the same metrics and ground truth. XGBoost alone: 62.4\% F1 (54.5\% FPR);
+        GPT-4o-mini alone: 90.8\% F1 (6.4\% FPR); Hybrid combined: \textbf{85.1\% F1
+        (6.4\% FPR)}.
+
+  \item \textbf{Theoretical formulation clarified}: All variables in the effectiveness
+        function $C(k) = \alpha D_k + \beta V_k + \gamma R_k$ are now explicitly defined
+        with default weights ($\alpha$=0.5, $\beta$=0.3, $\gamma$=0.2) and experimental
+        grounding. Multi-label output dimensionality corrected to 169 controls throughout.
+
+  \item \textbf{Overstated claims moderated}: ``First'', ``proves'', ``strictly more
+        expressive'', and comparative cost-efficiency claims have been softened or removed.
+        All conclusions include explicit scope qualifiers referencing the evaluation context.
+
+  \item \textbf{Reproducibility}: A full supplementary appendix documents dataset
+        provenance, hyperparameter tables, evaluation protocols, and phase-by-phase
+        experimental logs.
+\end{itemize}
+
+We note one data-size clarification for editorial awareness: the reviewer responses
+reference $n$=628 total for the LLM evaluation (SSH=200, Windows=200, macOS=200,
+HTTP=28). An earlier draft of the responses used $n$=800 before the HTTP sample was
+constrained to real enterprise data; all final manuscript tables and the supplementary
+appendix correctly reflect $n$=628.
+
+The revised manuscript remains original, is not under review elsewhere, uses only
+publicly available datasets, and complies fully with MDPI's ethical guidelines. The
+Article Processing Charge is understood and accepted.
+
+We are grateful for the opportunity to revise and resubmit, and we hope the revised
+manuscript meets the standards of \textit{Future Internet}.
 
 \vspace{0.5cm}
 
