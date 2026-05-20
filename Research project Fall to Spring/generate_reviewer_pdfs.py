@@ -16,9 +16,11 @@ from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 BASE = "/Users/moiseiradukunda/Documents/CMU/RESEARCH PROJECT/model-engine/Research project Fall to Spring"
 
 FILES = [
-    ("reviewer1_comments.md", "reviewer_response_1.pdf", "Reviewer 1"),
-    ("reviewer2_comments.md", "reviewer_response_2.pdf", "Reviewer 2"),
-    ("reviewer3_comments.md", "reviewer_response_3.pdf", "Reviewer 3"),
+    ("reviewer1_comments.md", "reviewer_response_1.pdf", "Reviewer 1 — Round 1"),
+    ("reviewer2_comments.md", "reviewer_response_2.pdf", "Reviewer 2 — Round 1"),
+    ("reviewer3_comments.md", "reviewer_response_3.pdf", "Reviewer 3 — Round 1"),
+    ("reviewer1_round2_response.md", "reviewer_response_1_round2.pdf", "Reviewer 1 — Round 2"),
+    ("reviewer3_round2_response.md", "reviewer_response_3_round2.pdf", "Reviewer 3 — Round 2"),
 ]
 
 # ── Colours ─────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 %% Supplementary Appendix — futureinternet-4270373
 %% "AI-Augmented Compliance Auditing for Cloud Systems: A Hybrid ML–LLM Approach"
 %% Authors: Moise Iradukunda Ingabire, Jema David Ndibwile
-%% Journal: Future Internet (MDPI) | Major Revision — May 2026
+%% Journal: Future Internet (MDPI) | Second Revision (Round 2) — May 2026
 
 \documentclass[11pt,a4paper]{article}
 \usepackage[margin=2.5cm]{geometry}
@@ -26,14 +26,87 @@
 \title{\textbf{Supplementary Appendix}\\
 \large AI-Augmented Compliance Auditing for Cloud Systems:\\
 A Hybrid ML--LLM Approach\\[4pt]
-\normalsize futureinternet-4270373}
+\normalsize futureinternet-4270373 \quad|\quad Second Revision (Round 2)}
 \author{Moise Iradukunda Ingabire \and Jema David Ndibwile\\
 Carnegie Mellon University Africa}
-\date{May 2026}
+\date{May 21, 2026}
 
 \begin{document}
 \maketitle
 \tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Revision History}
+\label{sec:revision-history}
+\addcontentsline{toc}{section}{Revision History}
+
+\noindent This supplementary appendix accompanies the \textbf{second revised manuscript}
+(Round~2) of futureinternet-4270373. The table below summarises what changed across
+both review rounds; all data, tables, and evaluation protocols in Sections~1--8 of this
+appendix reflect the final post-Round~2 state.
+
+\begin{table}[H]
+\centering
+\caption{Manuscript Revision History.}
+\label{tab:revision-history}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{>{\RaggedRight\arraybackslash}p{1.6cm}
+                >{\RaggedRight\arraybackslash}p{3.5cm}
+                >{\RaggedRight\arraybackslash}p{9.0cm}}
+\toprule
+\textbf{Round} & \textbf{Issue} & \textbf{Change Made} \\
+\midrule
+Round~1 & Data leakage (critical) &
+  86.3\% leakage identified in synthetic training data; 99.99\% F1 retracted;
+  dataset regenerated from scratch; XGBoost v2 achieves 85.45\% F1. \\
+\addlinespace
+Round~1 & Statistical rigor &
+  Wilson 95\% CIs added to every result; all 100\% claims bounded. \\
+\addlinespace
+Round~1 & LLM evaluation scope &
+  $n$=50 $\to$ $n$=200/type ($n$=628 total); Llama removed; HTTP constrained
+  to real SecRepo Squid data ($n$=28). \\
+\addlinespace
+Round~1 & Adversarial coverage &
+  2 $\to$ 5 MITRE ATT\&CK v14 scenarios; compliant baseline on real SSH/PAM
+  ($n$=75); 0.0\% FPR confirmed. \\
+\addlinespace
+Round~1 & Hybrid joint evaluation &
+  New Section~4.4: all three configurations evaluated on identical 180 real logs. \\
+\addlinespace
+Round~1 & Theoretical model &
+  $C(k) = \alpha D_k + \beta V_k + \gamma R_k$ variables explicitly defined;
+  169-control dimensionality corrected throughout. \\
+\addlinespace
+Round~1 & Overstated claims &
+  ``First'', ``proves'', ``strictly more expressive'' removed or qualified. \\
+\midrule
+Round~2 & 99.88\% scope (Reviewer~1, Issue~1) &
+  Two occurrences of 99.88\% (Section~3.5 and Table~9) now carry explicit
+  qualifier: ``SSH-domain fine-tune only; not cross-domain or general-purpose''. \\
+\addlinespace
+Round~2 & LLM generalization language (Reviewer~1, Issue~2) &
+  Three targeted edits: (a)~Phase~3 ``direct solution'' $\to$ ``preliminary
+  evidence\ldots insufficient for broad claims''; (b)~Finding F4 ``consistently
+  superior'' $\to$ ``consistently higher\ldots preliminary applied validation'';
+  (c)~new Statistical Scope sentence explicitly limiting conclusions to
+  exploratory/applied evaluation. \\
+\addlinespace
+Round~2 & Reviewer~3 &
+  No changes requested. Reviewer~3 confirmed: \textit{``suitable for publication''}. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Scope note on LLM evaluation} (Round~2 clarification): The $n$=628
+GPT-4o-mini evaluation (SSH=200, Windows=200, macOS=200, HTTP=28) supports exploratory
+and applied evaluation conclusions within the specific RWNCSA compliance context. It does
+not constitute sufficient evidence for broad claims of LLM superiority in general
+cybersecurity auditing. Validation on production Rwandan institution logs
+($n \geq 500$ per type) is planned for future deployment pilots.
+
 \newpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -143,7 +216,8 @@ exited}), creating ambiguity at the feature level.
 \label{sec:dataset-provenance}
 
 Table~\ref{tab:dataset-provenance} documents the full provenance of all datasets used in
-evaluation, addressing reproducibility concerns raised by Reviewer~2 (Comment~R and Comment~5).
+evaluation, addressing reproducibility concerns raised by Reviewer~2 (Round~1, Comment~R
+and Comment~5). Dataset composition and provenance are unchanged in Round~2.
 
 {\setlength{\tabcolsep}{4pt}%
 \footnotesize
