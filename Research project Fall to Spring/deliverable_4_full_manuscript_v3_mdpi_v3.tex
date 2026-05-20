@@ -613,7 +613,9 @@ hardware (Table~\ref{tab:model_comparison}).
 capture vocabulary co-occurrence patterns rather than semantic meaning. A log containing
 ``authentication failure'' is correctly classified only if that exact vocabulary appeared in
 training data with the same distribution. Fine-tuning on 5\% target-domain data recovers
-performance (99.88\% F1), but this approach does not scale: a new log type requires a new
+performance (99.88\% F1 on the same SSH domain; this result reflects SSH-specific
+vocabulary adaptation and should not be interpreted as cross-domain or general-purpose
+performance), but this approach does not scale: a new log type requires a new
 labeled sample collection, defeating the goal of zero-shot generalization across institutional
 environments. BERT was reconsidered at this point but rejected for the same infrastructure
 constraint: its semantic capability requires GPU-backed inference impractical at
@@ -622,9 +624,10 @@ constraint: its semantic capability requires GPU-backed inference impractical at
 \textbf{Phase 3 — LLM Semantic Path}: Large language models offer semantic understanding
 without retraining,their pre-training on vast corpora enables zero-shot reasoning about
 security log semantics regardless of format. GPT-4o-mini (cloud API) was evaluated as a zero-shot classifier across four log types
-(Section~\ref{sec:results}), achieving 92.3\% overall macro accuracy---a
-direct solution to the generalization gap that neither fine-tuned XGBoost nor BERT could
-address at acceptable deployment cost. An integration layer was needed to connect the
+(Section~\ref{sec:results}), achieving 92.3\% overall macro accuracy---providing
+preliminary evidence that semantic LLM reasoning can address the vocabulary-based
+generalization gap at acceptable deployment cost, while remaining insufficient for broad
+claims of LLM superiority in cybersecurity auditing without larger-scale validation. An integration layer was needed to connect the
 compliance pipeline to these LLM providers in a provider-agnostic way.
 
 \subsubsection{Model Context Protocol Integration}
@@ -872,8 +875,10 @@ achieves 85.7\% on real enterprise proxy logs.
 \textbf{Finding F4 (RQ0, LLM generalization)}: To validate generalizability beyond SSH logs,
 zero-shot evaluations were conducted across \textit{four} structurally distinct log types
 using GPT-4o-mini (cloud API, temperature=0), testing the deployment scenario for resource-constrained
-institutions (Table~\ref{tab:llm_multilog}). Results confirm that LLM accuracy is
-log-type-dependent but consistently superior to XGBoost zero-shot (7.98\%) across all categories.
+institutions (Table~\ref{tab:llm_multilog}). Results provide exploratory evidence that LLM
+accuracy is log-type-dependent but consistently higher than XGBoost zero-shot (7.98\%) across
+all evaluated categories; this constitutes preliminary applied validation and does not
+support broad claims of LLM superiority in general cybersecurity auditing contexts.
 
 \begin{table}[H]
 \caption{GPT-4o-mini Zero-Shot Accuracy by Log Type (Rwanda NCSA, expanded evaluation with
@@ -923,8 +928,12 @@ audit log datasets were identified, and this remains an acknowledged limitation.
 \textbf{Statistical Scope}: Wilson 95\% confidence intervals are reported per cell
 (Table~\ref{tab:llm_multilog}). At $n$=200 per structured log type, CIs narrow to
 $\pm$3--5 percentage points. The HTTP result has a wider CI ($\pm$13 pp) due to the
-smaller $n$=28 real-data sample. Validation on production Rwandan institution logs
-($n \geq 500$ per type) remains for future deployment pilots.
+smaller $n$=28 real-data sample. These sample sizes support exploratory and
+applied evaluation conclusions; they are not sufficient to support broad claims of
+LLM superiority in general cybersecurity auditing, and results should be interpreted
+as preliminary evidence for the specific log types and compliance context evaluated.
+Validation on production Rwandan institution logs ($n \geq 500$ per type) remains
+for future deployment pilots.
 
 \textbf{Error Analysis}: Misclassifications in both models predominantly produced
 \textit{partial} labels rather than opposite-polarity errors, confirming LLM uncertainty
@@ -1205,7 +1214,7 @@ T1562.001 78.0\%; 0.0\% FPR on real compliant logs \\
 RQ2 & Model comparison in resource-constrained env. & XGBoost: 137$\times$ smaller, 50$\times$
 faster than BERT; GPT-4o-mini: 92.3\% zero-shot (API) \\
 RQ3 & Hybrid dataset overcomes synthetic overfitting & Zero-shot: 7.98\%; 5\% fine-tune:
-99.88\%; vocab-cov router: 94.5\% \\
+99.88\% (SSH-domain fine-tune only); vocab-cov router: 94.5\% \\
 RQ4 & Multi-label vs.\ binary classification & 3.2 controls avg./event; binary loses
 per-control evidence \\
 --- & LLM generalization across log types & GPT-4o-mini: 92.3\% ($n$=628, 4 types, 37.5\% real); 85.1\% hybrid on 180 real logs \\
